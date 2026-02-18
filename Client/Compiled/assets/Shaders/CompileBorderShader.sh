@@ -1,0 +1,2 @@
+/home/ehadbalayla/Downloads/1.4.328.1/x86_64/bin/glslc -fshader-stage=vert ChunkBorder_vert.glsl -o ChunkBorder_vert.spv
+/home/ehadbalayla/Downloads/1.4.328.1/x86_64/bin/glslc -fshader-stage=frag ChunkBorder_frag.glsl -o ChunkBorder_frag.spv

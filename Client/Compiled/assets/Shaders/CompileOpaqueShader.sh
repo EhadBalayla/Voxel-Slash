@@ -1,0 +1,2 @@
+/home/ehadbalayla/Downloads/1.4.328.1/x86_64/bin/glslc -fshader-stage=vert Opaque_vert.glsl -o Opaque_vert.spv
+/home/ehadbalayla/Downloads/1.4.328.1/x86_64/bin/glslc -fshader-stage=frag Opaque_frag.glsl -o Opaque_frag.spv

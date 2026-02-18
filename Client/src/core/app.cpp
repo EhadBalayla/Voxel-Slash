@@ -1,0 +1,175 @@
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "app.h"
+#include "Utilities.h"
+
+#include <iostream>
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
+void resize_callback(GLFWwindow* window, int width, int height);
+
+App* GApp = nullptr;
+
+
+App* App::instance;
+App::App() {
+    GApp = this;
+    instance = this;
+    // Initialize camera at a height where terrain should be visible
+    m_Camera = Camera(glm::vec3(10.0f, 11.0f, 10.0f));
+}
+App* App::Get() {
+    return instance;
+}
+
+void App::Init() {
+    Window::InitGLFW();
+    m_Window.CreateWindow("Voxel Slash", Width, Height);
+    m_Window.MakeContext();
+    glfwSetCursorPosCallback(m_Window.GetGLFWwindow(), mouse_callback);
+    glfwSetFramebufferSizeCallback(m_Window.GetGLFWwindow(), resize_callback);
+    //glfwSetInputMode(m_Window.GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    m_Renderer.Init();
+    
+
+    m_DebugUI.Init();
+
+    
+    //load textures
+    m_TerrainAtlas.LoadTexture("assets/Textures/atlas.png");
+    
+    //load the descriptor sets
+    m_Renderer.StartDescriptors();
+
+    //load shaders
+    m_OpaqueShader.LoadShader("assets/Shaders/Opaque_vert.spv", "assets/Shaders/Opaque_frag.spv", PipelineType::Chunk);
+    m_BorderShader.LoadShader("assets/Shaders/ChunkBorder_vert.spv", "assets/Shaders/ChunkBorder_frag.spv", PipelineType::DebugChunkBorder);
+
+    RegisterAllBlocks();
+
+    m_World = new World;
+    m_World->GetChunkManager().UpdateChunks();
+}
+void App::Loop() {
+    while(!m_Window.ShouldClose()) {
+        
+        m_Window.StartFrame();
+        m_Window.PollEvents();
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastTime;
+        lastTime = currentFrame;
+        processInput();
+        proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
+        proj[1][1] *= -1;
+        m_Frustum = ExtractFrustum(proj * m_Camera.GetViewMatrix());
+
+
+        m_Camera.UpdateChunksAroundCamera();
+
+        m_World->UpdateWorld();
+
+        m_Renderer.SetViewProj(m_Camera.GetViewMatrix(), proj);
+
+        
+        m_World->RenderWorld();
+
+        if(showChunkBorders) {
+            m_Renderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Camera.ChunkCoordX * 32, m_Camera.ChunkCoordY * 32,m_Camera.ChunkCoordZ * 32)));
+
+            m_Renderer.BindVoxelDescriptor();
+            m_BorderShader.Bind();
+            vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 24, 1, 0, 0);
+        }
+
+        m_DebugUI.RenderDebugUI();
+
+        m_Window.NextFrame();
+    }
+}
+void App::Terminate() {
+    delete m_World;
+
+    vkDeviceWaitIdle(m_Renderer.GetDevice());
+
+    m_BorderShader.UnloadShader();
+    m_OpaqueShader.UnloadShader();
+
+    m_Renderer.EndDescriptors();
+
+    m_TerrainAtlas.UnloadTexture();
+
+    m_DebugUI.Terminate();
+
+    m_Renderer.Terminate();
+
+    m_Window.DestroyContext();
+    m_Window.DestroyWindow();
+    Window::TerminateGLFW();
+}
+
+void App::RegisterAllBlocks() {
+    BlockRegistery[BlockType::Air] = {{0, 0, 0, 0, 0, 0}};
+    BlockRegistery[BlockType::Stone] = {{0, 0, 0, 0, 0, 0}};
+    BlockRegistery[BlockType::Grass] = {{1, 3, 2, 2, 2, 2}};
+    BlockRegistery[BlockType::Dirt] = {{3, 3, 3, 3, 3, 3}};
+    BlockRegistery[BlockType::Mystery] = {{4, 4, 4, 4, 4, 4}};
+}
+
+
+
+bool firstMouse = false;
+float lastX = 1280.0f/2.0f;
+float lastY = 720.0f/2.0f;
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    (void)window; // Mark as intentionally unused
+
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;
+
+    lastX = xpos;
+    lastY = ypos;
+
+    App::Get()->m_Camera.ProcessMouseMovement(xoffset, yoffset);
+}
+void resize_callback(GLFWwindow* window, int width, int height) {
+    (void)window;
+    App::Get()->Width = width;
+    App::Get()->Height = height;
+}
+void App::processInput()
+{
+    if(glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        if(!firstClick) {
+            firstClick = true;
+            if(glfwGetInputMode(m_Window.GetGLFWwindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED) 
+                glfwSetInputMode(m_Window.GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            else
+                glfwSetInputMode(m_Window.GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+    } else {
+        firstClick = false;
+    }
+        
+
+    if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_W) == GLFW_PRESS)
+        m_Camera.ProcessKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_S) == GLFW_PRESS)
+        m_Camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_A) == GLFW_PRESS)
+        m_Camera.ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_D) == GLFW_PRESS)
+        m_Camera.ProcessKeyboard(RIGHT, deltaTime);
+}
