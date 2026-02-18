@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -15,6 +16,7 @@ public:
     ThreadPool(size_t count);
     ThreadPool();
     ~ThreadPool();
+    void Stop(); //does the same thing the destructor does
 
     void QueueJob(job j);
 private:

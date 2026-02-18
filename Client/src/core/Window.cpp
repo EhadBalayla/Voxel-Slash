@@ -79,7 +79,7 @@ void Window::StartFrame() {
 
 
 	uint32_t clearValuesCount = 2;
-	VkClearValue clearValues[] = {{0.5f, 0.9f, 1.0f, 1.0f}, {1.0f, 0.0f}};
+	VkClearValue clearValues[] = {{0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 0.0f}};
 
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

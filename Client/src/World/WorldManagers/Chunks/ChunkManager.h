@@ -1,6 +1,7 @@
 #pragma once
 #include "ChunkProvider.h"
 #include "ChunkGenerator.h"
+#include "../../../core/LODParallelism.h"
 
 class ChunkManager {
 public:

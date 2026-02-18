@@ -88,7 +88,7 @@ void DebugUI::RenderMenuDebugUI() {
     
     if(ImGui::Button("start")) {
         GApp->state = GameState::InGame;
-
+        GApp->waitingFrames = 0;
         GApp->m_Camera = Camera(glm::vec3(10.0f, 11.0f, 10.0f));
         GApp->m_World = new World();
         GApp->m_World->GetChunkManager().UpdateChunks();
