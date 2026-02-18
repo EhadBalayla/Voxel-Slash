@@ -41,11 +41,11 @@ void main() {
     if(faceID == 0u) { // Top
         Lighting = ambientLight + directionalLight * 1.0;
     } else if(faceID == 1u) { // Bottom
-        Lighting = ambientLight + directionalLight * 0.5;
+        Lighting = ambientLight + directionalLight * 0.2;
     } else if(faceID == 2u || faceID == 3u) { // Left/Right
-        Lighting = ambientLight + directionalLight * 0.75;
+        Lighting = ambientLight + directionalLight * 0.4;
     } else { // Front/Back
-        Lighting = ambientLight + directionalLight * 0.85;
+        Lighting = ambientLight + directionalLight * 0.6;
     }
 
 	uint indexX = texOffset % uint(8);

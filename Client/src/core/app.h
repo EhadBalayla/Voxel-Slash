@@ -41,7 +41,6 @@ public:
 
 
     App();
-    static App* Get();
     void Init();
     void Loop();
     void Terminate();
@@ -49,8 +48,6 @@ public:
     int RenderDistance = 8;
     int MaxLODLevel = 6; /*from 1 - 6*/
 private:
-    static App* instance;
-
     void RegisterAllBlocks();
 
 

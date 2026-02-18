@@ -7,7 +7,7 @@
 #include <cstring>
 
 void ChunkBuffer::Update(void* verticiesData, size_t verticiesSize, void* indiciesData, size_t indiciesSize) {
-    Renderer& renderer = App::Get()->m_Renderer;
+    Renderer& renderer = GApp->m_Renderer;
 
     VkDeviceSize bufferSize = static_cast<VkDeviceSize>(verticiesSize) + static_cast<VkDeviceSize>(indiciesSize);
     indiciesOffset = verticiesSize;
@@ -34,7 +34,7 @@ void ChunkBuffer::Update(void* verticiesData, size_t verticiesSize, void* indici
     vmaUnmapMemory(renderer.GetAllocator(), allocation);
 }
 void ChunkBuffer::Delete() {
-    Renderer& renderer = App::Get()->m_Renderer;
+    Renderer& renderer = GApp->m_Renderer;
 
     vmaDestroyBuffer(renderer.GetAllocator(), buffer, allocation);
 }

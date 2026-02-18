@@ -80,8 +80,8 @@ void Camera::updateCameraVectors()
 
 
 void Camera::UpdateChunksAroundCamera() {
-    if(App::Get()->LoadChunks)
-    if(!App::Get()->m_World->GetChunkManager().IsUpdatingChunks) {
+    if(GApp->LoadChunks)
+    if(!GApp->m_World->GetChunkManager().IsUpdatingChunks) {
         int CurrentCoordX = static_cast<int>(std::floor(Position.x / 32.0f));
         int CurrentCoordY = static_cast<int>(std::floor(Position.y / 32.0f));
         int CurrentCoordZ = static_cast<int>(std::floor(Position.z / 32.0f));
@@ -91,7 +91,7 @@ void Camera::UpdateChunksAroundCamera() {
             ChunkCoordY = CurrentCoordY;
             ChunkCoordZ = CurrentCoordZ;
 
-            App::Get()->m_World->GetChunkManager().UpdateChunks();
+            GApp->m_World->GetChunkManager().UpdateChunks();
         }
     }
 }

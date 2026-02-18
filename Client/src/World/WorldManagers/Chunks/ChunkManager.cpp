@@ -44,8 +44,8 @@ void ChunkManager::Render() {
     if(c) renderReadySet.insert(c);
 
 
-    App::Get()->m_Renderer.BindVoxelDescriptor();
-    App::Get()->m_OpaqueShader.Bind();
+    GApp->m_Renderer.BindVoxelDescriptor();
+    GApp->m_OpaqueShader.Bind();
     for(auto it = renderReadySet.begin(); it != renderReadySet.end();) {
         Chunk* c = *it;
 
@@ -57,7 +57,7 @@ void ChunkManager::Render() {
         }
         it++;
 
-        if(!ChunkInFrustum(App::Get()->m_Frustum, c->GetMin(), c->GetMax())) continue;
+        if(!ChunkInFrustum(GApp->m_Frustum, c->GetMin(), c->GetMax())) continue;
         if(c->LOD > 0 && !ShouldLODRender(c)) continue;
         if(!c->HasAnything) continue;
         
@@ -109,13 +109,13 @@ void ChunkManager::chunksUpdaterLoop() {
 
             if(!ChunkIteratorsRunning) break;
         }
-        for(int i = 0; i < App::Get()->MaxLODLevel; i++) {
+        for(int i = 0; i < GApp->MaxLODLevel; i++) {
 
-            int CenterX = App::Get()->m_Camera.ChunkCoordX / GetLODSize(i);
-            int CenterY = App::Get()->m_Camera.ChunkCoordY / GetLODSize(i);
-            int CenterZ = App::Get()->m_Camera.ChunkCoordZ / GetLODSize(i);
+            int CenterX = GApp->m_Camera.ChunkCoordX / GetLODSize(i);
+            int CenterY = GApp->m_Camera.ChunkCoordY / GetLODSize(i);
+            int CenterZ = GApp->m_Camera.ChunkCoordZ / GetLODSize(i);
 
-            for (int r = 0; r <= App::Get()->RenderDistance; r++) {
+            for (int r = 0; r <= GApp->RenderDistance; r++) {
 
 	    	    for (int dx = -r; dx <= r; dx++) {
 	    	        for (int dy = -r; dy <= r; dy++) {

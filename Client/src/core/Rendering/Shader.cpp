@@ -162,25 +162,25 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pColorBlendState = &colorBlendState;
 	pipelineInfo.pDepthStencilState = &depthStencilState;
-	pipelineInfo.layout = App::Get()->m_Renderer.GetChunksPipelineLayout();
-	pipelineInfo.renderPass = App::Get()->m_Window.GetSwapchain().swapchainRenderPass;
+	pipelineInfo.layout = GApp->m_Renderer.GetChunksPipelineLayout();
+	pipelineInfo.renderPass = GApp->m_Window.GetSwapchain().swapchainRenderPass;
 	pipelineInfo.subpass = 0;
 
-	if (vkCreateGraphicsPipelines(App::Get()->m_Renderer.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(GApp->m_Renderer.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline");
 	}
 
 
-	vkDestroyShaderModule(App::Get()->m_Renderer.GetDevice(), fragmentModule, nullptr);
-	vkDestroyShaderModule(App::Get()->m_Renderer.GetDevice(), vertexModule, nullptr);
+	vkDestroyShaderModule(GApp->m_Renderer.GetDevice(), fragmentModule, nullptr);
+	vkDestroyShaderModule(GApp->m_Renderer.GetDevice(), vertexModule, nullptr);
 }
 void Shader::UnloadShader() {
-	vkDestroyPipeline(App::Get()->m_Renderer.GetDevice(), graphicsPipeline, nullptr);
+	vkDestroyPipeline(GApp->m_Renderer.GetDevice(), graphicsPipeline, nullptr);
 }
 
 
 void Shader::Bind() {
-	vkCmdBindPipeline(App::Get()->m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+	vkCmdBindPipeline(GApp->m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 }
 
 
@@ -209,7 +209,7 @@ VkShaderModule createShaderModule(const std::vector<char>& code) {
 
 	VkShaderModule module;
 
-	if (vkCreateShaderModule(App::Get()->m_Renderer.GetDevice(), &createInfo, nullptr, &module) != VK_SUCCESS) {
+	if (vkCreateShaderModule(GApp->m_Renderer.GetDevice(), &createInfo, nullptr, &module) != VK_SUCCESS) {
 		throw std::runtime_error("couldn't create shader module");
 	}
 

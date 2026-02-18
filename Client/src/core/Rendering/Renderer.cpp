@@ -282,7 +282,7 @@ void Renderer::CreateChunkSets() {
 
         VkDescriptorImageInfo AtlasInfo{};
         AtlasInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        AtlasInfo.imageView = App::Get()->m_TerrainAtlas.Get();
+        AtlasInfo.imageView = GApp->m_TerrainAtlas.Get();
         AtlasInfo.sampler = sampler;
 
 
@@ -313,7 +313,7 @@ void Renderer::CreateChunkSets() {
 
 
 void UniformBuffer::Create(VkDeviceSize bufferSize, bool IsUniform) {
-	Renderer& renderer = App::Get()->m_Renderer;
+	Renderer& renderer = GApp->m_Renderer;
 	Buffers.resize(renderer.GetMaxFramesInFlight());
 	BuffersMemory.resize(renderer.GetMaxFramesInFlight());
 	BuffersMapped.resize(renderer.GetMaxFramesInFlight());
@@ -325,7 +325,7 @@ void UniformBuffer::Create(VkDeviceSize bufferSize, bool IsUniform) {
 	}
 }
 void UniformBuffer::Delete() {
-	Renderer& renderer = App::Get()->m_Renderer;
+	Renderer& renderer = GApp->m_Renderer;
 	for (int i = 0; i < renderer.GetMaxFramesInFlight(); i++) {
 		vkUnmapMemory(renderer.GetDevice(), BuffersMemory[i]);
 		vkDestroyBuffer(renderer.GetDevice(), Buffers[i], nullptr);

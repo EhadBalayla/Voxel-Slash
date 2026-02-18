@@ -30,7 +30,7 @@ void Window::MakeContext() {
     //start the GPU initialization
     m_Context.InitGPU(m_GLFWwindow);
 
-    App::Get()->m_Renderer.SetHandles(
+    GApp->m_Renderer.SetHandles(
 		m_Context.GetInstance(), 
 		m_Context.GetDebugMessenger(), 
 		m_Context.GetPhysicalDevice(),
@@ -62,17 +62,17 @@ void Window::DestroyWindow() {
 
 
 void Window::StartFrame() {
-    vkWaitForFences(m_Context.GetDevice(), 1, &m_Swapchain.inFlightFences[App::Get()->m_Renderer.CurrentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(m_Context.GetDevice(), 1, &m_Swapchain.inFlightFences[App::Get()->m_Renderer.CurrentFrame]);
+    vkWaitForFences(m_Context.GetDevice(), 1, &m_Swapchain.inFlightFences[GApp->m_Renderer.CurrentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(m_Context.GetDevice(), 1, &m_Swapchain.inFlightFences[GApp->m_Renderer.CurrentFrame]);
 
-    vkAcquireNextImageKHR(m_Context.GetDevice(), m_Swapchain.swapchain, UINT64_MAX, m_Swapchain.imageAvailableSemaphores[App::Get()->m_Renderer.CurrentFrame], VK_NULL_HANDLE, &m_Swapchain.imageIndex);
+    vkAcquireNextImageKHR(m_Context.GetDevice(), m_Swapchain.swapchain, UINT64_MAX, m_Swapchain.imageAvailableSemaphores[GApp->m_Renderer.CurrentFrame], VK_NULL_HANDLE, &m_Swapchain.imageIndex);
 
-    vkResetCommandBuffer(App::Get()->m_Renderer.GetFrameCommandBuffer(), 0);
+    vkResetCommandBuffer(GApp->m_Renderer.GetFrameCommandBuffer(), 0);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    if(vkBeginCommandBuffer(App::Get()->m_Renderer.GetFrameCommandBuffer(), &beginInfo) != VK_SUCCESS) {
+    if(vkBeginCommandBuffer(GApp->m_Renderer.GetFrameCommandBuffer(), &beginInfo) != VK_SUCCESS) {
         throw std::runtime_error("failed to start current frame's command buffer");
     }
 
@@ -97,19 +97,19 @@ void Window::StartFrame() {
 	viewport.height = m_Swapchain.swapchainImageExtent.height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(App::Get()->m_Renderer.GetFrameCommandBuffer(), 0, 1, &viewport);
+	vkCmdSetViewport(GApp->m_Renderer.GetFrameCommandBuffer(), 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
 	scissor.extent = m_Swapchain.swapchainImageExtent;
-	vkCmdSetScissor(App::Get()->m_Renderer.GetFrameCommandBuffer(), 0, 1, &scissor);
+	vkCmdSetScissor(GApp->m_Renderer.GetFrameCommandBuffer(), 0, 1, &scissor);
 
-	vkCmdBeginRenderPass(App::Get()->m_Renderer.GetFrameCommandBuffer(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(GApp->m_Renderer.GetFrameCommandBuffer(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 void Window::NextFrame() {
-	vkCmdEndRenderPass(App::Get()->m_Renderer.GetFrameCommandBuffer());
+	vkCmdEndRenderPass(GApp->m_Renderer.GetFrameCommandBuffer());
 
-    if (vkEndCommandBuffer(App::Get()->m_Renderer.GetFrameCommandBuffer()) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(GApp->m_Renderer.GetFrameCommandBuffer()) != VK_SUCCESS) {
 			throw std::runtime_error("couldn't end one of the rendering command buffers");
 	}
 
@@ -118,14 +118,14 @@ void Window::NextFrame() {
 
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &m_Swapchain.imageAvailableSemaphores[App::Get()->m_Renderer.CurrentFrame];
+	submitInfo.pWaitSemaphores = &m_Swapchain.imageAvailableSemaphores[GApp->m_Renderer.CurrentFrame];
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &App::Get()->m_Renderer.GetFrameCommandBuffer();
+	submitInfo.pCommandBuffers = &GApp->m_Renderer.GetFrameCommandBuffer();
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &m_Swapchain.renderingFinishedSemaphores[m_Swapchain.imageIndex];
 
-	if (vkQueueSubmit(App::Get()->m_Renderer.GetGraphicsQueue(), 1, &submitInfo, m_Swapchain.inFlightFences[App::Get()->m_Renderer.CurrentFrame]) != VK_SUCCESS) {
+	if (vkQueueSubmit(GApp->m_Renderer.GetGraphicsQueue(), 1, &submitInfo, m_Swapchain.inFlightFences[GApp->m_Renderer.CurrentFrame]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer");
 	}
 	VkPresentInfoKHR presentInfo{};
@@ -136,9 +136,9 @@ void Window::NextFrame() {
 	presentInfo.pSwapchains = &m_Swapchain.swapchain;
 	presentInfo.pImageIndices = &m_Swapchain.imageIndex;
 
-	vkQueuePresentKHR(App::Get()->m_Renderer.GetPresentQueue(), &presentInfo);
+	vkQueuePresentKHR(GApp->m_Renderer.GetPresentQueue(), &presentInfo);
 	
-	App::Get()->m_Renderer.CurrentFrame = (App::Get()->m_Renderer.CurrentFrame + 1) % m_Context.MAX_FRAMES_IN_FLIGHT;
+	GApp->m_Renderer.CurrentFrame = (GApp->m_Renderer.CurrentFrame + 1) % m_Context.MAX_FRAMES_IN_FLIGHT;
 }
 void Window::PollEvents() {
     glfwPollEvents();

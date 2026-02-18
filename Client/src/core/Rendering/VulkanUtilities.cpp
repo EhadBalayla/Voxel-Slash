@@ -4,7 +4,7 @@
 
 uint32_t VKUtils::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProps;
-	vkGetPhysicalDeviceMemoryProperties(App::Get()->m_Renderer.GetPhysicalDevice(), &memProps);
+	vkGetPhysicalDeviceMemoryProperties(GApp->m_Renderer.GetPhysicalDevice(), &memProps);
 
 	for (uint32_t i = 0; i < memProps.memoryTypeCount; i++) {
 		if ((typeFilter & (1 << i)) && (memProps.memoryTypes[i].propertyFlags & properties) == properties){
@@ -21,23 +21,23 @@ void VKUtils::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemory
 	bufferInfo.usage = usage;
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	if (vkCreateBuffer(App::Get()->m_Renderer.GetDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+	if (vkCreateBuffer(GApp->m_Renderer.GetDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
 		throw std::runtime_error("couldn't create buffer");
 	}
 
 	VkMemoryRequirements memoryRequirements{};
-	vkGetBufferMemoryRequirements(App::Get()->m_Renderer.GetDevice(), buffer, &memoryRequirements);
+	vkGetBufferMemoryRequirements(GApp->m_Renderer.GetDevice(), buffer, &memoryRequirements);
 
 	VkMemoryAllocateInfo memoryAllocInfo{};
 	memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	memoryAllocInfo.allocationSize = memoryRequirements.size;
 	memoryAllocInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, properties);
 
-	if (vkAllocateMemory(App::Get()->m_Renderer.GetDevice(), &memoryAllocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(GApp->m_Renderer.GetDevice(), &memoryAllocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate memory");
 	}
 
-	vkBindBufferMemory(App::Get()->m_Renderer.GetDevice(), buffer, bufferMemory, 0);
+	vkBindBufferMemory(GApp->m_Renderer.GetDevice(), buffer, bufferMemory, 0);
 }
 void VKUtils::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
 	VkCommandBuffer tempBuffer = BeginSingleUseCommandBuffer();
@@ -53,11 +53,11 @@ VkCommandBuffer VKUtils::BeginSingleUseCommandBuffer() {
     VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = App::Get()->m_Renderer.GetCommandPool();
+	allocInfo.commandPool = GApp->m_Renderer.GetCommandPool();
 	allocInfo.commandBufferCount = 1;
 
 	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(App::Get()->m_Renderer.GetDevice(), &allocInfo, &commandBuffer);
+	vkAllocateCommandBuffers(GApp->m_Renderer.GetDevice(), &allocInfo, &commandBuffer);
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -75,10 +75,10 @@ void VKUtils::EndSingleUseCommandBuffer(VkCommandBuffer commandBuffer) {
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
 
-	vkQueueSubmit(App::Get()->m_Renderer.GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(App::Get()->m_Renderer.GetGraphicsQueue());
+	vkQueueSubmit(GApp->m_Renderer.GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(GApp->m_Renderer.GetGraphicsQueue());
 
-	vkFreeCommandBuffers(App::Get()->m_Renderer.GetDevice(), App::Get()->m_Renderer.GetCommandPool(), 1, &commandBuffer);
+	vkFreeCommandBuffers(GApp->m_Renderer.GetDevice(), GApp->m_Renderer.GetCommandPool(), 1, &commandBuffer);
 }
 
 void VKUtils::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
@@ -97,23 +97,23 @@ void VKUtils::createImage(uint32_t width, uint32_t height, VkFormat format, VkIm
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 
-	if (vkCreateImage(App::Get()->m_Renderer.GetDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
+	if (vkCreateImage(GApp->m_Renderer.GetDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
 		throw std::runtime_error("couldn't create image");
 	}
 
 	VkMemoryRequirements memReqs;
-	vkGetImageMemoryRequirements(App::Get()->m_Renderer.GetDevice(), image, &memReqs);
+	vkGetImageMemoryRequirements(GApp->m_Renderer.GetDevice(), image, &memReqs);
 
 	VkMemoryAllocateInfo imageMemInfo{};
 	imageMemInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	imageMemInfo.allocationSize = memReqs.size;
 	imageMemInfo.memoryTypeIndex = VKUtils::findMemoryType(memReqs.memoryTypeBits, properties);
 
-	if (vkAllocateMemory(App::Get()->m_Renderer.GetDevice(), &imageMemInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(GApp->m_Renderer.GetDevice(), &imageMemInfo, nullptr, &imageMemory) != VK_SUCCESS) {
 		throw std::runtime_error("couldn't allocate memory for the image");
 	}
 
-	vkBindImageMemory(App::Get()->m_Renderer.GetDevice(), image, imageMemory, 0);
+	vkBindImageMemory(GApp->m_Renderer.GetDevice(), image, imageMemory, 0);
 }
 void VKUtils::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer commandBuffer = BeginSingleUseCommandBuffer();
@@ -221,7 +221,7 @@ VkImageView VKUtils::createImageView(VkImage image, VkFormat format, VkImageAspe
 	createInfo.subresourceRange.layerCount = 1;
 
 	VkImageView imageView;
-	if (vkCreateImageView(App::Get()->m_Renderer.GetDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS) {
+	if (vkCreateImageView(GApp->m_Renderer.GetDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS) {
 		throw std::runtime_error("couldn't create image view");
 	}
 

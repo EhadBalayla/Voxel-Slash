@@ -86,7 +86,7 @@ void AddFace(glm::ivec3 pos, Face face, uint32_t& indexOffset, uint8_t texOffset
 
 void Chunk::Render() {
     if(HasOpaque) {
-        Renderer& renderer = App::Get()->m_Renderer;
+        Renderer& renderer = GApp->m_Renderer;
 
         int LODFactor = GetLODSize(LOD);
         glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(ChunkX * Chunk_Length * LODFactor, ChunkY * Chunk_Length * LODFactor, ChunkZ * Chunk_Length * LODFactor));
@@ -147,7 +147,7 @@ void Chunk::GenerateMeshData() {
                     return m_Blocks[IndexAt(nx, ny, nz)] == BlockType::Air;
                     };
                 
-                BlockData bd = App::Get()->BlockRegistery[type];
+                BlockData bd = GApp->BlockRegistery[type];
                 if(IsAir(0, 0, -1)) AddFace(blockPos, Face::Back, indexOffset, bd.uvs.backUV, meshData.opaqueVerticies, meshData.opaqueIndicies);
                 if(IsAir(0, 0, 1)) AddFace(blockPos, Face::Front, indexOffset, bd.uvs.frontUV, meshData.opaqueVerticies, meshData.opaqueIndicies);
                 if(IsAir(-1, 0, 0)) AddFace(blockPos, Face::Left, indexOffset, bd.uvs.leftUV, meshData.opaqueVerticies, meshData.opaqueIndicies);

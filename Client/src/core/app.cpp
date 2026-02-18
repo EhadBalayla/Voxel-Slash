@@ -10,17 +10,10 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void resize_callback(GLFWwindow* window, int width, int height);
 
 App* GApp = nullptr;
-
-
-App* App::instance;
 App::App() {
     GApp = this;
-    instance = this;
     // Initialize camera at a height where terrain should be visible
     m_Camera = Camera(glm::vec3(10.0f, 11.0f, 10.0f));
-}
-App* App::Get() {
-    return instance;
 }
 
 void App::Init() {
@@ -38,7 +31,7 @@ void App::Init() {
 
     
     //load textures
-    m_TerrainAtlas.LoadTexture("assets/Textures/atlas.png");
+    m_TerrainAtlas.LoadTexture("assets/Textures/TerrainAtlas.png");
     
     //load the descriptor sets
     m_Renderer.StartDescriptors();
@@ -111,9 +104,9 @@ void App::Terminate() {
 
 void App::RegisterAllBlocks() {
     BlockRegistery[BlockType::Air] = {{0, 0, 0, 0, 0, 0}};
-    BlockRegistery[BlockType::Stone] = {{0, 0, 0, 0, 0, 0}};
-    BlockRegistery[BlockType::Grass] = {{1, 3, 2, 2, 2, 2}};
-    BlockRegistery[BlockType::Dirt] = {{3, 3, 3, 3, 3, 3}};
+    BlockRegistery[BlockType::Stone] = {{3, 3, 3, 3, 3, 3}};
+    BlockRegistery[BlockType::Grass] = {{0, 2, 1, 1, 1, 1}};
+    BlockRegistery[BlockType::Dirt] = {{2, 2, 2, 2, 2, 2}};
     BlockRegistery[BlockType::Mystery] = {{4, 4, 4, 4, 4, 4}};
 }
 
@@ -142,12 +135,12 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    App::Get()->m_Camera.ProcessMouseMovement(xoffset, yoffset);
+    GApp->m_Camera.ProcessMouseMovement(xoffset, yoffset);
 }
 void resize_callback(GLFWwindow* window, int width, int height) {
     (void)window;
-    App::Get()->Width = width;
-    App::Get()->Height = height;
+    GApp->Width = width;
+    GApp->Height = height;
 }
 void App::processInput()
 {

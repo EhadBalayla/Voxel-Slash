@@ -21,9 +21,9 @@ void Texture::LoadTexture(const char* path) {
     VKUtils::createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     void* vData;
-    vkMapMemory(App::Get()->m_Renderer.GetDevice(), stagingBufferMemory, 0, imageSize, 0, &vData);
+    vkMapMemory(GApp->m_Renderer.GetDevice(), stagingBufferMemory, 0, imageSize, 0, &vData);
     memcpy(vData, data, imageSize);
-    vkUnmapMemory(App::Get()->m_Renderer.GetDevice(), stagingBufferMemory);
+    vkUnmapMemory(GApp->m_Renderer.GetDevice(), stagingBufferMemory);
 
 
     VKUtils::createImage(m_Width, m_Height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
@@ -31,8 +31,8 @@ void Texture::LoadTexture(const char* path) {
     VKUtils::copyBufferToImage(stagingBuffer, image, m_Width, m_Height);
     VKUtils::transitionImageLayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkDestroyBuffer(App::Get()->m_Renderer.GetDevice(), stagingBuffer, nullptr);
-	vkFreeMemory(App::Get()->m_Renderer.GetDevice(), stagingBufferMemory, nullptr);
+    vkDestroyBuffer(GApp->m_Renderer.GetDevice(), stagingBuffer, nullptr);
+	vkFreeMemory(GApp->m_Renderer.GetDevice(), stagingBufferMemory, nullptr);
 
 
     imageView = VKUtils::createImageView(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -41,9 +41,9 @@ void Texture::LoadTexture(const char* path) {
 }
 
 void Texture::UnloadTexture() {
-    vkDestroyImageView(App::Get()->m_Renderer.GetDevice(), imageView, nullptr);
-    vkFreeMemory(App::Get()->m_Renderer.GetDevice(), imageMemory, nullptr);
-    vkDestroyImage(App::Get()->m_Renderer.GetDevice(), image, nullptr);
+    vkDestroyImageView(GApp->m_Renderer.GetDevice(), imageView, nullptr);
+    vkFreeMemory(GApp->m_Renderer.GetDevice(), imageMemory, nullptr);
+    vkDestroyImage(GApp->m_Renderer.GetDevice(), image, nullptr);
 }
 
 
