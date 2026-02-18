@@ -3,36 +3,8 @@
 #include "ChunkManager.h"
 
 #include "../../../core/Utilities.h"
+#include "../../../core/LODParallelism.h"
 
-void ChunkGen(void* p1, void* p2) {
-    Chunk* c = static_cast<Chunk*>(p1);
-    ChunkManager* manager = static_cast<ChunkManager*>(p2);
-    
-    manager->GetChunkGenerator().GenerateChunk(c);
-    c->IsGenerated = true;
-    c->IsInJob = false;
-    
-    c->IsMeshPending = true; manager->PushDirtyChunk(c); //if the chunk has no BLOCK at all, dont push into meshing
-}
-void ChunkMesh(void* p1, void* p2) {
-    Chunk* c = static_cast<Chunk*>(p1);
-    ChunkManager* manager = static_cast<ChunkManager*>(p2);
-
-    c->GenerateMeshData();
-    c->IsInJob = false;
-
-    c->IsUploadPending = true; manager->PushUploadPending(c);  //if the chunk has no mesh at all, dont push into uploading
-}
-void ChunkUpload(void* p1, void* p2) {
-    Chunk* c = static_cast<Chunk*>(p1);
-    ChunkManager* manager = static_cast<ChunkManager*>(p2);
-
-    c->UploadMeshData();
-    c->IsRenderReady = true;
-    c->IsInJob = false;
-
-    manager->PushReadyChunk(c);
-}
 
 ChunkProvider::ChunkProvider(ChunkManager* manager) : owningManager(manager) {}
 ChunkProvider::~ChunkProvider() {}
@@ -51,7 +23,7 @@ Chunk* ChunkProvider::ProvideChunk(int ChunkX, int ChunkY, int ChunkZ, int LOD) 
     }
 
     c->IsInJob = true;
-    GenPool[LOD].QueueJob({ChunkGen, c, owningManager});
+    owningManager->LODParallels[c->LOD]->GenerateChunk(c);
 
     return c;
 }
@@ -63,16 +35,6 @@ void ChunkProvider::RemoveChunk(Chunk* c) {
     }
     c->DeleteMeshObjects();
     delete c;
-}
-void ChunkProvider::MeshChunk(Chunk* c) {
-    c->IsMeshPending = false;
-    c->IsInJob = true;
-    MeshPool[c->LOD].QueueJob({ChunkMesh, c, owningManager});
-}
-void ChunkProvider::UploadChunk(Chunk* c) {
-    c->IsUploadPending = false;
-    c->IsInJob = true;
-    UploadPool[c->LOD].QueueJob({ChunkUpload, c, owningManager});
 }
 bool ChunkProvider::IsNeighborsReady(Chunk* c) {
     int ChunkX = c->ChunkX;

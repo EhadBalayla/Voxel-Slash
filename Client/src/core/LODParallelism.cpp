@@ -11,7 +11,7 @@ void ChunkGen(void* p1, void* p2) {
     c->IsGenerated = true;
     c->IsInJob = false;
     
-    c->IsMeshPending = true; manager->PushDirtyChunk(c); //if the chunk has no BLOCK at all, dont push into meshing
+    c->IsMeshPending = true; (*manager->LODParallels[c->LOD]).PushDirtyChunk(c); //if the chunk has no BLOCK at all, dont push into meshing
 }
 void ChunkMesh(void* p1, void* p2) {
     Chunk* c = static_cast<Chunk*>(p1);
@@ -20,7 +20,7 @@ void ChunkMesh(void* p1, void* p2) {
     c->GenerateMeshData();
     c->IsInJob = false;
 
-    c->IsUploadPending = true; manager->PushUploadPending(c);  //if the chunk has no mesh at all, dont push into uploading
+    c->IsUploadPending = true; (*manager->LODParallels[c->LOD]).PushUploadPending(c);  //if the chunk has no mesh at all, dont push into uploading
 }
 void ChunkUpload(void* p1, void* p2) {
     Chunk* c = static_cast<Chunk*>(p1);
@@ -46,10 +46,14 @@ LODParallelism::~LODParallelism() {
     meshIterator.join();
     uploadIterator.join();
     deletionIterator.join();
+
+    GenPool.Stop();
+    MeshPool.Stop();
+    UploadPool.Stop();
 }
 
 void LODParallelism::GenerateChunk(Chunk* c) {
-    GenPool.QueueJob({ChunkGen, c, owningManager});
+    GenPool.QueueJob({ChunkGen, c, owningChunkManager});
 }
 void LODParallelism::PushDirtyChunk(Chunk* c) {
     std::lock_guard<std::mutex> lock(meshIteratorMTX);
@@ -60,8 +64,8 @@ void LODParallelism::PushUploadPending(Chunk* c) {
     uploadIterationTransitionQueue.push(c);
 }
 void LODParallelism::PushDeletionChunk(Chunk* c) {
-    std::lock_guard<std::mutex> lock(deletionIteratorMTX[c->LOD]);
-    deletionIterationTransitionQueue[c->LOD].push(c);
+    std::lock_guard<std::mutex> lock(deletionIteratorMTX);
+    deletionIterationTransitionQueue.push(c);
 }
 
 void LODParallelism::chunksMeshIteratorLoop() {
@@ -81,10 +85,10 @@ void LODParallelism::chunksMeshIteratorLoop() {
                     c->IsMeshPending = false;
                     c->IsDeletionPending = true;
                     PushDeletionChunk(c);
-                    it = meshPendingSet[LOD].erase(it);
+                    it = meshPendingSet.erase(it);
                     continue;
                 }
-                if(c->HasAnything && m_ChunkProvider.IsNeighborsReady(c)) {
+                if(c->HasAnything && owningChunkManager->GetChunkProvider().IsNeighborsReady(c)) {
                     MeshChunk(c);
                     it = meshPendingSet.erase(it);
                     continue;
@@ -119,7 +123,7 @@ void LODParallelism::chunksUploadIteratorLoop() {
                     continue;
                 }
                 if(c->GetMeshData().opaqueVerticies.size() > 0) {
-                    m_ChunkProvider.UploadChunk(c); 
+                    UploadChunk(c); 
                     it = uploadPendingSet.erase(it);
                     continue;
                 }
@@ -145,7 +149,7 @@ void LODParallelism::chunksDeletionIteratorLoop() {
             for(auto it = deletionPendingSet.begin(); it != deletionPendingSet.end();) {
                 Chunk* c = *it;
                 if(c->referenceCount <= 0) {
-                    m_ChunkProvider.RemoveChunk(c);
+                    owningChunkManager->GetChunkProvider().RemoveChunk(c);
                     it = deletionPendingSet.erase(it);
                     continue;
                 }
@@ -161,10 +165,10 @@ void LODParallelism::chunksDeletionIteratorLoop() {
 void LODParallelism::MeshChunk(Chunk* c) {
     c->IsMeshPending = false;
     c->IsInJob = true;
-    MeshPool.QueueJob({ChunkMesh, c, owningManager});
+    MeshPool.QueueJob({ChunkMesh, c, owningChunkManager});
 }
 void LODParallelism::UploadChunk(Chunk* c) {
     c->IsUploadPending = false;
     c->IsInJob = true;
-    UploadPool.QueueJob({ChunkUpload, c, owningManager});
+    UploadPool.QueueJob({ChunkUpload, c, owningChunkManager});
 }

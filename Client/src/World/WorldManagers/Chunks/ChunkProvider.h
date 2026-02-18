@@ -34,8 +34,6 @@ public:
 
     Chunk* ProvideChunk(int ChunkX, int ChunkY, int ChunkZ, int LOD);
     void RemoveChunk(Chunk* c);
-    void MeshChunk(Chunk* c);
-    void UploadChunk(Chunk* c);
     bool IsNeighborsReady(Chunk* c);
     void DeleteAllChunks();
     std::unordered_map<glm::ivec3, Chunk*>& GetAllChunks(int LOD);
@@ -45,8 +43,4 @@ private:
 
     bool IsValidChunk(int ChunkX, int ChunkY, int ChunkZ, int LOD);
     Chunk* LoadNewChunk(int ChunkX, int ChunkY, int ChunkZ, int LOD);
-
-    ThreadPool GenPool[6];
-    ThreadPool MeshPool[6];
-    ThreadPool UploadPool[6];
 };

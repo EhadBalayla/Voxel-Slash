@@ -1,5 +1,6 @@
 #pragma once
 #include "ThreadPool.h"
+#include <unordered_set>
 
 class Chunk;
 class ChunkManager;

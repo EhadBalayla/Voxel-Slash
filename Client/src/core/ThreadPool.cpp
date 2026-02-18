@@ -6,15 +6,6 @@ ThreadPool::ThreadPool(size_t count) {
 	}
 }
 ThreadPool::ThreadPool() : ThreadPool(3) {}
-ThreadPool::~ThreadPool() {
-    /*ThreadsRunning = false;
-
-	cv.notify_all();
-
-	for (size_t i = 0; i < threads.size(); i++) {
-		threads[i].join();
-	}*/
-}
 void ThreadPool::Stop() {
     ThreadsRunning = false;
 
