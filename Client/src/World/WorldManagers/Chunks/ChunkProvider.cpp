@@ -116,15 +116,12 @@ bool ChunkProvider::IsNeighborsReady(Chunk* c) {
 }
 void ChunkProvider ::DeleteAllChunks() {
     for(int i = 0; i < 6; i++) {
-        auto map = GetAllChunks(i);
-
-        for(auto& n : map) {
+        for(auto& n : chunks[i]) {
             Chunk* c = n.second;
 
             c->DeleteMeshObjects();
             delete c;
         }
-        map.clear();
     }
 }
 std::unordered_map<glm::ivec3, Chunk*>& ChunkProvider::GetAllChunks(int LOD) {

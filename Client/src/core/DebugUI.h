@@ -5,6 +5,7 @@ class DebugUI {
 public:
     void Init();
     void RenderDebugUI();
+    void RenderMenuDebugUI();
     void Terminate();
 
 private:

@@ -27,7 +27,8 @@ ChunkManager::~ChunkManager() {
         uploadIterator[i].join();
         deletionIterator[i].join();
     }
-
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     m_ChunkProvider.DeleteAllChunks();
 }
 

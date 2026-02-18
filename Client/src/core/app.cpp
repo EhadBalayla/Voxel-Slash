@@ -22,7 +22,6 @@ void App::Init() {
     m_Window.MakeContext();
     glfwSetCursorPosCallback(m_Window.GetGLFWwindow(), mouse_callback);
     glfwSetFramebufferSizeCallback(m_Window.GetGLFWwindow(), resize_callback);
-    //glfwSetInputMode(m_Window.GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     m_Renderer.Init();
     
@@ -41,49 +40,62 @@ void App::Init() {
     m_BorderShader.LoadShader("assets/Shaders/ChunkBorder_vert.spv", "assets/Shaders/ChunkBorder_frag.spv", PipelineType::DebugChunkBorder);
 
     RegisterAllBlocks();
-
-    m_World = new World;
-    m_World->GetChunkManager().UpdateChunks();
 }
 void App::Loop() {
     while(!m_Window.ShouldClose()) {
-        
         m_Window.StartFrame();
         m_Window.PollEvents();
+
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastTime;
         lastTime = currentFrame;
-        processInput();
-        proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
-        proj[1][1] *= -1;
-        m_Frustum = ExtractFrustum(proj * m_Camera.GetViewMatrix());
+
+        switch(state) {
+            case GameState::MainMenu: {
+                m_DebugUI.RenderMenuDebugUI();
+                break;
+            }
+            case GameState::InGame: {
+                if(waitingFrames == 0) {
+                processInput();
+                proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
+                proj[1][1] *= -1;
+                m_Frustum = ExtractFrustum(proj * m_Camera.GetViewMatrix());
 
 
-        m_Camera.UpdateChunksAroundCamera();
+                m_Camera.UpdateChunksAroundCamera();
 
-        m_World->UpdateWorld();
+                m_World->UpdateWorld();
 
-        m_Renderer.SetViewProj(m_Camera.GetViewMatrix(), proj);
+                m_Renderer.SetViewProj(m_Camera.GetViewMatrix(), proj);
+                     
 
-        
-        m_World->RenderWorld();
+                m_World->RenderWorld();
 
-        if(showChunkBorders) {
-            m_Renderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Camera.ChunkCoordX * 32, m_Camera.ChunkCoordY * 32,m_Camera.ChunkCoordZ * 32)));
+                if(showChunkBorders) {
+                    m_Renderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Camera.ChunkCoordX * 32, m_Camera.ChunkCoordY * 32,m_Camera.ChunkCoordZ * 32)));
+                
+                    m_Renderer.BindVoxelDescriptor();
+                    m_BorderShader.Bind();
+                    vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 24, 1, 0, 0);
+                }
+            
+                m_DebugUI.RenderDebugUI();
+                } else {
+                    waitingFrames++;
+                    if(waitingFrames == 3) { 
+                        state = GameState::MainMenu;
 
-            m_Renderer.BindVoxelDescriptor();
-            m_BorderShader.Bind();
-            vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 24, 1, 0, 0);
+                        delete GApp->m_World;
+                    }
+                }
+                break;
+            }
         }
-
-        m_DebugUI.RenderDebugUI();
-
         m_Window.NextFrame();
     }
 }
 void App::Terminate() {
-    delete m_World;
-
     vkDeviceWaitIdle(m_Renderer.GetDevice());
 
     m_BorderShader.UnloadShader();

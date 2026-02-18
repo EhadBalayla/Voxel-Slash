@@ -53,7 +53,6 @@ void DebugUI::RenderDebugUI() {
     ImGui::TextUnformatted(std::string("Num Of Chunks LOD3: " + std::to_string(GApp->m_World->GetChunkManager().GetChunkProvider().GetAllChunks(3).size())).c_str());
     ImGui::TextUnformatted(std::string("Num Of Chunks LOD4: " + std::to_string(GApp->m_World->GetChunkManager().GetChunkProvider().GetAllChunks(4).size())).c_str());
     ImGui::TextUnformatted(std::string("Num Of Chunks LOD5: " + std::to_string(GApp->m_World->GetChunkManager().GetChunkProvider().GetAllChunks(5).size())).c_str());
-    //ImGui::TextUnformatted(std::string("Deletion Chunks Queued: : " + std::to_string(App::Get()->m_World.GetChunkManager().deletionQueue.size())).c_str());
 
     ImGui::SetNextItemWidth(75.0f);
     ImGui::InputFloat("##TeleportX", &x);
@@ -68,23 +67,35 @@ void DebugUI::RenderDebugUI() {
         GApp->m_Camera.Position = glm::vec3(x, y, z);
     }
 
-    //ImGui::TextUnformatted("Select Max LOD Level");
-    //ImGui::SameLine();
-    //ImGui::SetNextItemWidth(150.0f);
-    //ImGui::SliderInt("##MaxLODLevel", &App::Get()->MaxLODLevel, 1, 6);
-    
-    /*if(ImGui::Button("Reload All Chunks")) {
-        App::Get()->m_World.GetChunkManager().GetChunkProvider().DeleteAllChunks();
-        App::Get()->m_World.GetChunkManager().UpdateChunks();
-    }*/
-
 
     ImGui::SliderFloat("##FOV", &GApp->FOV, 30.0f, 180.0f);
 
     ImGui::Separator();
-    if(ImGui::Button("Quit Game")) {
-        glfwSetWindowShouldClose(GApp->m_Window.GetGLFWwindow(), true);
+    if(ImGui::Button("Back To Menu")) {
+        GApp->waitingFrames = 1;
     }
+    ImGui::End();
+
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), GApp->m_Renderer.GetFrameCommandBuffer());
+}
+void DebugUI::RenderMenuDebugUI() {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::Begin("Debug Menu");
+    
+    if(ImGui::Button("start")) {
+        GApp->state = GameState::InGame;
+
+        GApp->m_Camera = Camera(glm::vec3(10.0f, 11.0f, 10.0f));
+        GApp->m_World = new World();
+        GApp->m_World->GetChunkManager().UpdateChunks();
+    }
+    ImGui::SliderInt("Max LODs", &GApp->MaxLODLevel, 1, 6);
+    ImGui::SliderInt("Render Distance", &GApp->RenderDistance, 3, 12);
+
     ImGui::End();
 
     ImGui::Render();

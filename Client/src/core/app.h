@@ -11,6 +11,11 @@
 
 #include "Frustum.h"
 
+enum class GameState {
+    MainMenu,
+    InGame
+};
+
 class App {
 public:
     //core managers
@@ -47,6 +52,9 @@ public:
 
     int RenderDistance = 8;
     int MaxLODLevel = 6; /*from 1 - 6*/
+
+    GameState state = GameState::MainMenu;
+    int waitingFrames = 0;
 private:
     void RegisterAllBlocks();
 
