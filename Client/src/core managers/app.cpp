@@ -2,7 +2,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "app.h"
-#include "Utilities.h"
+#include "../core/Utilities.h"
 
 #include <iostream>
 
@@ -25,6 +25,9 @@ void App::Init() {
     
 
     m_DebugUI.Init();
+
+
+    m_AudioManager.Init();
 
     
     //load textures
@@ -113,9 +116,12 @@ void App::Terminate() {
 
     m_TerrainAtlas.UnloadTexture();
 
+    m_AudioManager.Terminate();
+    
     m_DebugUI.Terminate();
-
+    
     m_Renderer.Terminate();
+    
 
     m_Window.DestroyContext();
     m_Window.DestroyWindow();

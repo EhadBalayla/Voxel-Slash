@@ -1,5 +1,5 @@
 #include "Chunk.h"
-#include "../core/app.h"
+#include "../core managers/app.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 

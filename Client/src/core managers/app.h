@@ -3,13 +3,15 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/Shader.h"
 #include "Rendering/Texture.h"
+#include "AudioManager.h"
+#include "AssetManager.h"
 #include "../Entities/Player.h"
 #include "DebugUI.h"
 #include "../World/World.h"
 
 #include "../World/Block.h"
 
-#include "Frustum.h"
+#include "../core/Frustum.h"
 
 enum class GameState {
     MainMenu,
@@ -21,6 +23,8 @@ public:
     //core managers
     Window m_Window;
     Renderer m_Renderer;
+    AudioManager m_AudioManager;
+    AssetManager m_AssetManager;
     Player m_Player;
     World* m_World;
     DebugUI m_DebugUI;
@@ -58,6 +62,8 @@ public:
     int waitingFrames = 0;
 private:
     void RegisterAllBlocks();
+
+    void LoadAllNonVoxelAssets();
 
 
     bool firstClick = false;

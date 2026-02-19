@@ -1,6 +1,6 @@
 #include "ChunkManager.h"
 
-#include "../../../core/app.h"
+#include "../../../core managers/app.h"
 #include "../../../core/Utilities.h"
 #include "../../../core/LODParallelism.h"
 #include "../../Chunk.h"

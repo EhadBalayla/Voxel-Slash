@@ -5,7 +5,7 @@
 
 #include <glm/glm.hpp>
 
-#include "../core/Rendering/ChunkBuffer.h"
+#include "../core managers/Rendering/ChunkBuffer.h"
 
 constexpr int Chunk_Length = 32; //for 32x32x32 chunks, cuz our chunks are cubic we only need one number not 3 numbers
 constexpr int VOXEL_ARRAY_SIZE = Chunk_Length * Chunk_Length * Chunk_Length;

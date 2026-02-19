@@ -1,5 +1,5 @@
 #include "Player.h"
-#include "../core/app.h"
+#include "../core managers/app.h"
 #include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -7,6 +7,7 @@
 #include "../core/Utilities.h"
 
 float MouseSensitivity = 0.5f;
+bool pressedJump = false;
 
 Player::Player() {
     aabb = {glm::vec3(-0.3f, 0.0f, -0.3f), glm::vec3(0.3f, 1.8f, 0.3f)};
@@ -51,8 +52,17 @@ void Player::ProcessMovementInput() {
     if (glfwGetKey(GApp->m_Window.GetGLFWwindow(), GLFW_KEY_D) == GLFW_PRESS)
         velocity += right * acceleration;
 
-    if (glfwGetKey(GApp->m_Window.GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
-        velocity += glm::vec3(0.0f, 1.0f, 0.0f) * 0.01f;
+    if (glfwGetKey(GApp->m_Window.GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS) {
+        if(!pressedJump) {
+            pressedJump = true;
+            if(IsOnGround) velocity.y = 10.0f;
+        }
+    }
+    else {
+        if(pressedJump) {
+            pressedJump = false;
+        }
+    }
 }
 
 glm::vec3 Player::GetCameraForwardVector() {

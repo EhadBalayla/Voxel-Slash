@@ -1,5 +1,5 @@
 
-#include "core/app.h"
+#include "core managers/app.h"
 
 int main() {
     App app;
