@@ -2,6 +2,8 @@
 #include "ChunkProvider.h"
 #include "ChunkGenerator.h"
 
+#include "../../Block.h"
+
 class LODParallelism;
 
 class ChunkManager {
@@ -21,6 +23,8 @@ public:
     void PushReadyChunk(Chunk* c);
 
     LODParallelism** LODParallels;
+
+    BlockType GetBlockAt(int x, int y, int z);
 private:
     ChunkProvider m_ChunkProvider;
     ChunkGenerator m_ChunkGenerator;

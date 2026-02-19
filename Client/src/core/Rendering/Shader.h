@@ -6,7 +6,7 @@
 
 enum class PipelineType {
     Chunk,
-    DebugChunkBorder
+    BoxOutline
 };
 
 class Shader

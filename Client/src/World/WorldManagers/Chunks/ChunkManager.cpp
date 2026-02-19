@@ -99,9 +99,9 @@ void ChunkManager::chunksUpdaterLoop() {
         }
         for(int i = 0; i < GApp->MaxLODLevel; i++) {
 
-            int CenterX = GApp->m_Camera.ChunkCoordX / GetLODSize(i);
-            int CenterY = GApp->m_Camera.ChunkCoordY / GetLODSize(i);
-            int CenterZ = GApp->m_Camera.ChunkCoordZ / GetLODSize(i);
+            int CenterX = GApp->m_Player.ChunkCoordX / GetLODSize(i);
+            int CenterY = GApp->m_Player.ChunkCoordY / GetLODSize(i);
+            int CenterZ = GApp->m_Player.ChunkCoordZ / GetLODSize(i);
 
             for (int r = 0; r <= GApp->RenderDistance; r++) {
 
@@ -119,4 +119,17 @@ void ChunkManager::chunksUpdaterLoop() {
 
         IsUpdatingChunks = false;
     }
+}
+
+
+BlockType ChunkManager::GetBlockAt(int x, int y, int z) {
+    int ChunkX = (int)std::floor((double)x / Chunk_Length);
+    int ChunkY = (int)std::floor((double)y / Chunk_Length);
+    int ChunkZ = (int)std::floor((double)z / Chunk_Length);
+
+    int LocalX = x - ChunkX * Chunk_Length;
+    int LocalY = y - ChunkY * Chunk_Length;
+    int LocalZ = z - ChunkZ * Chunk_Length;
+
+    return m_ChunkProvider.ProvideChunk(ChunkX, ChunkY, ChunkZ, 0)->m_Blocks[IndexAt(LocalX, LocalY, LocalZ)];
 }

@@ -12,8 +12,6 @@ void resize_callback(GLFWwindow* window, int width, int height);
 App* GApp = nullptr;
 App::App() {
     GApp = this;
-    // Initialize camera at a height where terrain should be visible
-    m_Camera = Camera(glm::vec3(10.0f, 11.0f, 10.0f));
 }
 
 void App::Init() {
@@ -37,7 +35,8 @@ void App::Init() {
 
     //load shaders
     m_OpaqueShader.LoadShader("assets/Shaders/Opaque_vert.spv", "assets/Shaders/Opaque_frag.spv", PipelineType::Chunk);
-    m_BorderShader.LoadShader("assets/Shaders/ChunkBorder_vert.spv", "assets/Shaders/ChunkBorder_frag.spv", PipelineType::DebugChunkBorder);
+    m_BorderShader.LoadShader("assets/Shaders/ChunkBorder_vert.spv", "assets/Shaders/ChunkBorder_frag.spv", PipelineType::BoxOutline);
+    m_BoxOutlineShader.LoadShader("assets/Shaders/BoxOutline_vert.spv", "assets/Shaders/BoxOutline_frag.spv", PipelineType::BoxOutline);
 
     RegisterAllBlocks();
 }
@@ -60,24 +59,33 @@ void App::Loop() {
                 processInput();
                 proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
                 proj[1][1] *= -1;
-                m_Frustum = ExtractFrustum(proj * m_Camera.GetViewMatrix());
+                m_Frustum = ExtractFrustum(proj * m_Player.GetViewMatrix());
 
 
-                m_Camera.UpdateChunksAroundCamera();
+                m_Player.UpdateChunksAroundPlayer();
+                m_Player.Update(deltaTime);
 
-                m_World->UpdateWorld();
-
-                m_Renderer.SetViewProj(m_Camera.GetViewMatrix(), proj);
+                m_Renderer.SetViewProj(m_Player.GetViewMatrix(), proj);
                      
 
                 m_World->RenderWorld();
+                
+                {
+                    glm::mat4 mat = glm::mat4(1.0f);
+                    mat = glm::translate(glm::mat4(1.0f), m_Player.Position + glm::vec3(0.0f, m_Player.aabb.max.y / 2.0f, 0.0f));
+                    mat = glm::scale(mat, glm::vec3(0.5f, m_Player.aabb.max.y, 0.5f));
+
+                    m_BoxOutlineShader.Bind();
+                    m_Renderer.SetTrans(mat);
+                    vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 24, 1, 0, 0);
+                }
 
                 if(showChunkBorders) {
-                    m_Renderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Camera.ChunkCoordX * 32, m_Camera.ChunkCoordY * 32,m_Camera.ChunkCoordZ * 32)));
+                    m_Renderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Player.ChunkCoordX * 32, m_Player.ChunkCoordY * 32,m_Player.ChunkCoordZ * 32)));
                 
                     m_Renderer.BindVoxelDescriptor();
                     m_BorderShader.Bind();
-                    vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 24, 1, 0, 0);
+                    vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 36, 1, 0, 0);
                 }
             
                 m_DebugUI.RenderDebugUI();
@@ -147,7 +155,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    GApp->m_Camera.ProcessMouseMovement(xoffset, yoffset);
+    GApp->m_Player.ProcessMouseInput(xoffset, yoffset);
 }
 void resize_callback(GLFWwindow* window, int width, int height) {
     (void)window;
@@ -169,12 +177,12 @@ void App::processInput()
     }
         
 
-    if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_W) == GLFW_PRESS)
+    /*if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_W) == GLFW_PRESS)
         m_Camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_S) == GLFW_PRESS)
         m_Camera.ProcessKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_A) == GLFW_PRESS)
         m_Camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_D) == GLFW_PRESS)
-        m_Camera.ProcessKeyboard(RIGHT, deltaTime);
+        m_Camera.ProcessKeyboard(RIGHT, deltaTime);*/
 }

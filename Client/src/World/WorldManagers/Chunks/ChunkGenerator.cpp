@@ -152,8 +152,8 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
             //if(Biome < 0.5)
               //  FinalY = MakeIceSpikesHeight(WorldX, WorldZ);
             //else
-                //FinalY = MakePlainsHeight(WorldX, WorldZ);
-            FinalY = MakeMountainPeaks(WorldX, WorldZ);
+                FinalY = MakePlainsHeight(WorldX, WorldZ);
+            //FinalY = MakeMountainPeaks(WorldX, WorldZ);
             //FinalY = MakeMesaHeight(WorldX, WorldZ);
             //FinalY = MakeMountainPeaks(WorldX, WorldZ);
 

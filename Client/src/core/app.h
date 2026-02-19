@@ -3,7 +3,7 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/Shader.h"
 #include "Rendering/Texture.h"
-#include "Camera.h"
+#include "../Entities/Player.h"
 #include "DebugUI.h"
 #include "../World/World.h"
 
@@ -21,13 +21,14 @@ public:
     //core managers
     Window m_Window;
     Renderer m_Renderer;
-    Camera m_Camera;
+    Player m_Player;
     World* m_World;
     DebugUI m_DebugUI;
 
     //shaders
     Shader m_OpaqueShader;
     Shader m_BorderShader;
+    Shader m_BoxOutlineShader;
 
     //textures
     Texture m_TerrainAtlas;
@@ -38,7 +39,7 @@ public:
     //misc
     glm::mat4 proj;
     int Width = 1600, Height = 900;
-    float FOV = 70.0f;
+    float FOV = 90.0f;
     Frustum m_Frustum;
     bool showChunkBorders = false;
     bool LoadChunks = true;
@@ -51,7 +52,7 @@ public:
     void Terminate();
 
     int RenderDistance = 8;
-    int MaxLODLevel = 6; /*from 1 - 6*/
+    int MaxLODLevel = 1; /*from 1 - 6*/
 
     GameState state = GameState::MainMenu;
     int waitingFrames = 0;

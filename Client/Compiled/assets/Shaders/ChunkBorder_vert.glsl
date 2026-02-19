@@ -56,5 +56,5 @@ layout ( push_constant ) uniform trans {
 } meshTrans;
 
 void main() {
-    gl_Position = MatBO.proj * MatBO.view * meshTrans.model * vec4(borderLinesVerts[gl_VertexIndex], 1.0);
+    gl_Position = MatBO.proj * MatBO.view * meshTrans.model * vec4(cubeVertices[gl_VertexIndex], 1.0);
 }

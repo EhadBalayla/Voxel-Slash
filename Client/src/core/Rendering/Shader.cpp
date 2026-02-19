@@ -91,7 +91,7 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	//creating the input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
 	inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssemblyInfo.topology = type == PipelineType::Chunk ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+	inputAssemblyInfo.topology = type == PipelineType::Chunk ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 	inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
 	//creating the rasterizer
