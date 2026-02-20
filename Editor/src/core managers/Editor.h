@@ -1,10 +1,12 @@
 #pragma once
 #include "Window.h"
+#include "EditorManager.h"
 #include "Rendering/Renderer.h"
 
 class Editor {
 public:
     Window m_Window;
+    EditorManager m_Editor;
     Renderer m_Renderer;
 
     Editor();
