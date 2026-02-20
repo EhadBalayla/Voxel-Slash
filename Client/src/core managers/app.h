@@ -30,6 +30,7 @@ public:
     DebugUI m_DebugUI;
 
     //shaders
+    Shader m_FullscreenQuadShader;
     Shader m_OpaqueShader;
     Shader m_BorderShader;
     Shader m_BoxOutlineShader;

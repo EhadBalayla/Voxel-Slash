@@ -1,7 +1,7 @@
 #pragma once
 #include <GLFW/glfw3.h>
-#include "Rendering/Context.h"
-#include "Rendering/Swapchain.h"
+#include "Context.h"
+#include "Swapchain.h"
 
 class Window {
 public:
@@ -19,6 +19,8 @@ public:
     //loop functions
     void StartFrame();
     void NextFrame();
+    void StartFullscreenRender();
+    void EndFullscreenRender();
     void PollEvents();
     bool ShouldClose();
 

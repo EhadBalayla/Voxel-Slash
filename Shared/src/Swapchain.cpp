@@ -6,14 +6,10 @@
 #include <algorithm>
 #include <limits>
 
-#include "../Editor.h"
-#include "VulkanUtilities.h"
-
 void Swapchain::Create() {
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
-	createDepthBuffer();
 	createFramebuffers();
 	createSyncObjects();
 }
@@ -27,9 +23,6 @@ void Swapchain::Delete() {
 	for (auto Framebuffer : swapChainFramebuffers)
 		vkDestroyFramebuffer(context->GetDevice(), Framebuffer, nullptr);
     vkDestroyRenderPass(context->GetDevice(), swapchainRenderPass, nullptr);
-	vkDestroyImageView(context->GetDevice(), depthImageView, nullptr);
-	vkFreeMemory(context->GetDevice(), depthImageMemory, nullptr);
-	vkDestroyImage(context->GetDevice(), depthImage, nullptr);
 	for (auto ImageView : swapChainImageViews)
 		vkDestroyImageView(context->GetDevice(), ImageView, nullptr);
 	vkDestroySwapchainKHR(context->GetDevice(), swapchain, nullptr);
@@ -113,12 +106,6 @@ void Swapchain::createImageViews() {
 		}
 	}
 }
-void Swapchain::createDepthBuffer() {
-	VkFormat depthFormat = findDepthFormat();
-	VKUtils::createImage(GEditor->Width, GEditor->Height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-	depthImageView = VKUtils::createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-}
 void Swapchain::createRenderPass() {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = swapchainImageFormat;
@@ -130,34 +117,19 @@ void Swapchain::createRenderPass() {
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-	VkAttachmentDescription depthAttachment{};
-	depthAttachment.format = findDepthFormat();
-	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	uint32_t attachmentCount = 2;
-	VkAttachmentDescription attachments[] = { colorAttachment, depthAttachment };
+	uint32_t attachmentCount = 1;
+	VkAttachmentDescription attachments[] = { colorAttachment };
 
 
 	VkAttachmentReference colorAttachmentRef{};
 	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	VkAttachmentReference depthAttachmentRef{};
-	depthAttachmentRef.attachment = 1;
-	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
 
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -184,8 +156,8 @@ void Swapchain::createFramebuffers() {
 	swapChainFramebuffers.resize(swapChainImageViews.size());
 
 	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-		uint32_t attachmentCount = 2;
-		VkImageView attachments[] = {swapChainImageViews[i], depthImageView};
+		uint32_t attachmentCount = 1;
+		VkImageView attachments[] = {swapChainImageViews[i]};
 
 		VkFramebufferCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -263,26 +235,4 @@ VkExtent2D Swapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilit
 
 		return actualExtent;
 	}
-}
-
-
-VkFormat Swapchain::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
-	for (VkFormat format : candidates) {
-		VkFormatProperties props;
-		vkGetPhysicalDeviceFormatProperties(context->GetPhysicalDevice(), format, &props);
-
-		if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-			return format;
-		}
-		else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-			return format;
-		}
-	}
-
-	throw std::runtime_error("failed to find supported format!");
-}
-VkFormat Swapchain::findDepthFormat() {
-	return findSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }

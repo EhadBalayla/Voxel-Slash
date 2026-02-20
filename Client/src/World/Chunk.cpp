@@ -95,9 +95,9 @@ void Chunk::Render() {
         renderer.SetTrans(model);
 
         VkDeviceSize offset[] = {0};
-        vkCmdBindVertexBuffers(renderer.GetFrameCommandBuffer(), 0, 1, &mesh.opaqueMeshBuffer.GetBuffer(), offset);
-        vkCmdBindIndexBuffer(renderer.GetFrameCommandBuffer(), mesh.opaqueMeshBuffer.GetBuffer(), mesh.opaqueMeshBuffer.indiciesOffset, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(renderer.GetFrameCommandBuffer(), mesh.opaqueCount, 1, 0, 0, 0);
+        vkCmdBindVertexBuffers(GApp->m_Window.GetContext().GetCommandBuffers()[GApp->m_Window.GetContext().currentFrame], 0, 1, &mesh.opaqueMeshBuffer.GetBuffer(), offset);
+        vkCmdBindIndexBuffer(GApp->m_Window.GetContext().GetCommandBuffers()[GApp->m_Window.GetContext().currentFrame], mesh.opaqueMeshBuffer.GetBuffer(), mesh.opaqueMeshBuffer.indiciesOffset, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(GApp->m_Window.GetContext().GetCommandBuffers()[GApp->m_Window.GetContext().currentFrame], mesh.opaqueCount, 1, 0, 0, 0);
     }
 }
 

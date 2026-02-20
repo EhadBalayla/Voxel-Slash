@@ -53,11 +53,11 @@ VkCommandBuffer VKUtils::BeginSingleUseCommandBuffer() {
     VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = GApp->m_Renderer.GetCommandPool();
+	allocInfo.commandPool = GApp->m_Window.GetContext().GetCommandPool();
 	allocInfo.commandBufferCount = 1;
 
 	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(GApp->m_Renderer.GetDevice(), &allocInfo, &commandBuffer);
+	vkAllocateCommandBuffers(GApp->m_Window.GetContext().GetDevice(), &allocInfo, &commandBuffer);
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -75,10 +75,10 @@ void VKUtils::EndSingleUseCommandBuffer(VkCommandBuffer commandBuffer) {
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
 
-	vkQueueSubmit(GApp->m_Renderer.GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(GApp->m_Renderer.GetGraphicsQueue());
+	vkQueueSubmit(GApp->m_Window.GetContext().GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(GApp->m_Window.GetContext().GetGraphicsQueue());
 
-	vkFreeCommandBuffers(GApp->m_Renderer.GetDevice(), GApp->m_Renderer.GetCommandPool(), 1, &commandBuffer);
+	vkFreeCommandBuffers(GApp->m_Window.GetContext().GetDevice(), GApp->m_Window.GetContext().GetCommandPool(), 1, &commandBuffer);
 }
 
 void VKUtils::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {

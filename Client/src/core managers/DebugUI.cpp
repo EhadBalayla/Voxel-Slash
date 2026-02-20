@@ -99,7 +99,7 @@ void DebugUI::RenderMenuDebugUI() {
     ImGui::End();
 
     ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), GApp->m_Renderer.GetFrameCommandBuffer());
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), GApp->m_Window.GetContext().GetCommandBuffers()[GApp->m_Window.GetContext().currentFrame]);
 }
 void DebugUI::Terminate() {
     ImGui_ImplVulkan_Shutdown();

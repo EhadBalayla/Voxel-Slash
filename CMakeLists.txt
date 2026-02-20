@@ -11,5 +11,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+add_subdirectory(Shared)
 add_subdirectory(Client)
 add_subdirectory(Editor)

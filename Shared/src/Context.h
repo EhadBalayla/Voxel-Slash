@@ -24,21 +24,24 @@ public:
 	void TerminateGPU();
 
 	//getters
-	VkInstance& GetInstance();
-	VkDebugUtilsMessengerEXT& GetDebugMessenger();
-	VkSurfaceKHR& GetSurface();
-	VkPhysicalDevice& GetPhysicalDevice();
-	VkDevice& GetDevice();
-	VkQueue& GetGraphicsQueue();
-	VkQueue& GetPresentQueue();
-	uint32_t GetGraphicsFamily();
-	uint32_t GetPresentFamily();
+	VkInstance GetInstance() const;
+	VkDebugUtilsMessengerEXT GetDebugMessenger() const;
+	VkSurfaceKHR GetSurface() const;
+	VkPhysicalDevice GetPhysicalDevice() const;
+	VkDevice GetDevice() const;
+	VkQueue GetGraphicsQueue() const;
+	VkQueue GetPresentQueue() const;
+	uint32_t GetGraphicsFamily() const;
+	uint32_t GetPresentFamily() const;
+	VkCommandPool GetCommandPool() const;
+	VkCommandBuffer* GetCommandBuffers();
 
 	//public helpers
 	QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice device);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
 	const int MAX_FRAMES_IN_FLIGHT = 3;
+	int currentFrame = 0;
 private:
 	//initiating Vulkan
 	VkInstance instance;
@@ -50,6 +53,8 @@ private:
 	VkQueue presentQueue;
 	uint32_t graphicsFamily;
 	uint32_t presentFamily;
+	VkCommandPool commandPool;
+	std::vector<VkCommandBuffer> commandBuffers;
 
 	//vulkan creation functions
 	void createInstance();
@@ -57,6 +62,8 @@ private:
 	void createSurface(GLFWwindow* window);
 	void pickPhysicalDevice();
 	void createLogicalDevice();
+	void createCommandPool();
+	void createCommandBuffers();
 
 
 

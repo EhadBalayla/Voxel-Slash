@@ -2,8 +2,6 @@
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 
-
-
 file(GLOB_RECURSE SRC_FILES 
     src/*.cpp 
     src/*.h
@@ -22,10 +20,12 @@ add_executable(VoxelSlash_Client ${SRC_FILES})
 target_include_directories(VoxelSlash_Client PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty
+    ${CMAKE_SOURCE_DIR}/Shared/src
 )
 
 target_link_libraries(VoxelSlash_Client PRIVATE 
-    glfw 
+    Shared
+    glfw
     Vulkan::Vulkan
 )
 

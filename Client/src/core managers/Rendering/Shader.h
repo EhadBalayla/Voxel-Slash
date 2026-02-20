@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 enum class PipelineType {
+    FullscreenQuad,
     Chunk,
     BoxOutline
 };

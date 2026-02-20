@@ -21,8 +21,21 @@ void App::Init() {
     glfwSetCursorPosCallback(m_Window.GetGLFWwindow(), mouse_callback);
     glfwSetFramebufferSizeCallback(m_Window.GetGLFWwindow(), resize_callback);
 
+    m_Renderer.SetHandles(
+        m_Window.GetContext().GetInstance(),
+        m_Window.GetContext().GetPhysicalDevice(),
+        m_Window.GetContext().GetDevice(),
+        m_Window.GetContext().GetGraphicsQueue(),
+        m_Window.GetContext().GetPresentQueue(),
+        m_Window.GetContext().GetSurface(),
+        m_Window.GetContext().GetGraphicsFamily(),
+        m_Window.GetContext().GetPresentFamily(),
+        m_Window.GetContext().GetCommandPool(),
+        m_Window.GetContext().GetCommandBuffers(),
+        m_Window.GetContext().MAX_FRAMES_IN_FLIGHT,
+        &m_Window.GetContext().currentFrame
+    );
     m_Renderer.Init();
-    
 
     m_DebugUI.Init();
 
@@ -40,6 +53,7 @@ void App::Init() {
     m_OpaqueShader.LoadShader("assets/Shaders/Opaque_vert.spv", "assets/Shaders/Opaque_frag.spv", PipelineType::Chunk);
     m_BorderShader.LoadShader("assets/Shaders/ChunkBorder_vert.spv", "assets/Shaders/ChunkBorder_frag.spv", PipelineType::BoxOutline);
     m_BoxOutlineShader.LoadShader("assets/Shaders/BoxOutline_vert.spv", "assets/Shaders/BoxOutline_frag.spv", PipelineType::BoxOutline);
+    m_FullscreenQuadShader.LoadShader("assets/Shaders/FullscreenQuad_vert.spv", "assets/Shaders/FullscreenQuad_frag.spv", PipelineType::FullscreenQuad);
 
     RegisterAllBlocks();
 }
@@ -54,7 +68,9 @@ void App::Loop() {
 
         switch(state) {
             case GameState::MainMenu: {
+                m_Window.StartFullscreenRender();
                 m_DebugUI.RenderMenuDebugUI();
+                m_Window.EndFullscreenRender();
                 break;
             }
             case GameState::InGame: {
@@ -70,7 +86,7 @@ void App::Loop() {
 
                 m_Renderer.SetViewProj(m_Player.GetViewMatrix(), proj);
                      
-
+                m_Renderer.StartRender();
                 m_World->RenderWorld();
                 
                 {
@@ -80,7 +96,7 @@ void App::Loop() {
 
                     m_BoxOutlineShader.Bind();
                     m_Renderer.SetTrans(mat);
-                    vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 24, 1, 0, 0);
+                    vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 24, 1, 0, 0);
                 }
 
                 if(showChunkBorders) {
@@ -88,13 +104,49 @@ void App::Loop() {
                 
                     m_Renderer.BindVoxelDescriptor();
                     m_BorderShader.Bind();
-                    vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 36, 1, 0, 0);
+                    vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 36, 1, 0, 0);
                 }
+                m_Renderer.EndRender();
             
-                m_DebugUI.RenderDebugUI();
+
+                VkImageMemoryBarrier imageBarrier{};
+                imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageBarrier.image = m_Renderer.GetColorBuffer();
+                imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                imageBarrier.subresourceRange.baseMipLevel = 0;
+                imageBarrier.subresourceRange.levelCount = 1;
+                imageBarrier.subresourceRange.baseArrayLayer = 0;
+                imageBarrier.subresourceRange.layerCount = 1;
+                imageBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                VkPipelineStageFlags srcMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                VkPipelineStageFlags dstMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+                vkCmdPipelineBarrier(m_Renderer.GetFrameCommandBuffer(),
+                    srcMask, 
+                    dstMask,
+                    0, 
+                    0, nullptr, 
+                    0, nullptr, 
+                    1, &imageBarrier);
+
+                m_Renderer.UpdateFullscreenQuad();
+
+
+                m_Window.StartFullscreenRender();
+                m_Renderer.BindFullscreenQuad();
+                m_FullscreenQuadShader.Bind();
+                vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 6, 1, 0, 0);
+                //m_DebugUI.RenderDebugUI();
+                m_Window.EndFullscreenRender();
                 } else {
                     waitingFrames++;
-                    if(waitingFrames == 3) { 
+                    if(waitingFrames == 4) { 
                         state = GameState::MainMenu;
 
                         delete GApp->m_World;

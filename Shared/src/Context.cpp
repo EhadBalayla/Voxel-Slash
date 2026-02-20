@@ -42,8 +42,14 @@ void Context::InitGPU(GLFWwindow* window) {
 	createSurface(window);
 	pickPhysicalDevice();
 	createLogicalDevice();
+
+	createCommandPool();
+	createCommandBuffers();
 }
 void Context::TerminateGPU() {
+	vkFreeCommandBuffers(device, commandPool, commandBuffers.size(), commandBuffers.data());
+	vkDestroyCommandPool(device, commandPool, nullptr);
+
 	vkDestroyDevice(device, nullptr); //ending the device
 	vkDestroySurfaceKHR(instance, surface, nullptr); //ending the surface
 	if (enableValidationLayers)
@@ -132,10 +138,8 @@ void Context::pickPhysicalDevice() {
 	}
 }
 void Context::createLogicalDevice() {
-	QueueFamilyIndicies indicies = findQueueFamilies(physicalDevice);
-
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies = { indicies.graphicsFamily.value(), indicies.presentFamily.value() };
+	std::set<uint32_t> uniqueQueueFamilies = { graphicsFamily, presentFamily };
 
 	float queuePriority = 1.0f;
 
@@ -179,41 +183,67 @@ void Context::createLogicalDevice() {
 		throw std::runtime_error("failed to create logical device");
 	}
 
-	vkGetDeviceQueue(device, indicies.graphicsFamily.value(), 0, &graphicsQueue); //gets the queue for the graphics family index
-	vkGetDeviceQueue(device, indicies.presentFamily.value(), 0, &presentQueue); //gets the queue for the presentation family index
+	vkGetDeviceQueue(device, graphicsFamily, 0, &graphicsQueue); //gets the queue for the graphics family index
+	vkGetDeviceQueue(device, presentFamily, 0, &presentQueue); //gets the queue for the presentation family index
+}
+void Context::createCommandPool() {
+	VkCommandPoolCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	createInfo.queueFamilyIndex = graphicsFamily;
+	createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	graphicsFamily = indicies.graphicsFamily.value();
-	presentFamily = indicies.presentFamily.value();
+	if (vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS) {
+		throw std::runtime_error("couldn't create command pool for graphics");
+	}
+}
+void Context::createCommandBuffers() {
+	commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = commandPool;
+	allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create one or more of the main command buffers");
+	}
 }
 
 
 
-VkInstance& Context::GetInstance() {
+VkInstance Context::GetInstance() const {
 	return instance;
 }
-VkDebugUtilsMessengerEXT& Context::GetDebugMessenger() {
+VkDebugUtilsMessengerEXT Context::GetDebugMessenger() const {
 	return debugMessenger;
 }
-VkPhysicalDevice& Context::GetPhysicalDevice() {
+VkPhysicalDevice Context::GetPhysicalDevice() const {
 	return physicalDevice;
 }
-VkDevice& Context::GetDevice() {
+VkDevice Context::GetDevice() const {
 	return device;
 }
-VkSurfaceKHR& Context::GetSurface() {
+VkSurfaceKHR Context::GetSurface() const {
 	return surface;
 }
-VkQueue& Context::GetGraphicsQueue() {
+VkQueue Context::GetGraphicsQueue() const {
 	return graphicsQueue;
 }
-VkQueue& Context::GetPresentQueue() {
+VkQueue Context::GetPresentQueue() const{
 	return presentQueue;
 }
-uint32_t Context::GetGraphicsFamily() {
+uint32_t Context::GetGraphicsFamily() const {
 	return graphicsFamily;
 }
-uint32_t Context::GetPresentFamily() {
+uint32_t Context::GetPresentFamily() const {
 	return presentFamily;
+}
+VkCommandPool Context::GetCommandPool() const {
+	return commandPool;
+}
+VkCommandBuffer* Context::GetCommandBuffers() {
+	return commandBuffers.data();
 }
 
 
@@ -345,7 +375,12 @@ bool Context::isDeviceSuitable(VkPhysicalDevice device) {
 		SwapchainAdequate = !details.formats.empty() && !details.presentModes.empty();
 	}
 
-	return indicies.IsComplete() && extentionsSupported && SwapchainAdequate;
+	if(indicies.IsComplete() && extentionsSupported && SwapchainAdequate) {
+		graphicsFamily = indicies.graphicsFamily.value();
+		presentFamily = indicies.presentFamily.value();
+		return true;
+	}
+	return false;
 }
 bool Context::checkDeviceExtentionSupport(VkPhysicalDevice device) {
 	uint32_t extentionsCount = 0;

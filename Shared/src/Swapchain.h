@@ -9,6 +9,8 @@ public:
 	void Create();
 	void Delete();
 
+	void RecreateSwapchain() {};
+
 	uint32_t imageIndex; //will be used for the index of the swapchain image for synchronization
 
 	VkSwapchainKHR swapchain;
@@ -24,10 +26,6 @@ public:
 	std::vector<VkImageView> swapChainImageViews;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 
-	VkImage depthImage;
-	VkImageView depthImageView;
-	VkDeviceMemory depthImageMemory;
-
 	VkRenderPass swapchainRenderPass; //just temporary wanna see if it works... but even then there is ever going to be one swapchain in the editor to begin with
 
 	//make sure to set later
@@ -38,7 +36,6 @@ private:
 	//creation functions
 	void createSwapChain();
 	void createImageViews();
-	void createDepthBuffer();
 	void createRenderPass();
 	void createFramebuffers();
 	void createSyncObjects();
@@ -46,7 +43,4 @@ private:
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-
-	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-	VkFormat findDepthFormat();
 };
