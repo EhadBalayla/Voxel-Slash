@@ -17,8 +17,6 @@ void Renderer::Init() {
 
     createDescriptorPool();
 	createTextureSampler();
-
-	createFullscreenSets();
 }
 void Renderer::StartDescriptors() {
     CreateChunkSets();
@@ -114,6 +112,9 @@ int Renderer::GetMaxFramesInFlight() {
 }
 
 
+VkSampler Renderer::GetSampler() {
+	return sampler;
+}
 VkRenderPass Renderer::GetOffscreenRenderPass() {
 	return offscreenRenderPass;
 }
@@ -126,14 +127,14 @@ VkPipelineLayout Renderer::GetChunksPipelineLayout() {
 VmaAllocator Renderer::GetAllocator() {
 	return allocator;
 }
-VkPipelineLayout Renderer::GetFullscreenPipelineLayout() {
-	return fullscreenPipelineLayout;
-}
 std::mutex& Renderer::GetFrameDeletionMTX() {
 	return deletionQueueMTX[*CurrentFrame];
 }
 VkImage Renderer::GetColorBuffer() {
 	return colorBuffer[*CurrentFrame];
+}
+VkImageView Renderer::GetColorBufferView() {
+	return colorBufferView[*CurrentFrame];
 }
 
 void Renderer::SetHandles(
@@ -165,30 +166,6 @@ void Renderer::SetHandles(
 }
 void Renderer::BindVoxelDescriptor() {
 	vkCmdBindDescriptorSets(commandBuffers[*CurrentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, ChunksPipelineLayout, 0, 1, &ChunkSets[*CurrentFrame], 0, nullptr);
-}
-void Renderer::BindFullscreenQuad() {
-	vkCmdBindDescriptorSets(commandBuffers[*CurrentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, fullscreenPipelineLayout, 0, 1, &fullscreenSets[*CurrentFrame], 0, nullptr);
-}
-void Renderer::UpdateFullscreenQuad() {
-	VkDescriptorImageInfo texInfo{};
-    texInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    texInfo.imageView = colorBufferView[*CurrentFrame];
-    texInfo.sampler = sampler;
-
-
-
-    VkWriteDescriptorSet texWrite{};
-    texWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    texWrite.dstSet = fullscreenSets[*CurrentFrame];
-    texWrite.dstBinding = 0;
-    texWrite.pImageInfo = &texInfo;
-    texWrite.dstArrayElement = 0;
-    texWrite.descriptorCount = 1;
-    texWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
- 
-    uint32_t writeCount = 1;
-    VkWriteDescriptorSet descriptorWrites[] = {texWrite};
-    vkUpdateDescriptorSets(device, writeCount, descriptorWrites, 0, nullptr);
 }
 void Renderer::SetViewProj(glm::mat4 view, glm::mat4 proj) {
 	MatricesBufferStruct MBO = {proj, view};
@@ -376,7 +353,7 @@ void Renderer::createDescriptorPool() {
 
 	VkDescriptorPoolSize poolSize2{};
 	poolSize2.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize2.descriptorCount = 2 * MAX_FRAMES_IN_FLIGHT;
+	poolSize2.descriptorCount = 1 * MAX_FRAMES_IN_FLIGHT;
 
 	VkDescriptorPoolSize poolSize3{};
 	poolSize3.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -534,47 +511,6 @@ void Renderer::CreateChunkSets() {
         VkWriteDescriptorSet descriptorWrites[] = {MatricesWrite, AtlasWrite};
         vkUpdateDescriptorSets(device, writeCount, descriptorWrites, 0, nullptr);
 	}
-}
-void Renderer::createFullscreenSets() {
-	VkDescriptorSetLayoutBinding TextureAtlasBinding{};
-    TextureAtlasBinding.binding = 0;
-    TextureAtlasBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    TextureAtlasBinding.descriptorCount = 1;
-    TextureAtlasBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    TextureAtlasBinding.pImmutableSamplers = nullptr;
-
-	VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.pBindings = &TextureAtlasBinding;
-    layoutInfo.bindingCount = 1;
-
-    if(vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &fullscreenSetLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create fullscreen's descriptor set layout");
-    }
-
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = &fullscreenSetLayout;
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
-	pipelineLayoutInfo.pPushConstantRanges = nullptr;
-	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &fullscreenPipelineLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to make fullscreen pipeline layout");
-	}
-
-	//create the descriptor set/s
-    std::vector<VkDescriptorSetLayout> setLayouts(MAX_FRAMES_IN_FLIGHT, fullscreenSetLayout);
-
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.pSetLayouts = setLayouts.data();
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-    
-    fullscreenSets.resize(MAX_FRAMES_IN_FLIGHT);
-    if(vkAllocateDescriptorSets(device, &allocInfo, fullscreenSets.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate the descriptor sets of the Chunks");
-    }
 }
 
 

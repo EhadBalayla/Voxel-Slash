@@ -91,7 +91,7 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	//creating the input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
 	inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssemblyInfo.topology = (type == PipelineType::Chunk || type == PipelineType::FullscreenQuad) ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	inputAssemblyInfo.topology = type == PipelineType::Chunk ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 	inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
 	//creating the rasterizer
@@ -99,7 +99,7 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizerInfo.depthClampEnable = VK_FALSE;
 	rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
-	rasterizerInfo.polygonMode = (type == PipelineType::Chunk || type == PipelineType::FullscreenQuad) ? VK_POLYGON_MODE_FILL : VK_POLYGON_MODE_LINE;
+	rasterizerInfo.polygonMode = type == PipelineType::Chunk ? VK_POLYGON_MODE_FILL : VK_POLYGON_MODE_LINE;
 	rasterizerInfo.lineWidth = 5.0f;
 	rasterizerInfo.cullMode = type == PipelineType::Chunk ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
 	rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
@@ -139,7 +139,7 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 		depthStencilState.maxDepthBounds = 1.0f;
 		depthStencilState.stencilTestEnable = VK_FALSE;
 	}
-	{ //where we dont want depth testing
+	else { //where we dont want depth testing
 		depthStencilState.depthTestEnable = VK_FALSE;
 		depthStencilState.depthWriteEnable = VK_FALSE;
 		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
@@ -162,8 +162,8 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pColorBlendState = &colorBlendState;
 	pipelineInfo.pDepthStencilState = &depthStencilState;
-	pipelineInfo.layout = type == PipelineType::FullscreenQuad ? GApp->m_Renderer.GetFullscreenPipelineLayout() : GApp->m_Renderer.GetChunksPipelineLayout();
-	pipelineInfo.renderPass = type == PipelineType::FullscreenQuad ? GApp->m_Window.GetSwapchain().swapchainRenderPass : GApp->m_Renderer.GetOffscreenRenderPass();
+	pipelineInfo.layout = GApp->m_Renderer.GetChunksPipelineLayout();
+	pipelineInfo.renderPass = GApp->m_Renderer.GetOffscreenRenderPass();
 	pipelineInfo.subpass = 0;
 
 	if (vkCreateGraphicsPipelines(GApp->m_Renderer.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {

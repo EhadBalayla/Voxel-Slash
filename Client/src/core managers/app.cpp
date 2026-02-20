@@ -37,6 +37,8 @@ void App::Init() {
     );
     m_Renderer.Init();
 
+    m_FullscreenQuad.CreateFullscreenQuad();
+
     m_DebugUI.Init();
 
 
@@ -53,7 +55,6 @@ void App::Init() {
     m_OpaqueShader.LoadShader("assets/Shaders/Opaque_vert.spv", "assets/Shaders/Opaque_frag.spv", PipelineType::Chunk);
     m_BorderShader.LoadShader("assets/Shaders/ChunkBorder_vert.spv", "assets/Shaders/ChunkBorder_frag.spv", PipelineType::BoxOutline);
     m_BoxOutlineShader.LoadShader("assets/Shaders/BoxOutline_vert.spv", "assets/Shaders/BoxOutline_frag.spv", PipelineType::BoxOutline);
-    m_FullscreenQuadShader.LoadShader("assets/Shaders/FullscreenQuad_vert.spv", "assets/Shaders/FullscreenQuad_frag.spv", PipelineType::FullscreenQuad);
 
     RegisterAllBlocks();
 }
@@ -107,42 +108,12 @@ void App::Loop() {
                     vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 36, 1, 0, 0);
                 }
                 m_Renderer.EndRender();
-            
 
-                VkImageMemoryBarrier imageBarrier{};
-                imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageBarrier.image = m_Renderer.GetColorBuffer();
-                imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                imageBarrier.subresourceRange.baseMipLevel = 0;
-                imageBarrier.subresourceRange.levelCount = 1;
-                imageBarrier.subresourceRange.baseArrayLayer = 0;
-                imageBarrier.subresourceRange.layerCount = 1;
-                imageBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                VkPipelineStageFlags srcMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-                VkPipelineStageFlags dstMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-                vkCmdPipelineBarrier(m_Renderer.GetFrameCommandBuffer(),
-                    srcMask, 
-                    dstMask,
-                    0, 
-                    0, nullptr, 
-                    0, nullptr, 
-                    1, &imageBarrier);
-
-                m_Renderer.UpdateFullscreenQuad();
-
+                m_FullscreenQuad.SetTexture();
 
                 m_Window.StartFullscreenRender();
-                m_Renderer.BindFullscreenQuad();
-                m_FullscreenQuadShader.Bind();
-                vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 6, 1, 0, 0);
-                //m_DebugUI.RenderDebugUI();
+                m_FullscreenQuad.Draw();
+                m_DebugUI.RenderDebugUI();
                 m_Window.EndFullscreenRender();
                 } else {
                     waitingFrames++;

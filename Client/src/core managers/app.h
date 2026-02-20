@@ -1,5 +1,6 @@
 #pragma once
 #include "Window.h"
+#include "Rendering/FullscreenQuad.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/Shader.h"
 #include "Rendering/Texture.h"
@@ -22,6 +23,7 @@ class App {
 public:
     //core managers
     Window m_Window;
+    FullscreenQuad m_FullscreenQuad;
     Renderer m_Renderer;
     AudioManager m_AudioManager;
     AssetManager m_AssetManager;
@@ -30,7 +32,6 @@ public:
     DebugUI m_DebugUI;
 
     //shaders
-    Shader m_FullscreenQuadShader;
     Shader m_OpaqueShader;
     Shader m_BorderShader;
     Shader m_BoxOutlineShader;

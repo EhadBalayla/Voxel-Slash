@@ -45,20 +45,19 @@ public:
 	VkCommandBuffer GetFrameCommandBuffer();
 	int GetMaxFramesInFlight();
 
+	VkSampler GetSampler();
 	VkRenderPass GetOffscreenRenderPass();
 	VkDescriptorSetLayout GetChunksSetLayout();
 	VkPipelineLayout GetChunksPipelineLayout();
 	VmaAllocator GetAllocator();
-	VkPipelineLayout GetFullscreenPipelineLayout();
 	VkImage GetColorBuffer();
+	VkImageView GetColorBufferView();
 
 	std::mutex& GetFrameDeletionMTX();
 
     //public helpers
     void SetHandles(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkSurfaceKHR surface, uint32_t graphicsFamilyIndex, uint32_t presentFamilyIndex, VkCommandPool commandPool, VkCommandBuffer* commandBuffers, int MAX_FRAMES_IN_FLIGHT, int* currentFrame);
 	void BindVoxelDescriptor();
-	void BindFullscreenQuad();
-	void UpdateFullscreenQuad();
 	void SetViewProj(glm::mat4 view, glm::mat4 proj);
 	void SetTrans(glm::mat4 trans);
 	void QueueBufferDeletion(BufferAllocation buffer);
@@ -103,10 +102,6 @@ private:
     VkDescriptorSetLayout ChunkSetLayout;
 	VkPipelineLayout ChunksPipelineLayout;
 
-	VkDescriptorSetLayout fullscreenSetLayout;
-	std::vector<VkDescriptorSet> fullscreenSets;
-	VkPipelineLayout fullscreenPipelineLayout;
-
 	//deletion stuff
 	std::mutex deletionQueueMTX[3];
 	std::vector<BufferAllocation> bufferDeletionQueue[3]; //3 because the max frames in flight is hardcoded to 3
@@ -120,7 +115,6 @@ private:
     void createTextureSampler();
 	void createAllocator();
     void CreateChunkSets();
-	void createFullscreenSets();
 };
 
 
