@@ -11,6 +11,10 @@ file(GLOB_RECURSE SRC_FILES
 
 add_library(Shared STATIC ${SRC_FILES})
 
+target_include_directories(Shared PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty
+)
+
 target_link_libraries(Shared PRIVATE 
     glfw
     Vulkan::Vulkan

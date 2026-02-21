@@ -15,8 +15,12 @@ void Renderer::Init() {
 
     createDescriptorPool();
 	createTextureSampler();
+
+	create3DLayout();
 }
 void Renderer::Terminate() {
+	vkDestroyPipelineLayout(device, Pipe3DLayout, nullptr);
+
 	vkDestroySampler(device, sampler, nullptr);
 
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
@@ -124,6 +128,9 @@ VkImageView* Renderer::GetColorBufferViews() {
 VkImageView Renderer::GetColorBufferView() {
 	return colorBufferView[*CurrentFrame];
 }
+VkPipelineLayout Renderer::Get3DPipelineLayout() {
+	return Pipe3DLayout;
+}
 
 void Renderer::SetHandles(
 	VkInstance instance, 
@@ -151,6 +158,9 @@ void Renderer::SetHandles(
 	this->commandBuffers = commandBuffers;
     this->MAX_FRAMES_IN_FLIGHT = MAX_FRAMES_IN_FLIGHT;
 	this->CurrentFrame = currentFrame;
+}
+void Renderer::SetModelViewProj(glm::mat4 mtx) {
+	vkCmdPushConstants(commandBuffers[*CurrentFrame], Pipe3DLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
 }
 
 void Renderer::createColorBuffer() {
@@ -386,4 +396,22 @@ void Renderer::createAllocator() {
 		throw std::runtime_error("failed to create the Vulkan allocator");
 	}
 	
+} 
+void Renderer::create3DLayout() {
+	//create the pipeline layout
+	VkPushConstantRange modelTransformRange{};
+	modelTransformRange.offset = 0;
+	modelTransformRange.size = sizeof(glm::mat4);
+	modelTransformRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 0;
+	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.pushConstantRangeCount = 1;
+	pipelineLayoutInfo.pPushConstantRanges = &modelTransformRange;
+
+	if(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &Pipe3DLayout) != VK_SUCCESS) {
+		throw std::runtime_error("couldn't create chunks pipeline layout");
+	}
 }

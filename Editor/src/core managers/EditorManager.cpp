@@ -4,6 +4,11 @@
 
 #include "Editor.h"
 
+char buff[256];
+char buff2[256];
+PrefabNode* cachedNode = nullptr;
+bool IsRightClickOnViewport = false;
+
 void EditorManager::Init() {
     VkDescriptorPoolSize poolSize{};
     poolSize.descriptorCount = 50;
@@ -48,6 +53,11 @@ void EditorManager::Init() {
     }
 }
 void EditorManager::Render() {
+    if(IsRightClickOnViewport) {
+        ImGuiIO& io = ImGui::GetIO();
+        io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+    }
+
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -128,14 +138,67 @@ void EditorManager::Render() {
 	    );
         ImVec2 windowSize = ImGui::GetContentRegionAvail();
         ImGui::Image(viewportBuffers[*GEditor->m_Renderer.CurrentFrame], windowSize, ImVec2(0, 1), ImVec2(1, 0));
+
+        if(ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+            if(!IsRightClickOnViewport) {
+                IsRightClickOnViewport = true;
+                glfwSetInputMode(GEditor->m_Window.GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                double MouseX, MouseY;
+                glfwGetCursorPos(GEditor->m_Window.GetGLFWwindow(), &MouseX, &MouseY);
+                GEditor->m_Camera.LastX = (float)MouseX;
+                GEditor->m_Camera.LastY = (float)MouseY;
+            }
+            if (glfwGetKey(GEditor->m_Window.GetGLFWwindow(), GLFW_KEY_W) == GLFW_PRESS)
+                GEditor->m_Camera.ProcessKeyboard(FORWARD, GEditor->DeltaTime);
+            if (glfwGetKey(GEditor->m_Window.GetGLFWwindow(), GLFW_KEY_S) == GLFW_PRESS)
+                GEditor->m_Camera.ProcessKeyboard(BACKWARD, GEditor->DeltaTime);
+            if (glfwGetKey(GEditor->m_Window.GetGLFWwindow(), GLFW_KEY_A) == GLFW_PRESS)
+                GEditor->m_Camera.ProcessKeyboard(LEFT, GEditor->DeltaTime);
+            if (glfwGetKey(GEditor->m_Window.GetGLFWwindow(), GLFW_KEY_D) == GLFW_PRESS)
+                GEditor->m_Camera.ProcessKeyboard(RIGHT, GEditor->DeltaTime);
+
+            double MouseX, MouseY;
+            glfwGetCursorPos(GEditor->m_Window.GetGLFWwindow(), &MouseX, &MouseY);
+            GEditor->m_Camera.ProcessMouseMovement((float)MouseX, (float)MouseY);
+        } else {
+            if(IsRightClickOnViewport) {
+                glfwSetInputMode(GEditor->m_Window.GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                IsRightClickOnViewport = false;
+            }
+        }
+
         ImGui::End();
 
         ImGui::Begin("Prefab Graph");
-
+        RenderPrefabNodes(&m_Prefab.m_RootNode);
         ImGui::End();
 
         ImGui::Begin("Properties");
-
+        if(selectedNode) {
+            if(ImGui::InputText("Node Name: ", buff, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+                selectedNode->m_Name = buff;
+            }
+            if(ImGui::Button("Add Child")) {
+                cachedNode = selectedNode;
+                ImGui::OpenPopup("NewNodePopup");
+            }
+            ImGui::InputFloat3("Position: ", reinterpret_cast<float*>(&selectedNode->pos));
+            ImGui::InputFloat3("Rotation: ", reinterpret_cast<float*>(&selectedNode->rot));
+            ImGui::InputFloat3("Scale: ", reinterpret_cast<float*>(&selectedNode->scale));
+        }
+        if(ImGui::BeginPopup("NewNodePopup")) {
+            ImGui::InputText("##SetNewNodeName", buff2, 256, ImGuiInputTextFlags_EnterReturnsTrue);
+            if(ImGui::Button("Ok")) {
+                std::string newNodeName = buff2;
+                AddNewPrefabNode(cachedNode, newNodeName);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if(ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
         ImGui::End();
 
         ImGui::Begin("Toolbar");
@@ -158,4 +221,21 @@ void EditorManager::Terminate() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
     vkDestroyDescriptorPool(GEditor->m_Window.GetContext().GetDevice(), editorPool, nullptr);
+}
+
+Prefab& EditorManager::GetPrefab() {
+    return m_Prefab;
+}
+
+void EditorManager::RenderPrefabNodes(PrefabNode* m_Node) {
+    if(ImGui::TreeNode(m_Node->m_Name.c_str())) {
+        if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+            selectedNode = m_Node;
+            strcpy(buff, selectedNode->m_Name.c_str());
+        }
+        for(auto n : m_Node->m_Children) {
+            RenderPrefabNodes(n);
+        }
+        ImGui::TreePop();
+    }
 }

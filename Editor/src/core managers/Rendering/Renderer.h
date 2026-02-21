@@ -40,11 +40,13 @@ public:
 	VkImage GetColorBuffer();
 	VkImageView* GetColorBufferViews();
 	VkImageView GetColorBufferView();
+	VkPipelineLayout Get3DPipelineLayout();
 
 	std::mutex& GetFrameDeletionMTX();
 
     //public helpers
     void SetHandles(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkSurfaceKHR surface, uint32_t graphicsFamilyIndex, uint32_t presentFamilyIndex, VkCommandPool commandPool, VkCommandBuffer* commandBuffers, int MAX_FRAMES_IN_FLIGHT, int* currentFrame);
+	void SetModelViewProj(glm::mat4 mtx);
 	void QueueBufferDeletion(BufferAllocation buffer);
 	void FlushBufferDeletionQueue();
 
@@ -81,6 +83,8 @@ private:
 	std::vector<VkImageView> depthBufferView;
 	std::vector<VmaAllocation> depthBufferAlloc;
 
+	VkPipelineLayout Pipe3DLayout;
+
 	//deletion stuff
 	std::mutex deletionQueueMTX[3];
 	std::vector<BufferAllocation> bufferDeletionQueue[3]; //3 because the max frames in flight is hardcoded to 3
@@ -93,4 +97,5 @@ private:
     void createDescriptorPool();
     void createTextureSampler();
 	void createAllocator();
+	void create3DLayout();
 };
