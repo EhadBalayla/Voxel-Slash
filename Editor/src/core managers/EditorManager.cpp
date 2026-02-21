@@ -57,61 +57,96 @@ void EditorManager::Render() {
 	ImGui::SetNextWindowSize(viewport->WorkSize);
 	ImGui::SetNextWindowViewport(viewport->ID);
 
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
+    ImGuiWindowFlags dockspace_flags = ImGuiWindowFlags_NoDocking |
                                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
 		                            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | 
                                     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-    ImGui::Begin("DockSpace", nullptr, window_flags);
+    ImGui::Begin("DockSpace", nullptr, dockspace_flags);
 
     ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
     ImGui::DockSpace(dockspace_id, ImVec2(0.0, 0.0), ImGuiDockNodeFlags_PassthruCentralNode);
 
     ImGui::End();
 
-    ImGui::Begin("Viewport");
+    ImGui::Begin("Prefab Editing", nullptr, ImGuiWindowFlags_MenuBar);
+
+    ImGuiID prefabDockspace_id = ImGui::GetID("PrefabEditingDockspace");
+    ImGui::DockSpace(prefabDockspace_id, ImVec2(0.0, 0.0), ImGuiDockNodeFlags_PassthruCentralNode);
+
+    if(ImGui::BeginMenuBar()) {
+        if(ImGui::BeginMenu("File")) {
+            if(ImGui::MenuItem("Load Prefab")) {
+
+            }
+            if(ImGui::MenuItem("Save Prefab")) {
+
+            }
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+
+    ImGui::End();
+
+    ImGui::Begin("Asset Browser", nullptr, ImGuiWindowFlags_MenuBar);
+
+    if(ImGui::BeginMenuBar()) {
+
+        ImGui::EndMenuBar();
+    }
+
+    ImGui::End();
+
+    //all panels of the prefab editing
+    {
+        ImGui::Begin("Viewport");
         VkImageMemoryBarrier barrier{};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // from rendering
-		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // for ImGui sampling
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = GEditor->m_Renderer.GetColorBuffer(); // your framebuffer color VkImage
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		barrier.subresourceRange.baseMipLevel = 0;
-		barrier.subresourceRange.levelCount = 1;
-		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.layerCount = 1;
-		// Access masks: writing to color attachment -> reading in shader
-		barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-		VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-		vkCmdPipelineBarrier(
-			GEditor->m_Renderer.GetFrameCommandBuffer(),
-			srcStage, dstStage,
-			0,
-			0, nullptr,
-			0, nullptr,
-			1, &barrier
-		);
+	    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	    barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	    barrier.image = GEditor->m_Renderer.GetColorBuffer();
+	    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	    barrier.subresourceRange.baseMipLevel = 0;
+	    barrier.subresourceRange.levelCount = 1;
+	    barrier.subresourceRange.baseArrayLayer = 0;
+	    barrier.subresourceRange.layerCount = 1;
+	    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	    VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	    VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	    vkCmdPipelineBarrier(
+	    	GEditor->m_Renderer.GetFrameCommandBuffer(),
+	    	srcStage, dstStage,
+	    	0,
+	    	0, nullptr,
+	    	0, nullptr,
+	    	1, &barrier
+	    );
         ImVec2 windowSize = ImGui::GetContentRegionAvail();
         ImGui::Image(viewportBuffers[*GEditor->m_Renderer.CurrentFrame], windowSize, ImVec2(0, 1), ImVec2(1, 0));
-    ImGui::End();
+        ImGui::End();
 
-    ImGui::Begin("Debug Menu2");
+        ImGui::Begin("Prefab Graph");
 
-    ImGui::End();
+        ImGui::End();
 
-    ImGui::Begin("Debug Menu3");
+        ImGui::Begin("Properties");
 
-    ImGui::End();
+        ImGui::End();
 
-    ImGui::Begin("Debug Menu4");
+        ImGui::Begin("Toolbar");
 
-    ImGui::End();
+        ImGui::End();
+    }
+
+    //all panels for asset importing
+    {
+
+    }
 
     ImGui::Render();
 }
