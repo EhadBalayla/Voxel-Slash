@@ -19,7 +19,8 @@ void RemovePrefabNode(PrefabNode* NodeToRemove);
 
 class Prefab {
 public:
-    void Save();
+    void Save(const char* path);
+    void Load(const char* path);
 
     PrefabNode m_RootNode;
 };

@@ -53,3 +53,8 @@ glm::vec3 SmoothInterp(const glm::vec3& current, const glm::vec3& target, float 
     float alpha = 1.0f - expf(-speed * deltaTime);
     return current + (target - current) * alpha;
 }
+float FInterp(float current, float target, float deltaTime, float speed) {
+	float alpha = 1.0f - expf(-speed * deltaTime);
+    return current + (target - current) * alpha;
+}
+

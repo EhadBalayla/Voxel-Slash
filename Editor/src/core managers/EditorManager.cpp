@@ -4,6 +4,9 @@
 
 #include "Editor.h"
 
+#include <Windows.h> //specifically for the dialogue boxes
+#include <iostream>
+
 char buff[256];
 char buff2[256];
 PrefabNode* cachedNode = nullptr;
@@ -87,10 +90,42 @@ void EditorManager::Render() {
     if(ImGui::BeginMenuBar()) {
         if(ImGui::BeginMenu("File")) {
             if(ImGui::MenuItem("Load Prefab")) {
+                char Title[] = "Load Prefab";
+                char szFileName[MAX_PATH] = "";
 
+                OPENFILENAME ofn;
+                ZeroMemory(&ofn, sizeof(OPENFILENAME));
+
+                ofn.lStructSize = sizeof(OPENFILENAME);
+                ofn.lpstrFilter = "Prefab Files (*.pfb)\0*.pfb\0";
+                ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+                ofn.lpstrFile = szFileName;
+                ofn.nMaxFile = MAX_PATH;
+                ofn.hwndOwner = nullptr;
+                ofn.lpstrDefExt = "pfb";
+
+                if(GetOpenFileName(&ofn)) {
+                    m_Prefab.Load(szFileName);
+                }
             }
             if(ImGui::MenuItem("Save Prefab")) {
+                char Title[] = "Save Prefab";
+                char szFileName[MAX_PATH] = "";
 
+                OPENFILENAME ofn;
+                ZeroMemory(&ofn, sizeof(OPENFILENAME));
+
+                ofn.lStructSize = sizeof(OPENFILENAME);
+                ofn.lpstrFilter = "Prefab Files (*.pfb)\0*.pfb\0";
+                ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+                ofn.lpstrFile = szFileName;
+                ofn.nMaxFile = MAX_PATH;
+                ofn.hwndOwner = nullptr;
+                ofn.lpstrDefExt = "pfb";
+
+                if(GetSaveFileName(&ofn)) {
+                    m_Prefab.Save(szFileName);
+                }
             }
 
             ImGui::EndMenu();

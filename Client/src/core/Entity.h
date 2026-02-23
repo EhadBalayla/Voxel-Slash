@@ -1,5 +1,6 @@
 #pragma once
 #include "AABB.h"
+#include "Prefab.h"
 
 class Entity {
 public:
@@ -7,12 +8,14 @@ public:
     float Rotation = 0.0f;
     
     AABB aabb;
+    Prefab prefab;
 
     virtual void Update(float DeltaTime) = 0;
+    void RenderPrefab();
+    void RenderCollision();
 
     glm::vec3 GetForwardVector();
     glm::vec3 GetRightVector();
-
 protected:
     void MoveAndCollide(float DeltaTime);
 

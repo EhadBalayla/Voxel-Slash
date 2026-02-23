@@ -55,6 +55,7 @@ void App::Init() {
     m_OpaqueShader.LoadShader("assets/Shaders/Opaque_vert.spv", "assets/Shaders/Opaque_frag.spv", PipelineType::Chunk);
     m_BorderShader.LoadShader("assets/Shaders/ChunkBorder_vert.spv", "assets/Shaders/ChunkBorder_frag.spv", PipelineType::BoxOutline);
     m_BoxOutlineShader.LoadShader("assets/Shaders/BoxOutline_vert.spv", "assets/Shaders/BoxOutline_frag.spv", PipelineType::BoxOutline);
+    m_SkeletalMeshShader.LoadShader("assets/Shaders/SkeletalMeshShader_vert.spv", "assets/Shaders/SkeletalMeshShader_frag.spv", PipelineType::SkeletalMesh);
 
     RegisterAllBlocks();
 }
@@ -98,6 +99,9 @@ void App::Loop() {
                     m_BoxOutlineShader.Bind();
                     m_Renderer.SetTrans(mat);
                     vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 24, 1, 0, 0);
+
+                    m_SkeletalMeshShader.Bind();
+                    m_Player.RenderPrefab();
                 }
 
                 if(showChunkBorders) {

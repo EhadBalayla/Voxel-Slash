@@ -6,7 +6,9 @@
 
 enum class PipelineType {
     Chunk,
-    BoxOutline
+    BoxOutline,
+    SkeletalMesh,
+    StaticMesh
 };
 
 class Shader
