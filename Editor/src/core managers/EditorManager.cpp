@@ -5,7 +5,7 @@
 #include "Editor.h"
 
 #include <Windows.h> //specifically for the dialogue boxes
-#include <iostream>
+#include <ShlObj.h>
 
 char buff[256];
 char buff2[256];
@@ -135,7 +135,10 @@ void EditorManager::Render() {
 
     ImGui::End();
 
-    ImGui::Begin("Asset Browser", nullptr, ImGuiWindowFlags_MenuBar);
+    ImGui::Begin("Asset Editor", nullptr, ImGuiWindowFlags_MenuBar);
+
+    ImGuiID assetDockspace_id = ImGui::GetID("AssetEditingDockspace");
+    ImGui::DockSpace(assetDockspace_id, ImVec2(0.0, 0.0), ImGuiDockNodeFlags_PassthruCentralNode);
 
     if(ImGui::BeginMenuBar()) {
 
@@ -243,7 +246,33 @@ void EditorManager::Render() {
 
     //all panels for asset importing
     {
+        ImGui::Begin("Asset Browser");
+        ImVec2 topLeftPos = ImGui::GetCursorPos();
 
+        if(!IsAssetsFolderChosen) {
+            ImVec2 WindSize = ImGui::GetContentRegionAvail();
+            ImVec2 MidOffset = ImVec2(WindSize.x / 2.0f, WindSize.y / 2.0f);
+
+            ImVec2 MidPos = ImVec2(topLeftPos.x + MidOffset.x, topLeftPos.y + MidOffset.y);
+            ImGui::SetCursorPos(MidPos);
+            if(ImGui::Button("Select Folder", ImVec2(100.0f, 100.0f))) {
+                BROWSEINFO bi = {0};
+                bi.lpszTitle = "Select a folder";
+                bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_USENEWUI;
+
+                LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
+                char path[MAX_PATH];
+                if(SHGetPathFromIDList(pidl, path)) {
+                    AssetsFolder = path;
+                    IsAssetsFolderChosen = true;
+                }
+                CoTaskMemFree(pidl);
+            }
+        } else {
+
+        }
+
+        ImGui::End();
     }
 
     ImGui::Render();

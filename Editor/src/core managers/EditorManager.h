@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include <vector>
 #include "Prefab.h"
+#include <string>
 
 class EditorManager {
 public:
@@ -19,4 +20,7 @@ private:
     Prefab m_Prefab;
     PrefabNode* selectedNode = nullptr;
     void RenderPrefabNodes(PrefabNode* m_Node);
+
+    bool IsAssetsFolderChosen = false;
+    std::string AssetsFolder = "none";
 };

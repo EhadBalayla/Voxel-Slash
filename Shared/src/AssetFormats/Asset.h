@@ -1,8 +1,10 @@
 #pragma once
 #include <cstdint>
+#include <fstream>
 
 enum class AssetType : uint8_t {
     SkeletalMeshAsset = 0,
+    StaticMeshAsset = 1,
 };
 
 struct AssetHeader {
@@ -13,6 +15,9 @@ class Asset {
 public:
     AssetHeader header;
 
-    virtual void Load() = 0;
-    virtual void Save() = 0;
+    void Load(const char* path);
+    void Save(const char* path);
+protected:
+    virtual void Deserialize(std::ifstream& path) = 0;
+    virtual void Serialize(std::ofstream& path) = 0;
 };
