@@ -3,11 +3,10 @@
 
 class ChunkBuffer {
 public:
-    void Update(void* verticiesData, size_t verticiesSize, void* indiciesData, size_t indiciesSize);
+    void Update(void* verticiesData, size_t verticiesSize);
     void Delete();
 
     VkBuffer& GetBuffer();
-    VkDeviceSize indiciesOffset;
 private:
 	//SubAllocation allocation;
     VmaAllocation allocation;

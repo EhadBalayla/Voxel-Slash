@@ -25,7 +25,7 @@ uint32_t GetVertex(glm::ivec3 pos, int blockCorner, int texCorner, uint8_t texOf
 
     return ret;
 }
-void AddFace(glm::ivec3 pos, Face face, uint32_t& indexOffset, uint8_t texOffset, std::vector<uint32_t>& verticies, std::vector<uint32_t>& indicies) {
+void AddFace(glm::ivec3 pos, Face face, uint32_t& indexOffset, uint8_t texOffset, std::vector<uint32_t>& verticies/*, std::vector<uint32_t>& indicies*/) {
     uint32_t v1, v2, v3, v4;
     uint8_t faceID = static_cast<uint8_t>(face);
 
@@ -71,16 +71,9 @@ void AddFace(glm::ivec3 pos, Face face, uint32_t& indexOffset, uint8_t texOffset
     verticies.push_back(v1);
     verticies.push_back(v2);
     verticies.push_back(v3);
+    verticies.push_back(v3);
     verticies.push_back(v4);
-
-    indicies.push_back(indexOffset + 0);
-    indicies.push_back(indexOffset + 1);
-    indicies.push_back(indexOffset + 2);
-    indicies.push_back(indexOffset + 2);
-    indicies.push_back(indexOffset + 3);
-    indicies.push_back(indexOffset + 0);
-
-    indexOffset += 4;
+    verticies.push_back(v1);
 }
 
 
@@ -96,8 +89,7 @@ void Chunk::Render() {
 
         VkDeviceSize offset[] = {0};
         vkCmdBindVertexBuffers(GApp->m_Window.GetContext().GetCommandBuffers()[GApp->m_Window.GetContext().currentFrame], 0, 1, &mesh.opaqueMeshBuffer.GetBuffer(), offset);
-        vkCmdBindIndexBuffer(GApp->m_Window.GetContext().GetCommandBuffers()[GApp->m_Window.GetContext().currentFrame], mesh.opaqueMeshBuffer.GetBuffer(), mesh.opaqueMeshBuffer.indiciesOffset, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(GApp->m_Window.GetContext().GetCommandBuffers()[GApp->m_Window.GetContext().currentFrame], mesh.opaqueCount, 1, 0, 0, 0);
+        vkCmdDraw(renderer.GetFrameCommandBuffer(), mesh.opaqueCount, 1, 0, 0);
     }
 }
 
@@ -148,12 +140,12 @@ void Chunk::GenerateMeshData() {
                     };
                 
                 BlockData bd = GApp->BlockRegistery[type];
-                if(IsAir(0, 0, -1)) AddFace(blockPos, Face::Back, indexOffset, bd.uvs.backUV, meshData.opaqueVerticies, meshData.opaqueIndicies);
-                if(IsAir(0, 0, 1)) AddFace(blockPos, Face::Front, indexOffset, bd.uvs.frontUV, meshData.opaqueVerticies, meshData.opaqueIndicies);
-                if(IsAir(-1, 0, 0)) AddFace(blockPos, Face::Left, indexOffset, bd.uvs.leftUV, meshData.opaqueVerticies, meshData.opaqueIndicies);
-                if(IsAir(1, 0, 0)) AddFace(blockPos, Face::Right, indexOffset, bd.uvs.rightUV, meshData.opaqueVerticies, meshData.opaqueIndicies);
-                if(IsAir(0, 1, 0)) AddFace(blockPos, Face::Top, indexOffset, bd.uvs.topUV, meshData.opaqueVerticies, meshData.opaqueIndicies);
-                if(IsAir(0, -1, 0)) AddFace(blockPos, Face::Bottom, indexOffset, bd.uvs.bottomUV, meshData.opaqueVerticies, meshData.opaqueIndicies);
+                if(IsAir(0, 0, -1)) AddFace(blockPos, Face::Back, indexOffset, bd.uvs.backUV, meshData.opaqueVerticies);
+                if(IsAir(0, 0, 1)) AddFace(blockPos, Face::Front, indexOffset, bd.uvs.frontUV, meshData.opaqueVerticies);
+                if(IsAir(-1, 0, 0)) AddFace(blockPos, Face::Left, indexOffset, bd.uvs.leftUV, meshData.opaqueVerticies);
+                if(IsAir(1, 0, 0)) AddFace(blockPos, Face::Right, indexOffset, bd.uvs.rightUV, meshData.opaqueVerticies);
+                if(IsAir(0, 1, 0)) AddFace(blockPos, Face::Top, indexOffset, bd.uvs.topUV, meshData.opaqueVerticies);
+                if(IsAir(0, -1, 0)) AddFace(blockPos, Face::Bottom, indexOffset, bd.uvs.bottomUV, meshData.opaqueVerticies);
             }
         }
     }
@@ -168,15 +160,11 @@ void Chunk::GenerateMeshData() {
 void Chunk::UploadMeshData() {
     if(meshData.opaqueVerticies.size() > 0) {
         // Upload to GPU
-        mesh.opaqueMeshBuffer.Update(meshData.opaqueVerticies.data(), meshData.opaqueVerticies.size() * sizeof(uint32_t), meshData.opaqueIndicies.data(), meshData.opaqueIndicies.size() * sizeof(uint32_t));
-
-        mesh.opaqueCount = meshData.opaqueIndicies.size();
+        mesh.opaqueMeshBuffer.Update(meshData.opaqueVerticies.data(), meshData.opaqueVerticies.size() * sizeof(uint32_t));
+        mesh.opaqueCount = meshData.opaqueVerticies.size();
 
         meshData.opaqueVerticies.clear();
-        meshData.opaqueIndicies.clear();
-    
         std::vector<uint32_t>().swap(meshData.opaqueVerticies);
-        std::vector<uint32_t>().swap(meshData.opaqueIndicies);
 
         HasOpaque = true;
     } else HasOpaque = false;

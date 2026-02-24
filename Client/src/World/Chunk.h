@@ -21,7 +21,6 @@ struct ChunkMesh {
 };
 struct ChunkMeshData {
     std::vector<uint32_t> opaqueVerticies;
-    std::vector<uint32_t> opaqueIndicies;
 };
 
 class Chunk {
