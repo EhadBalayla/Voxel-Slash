@@ -21,6 +21,7 @@ target_include_directories(VoxelSlash_Client PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty
     ${CMAKE_SOURCE_DIR}/Shared/src
+    ${CMAKE_SOURCE_DIR}/Shared/ThirdParty
 )
 
 target_link_libraries(VoxelSlash_Client PRIVATE 
