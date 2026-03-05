@@ -9,7 +9,6 @@
 #include "VulkanUtilities.h"
 
 void Renderer::Init() {
-	createAllocator();
 	createOffscreenPass();
 	createColorBuffer();
 	createDepthBuffer();
@@ -43,8 +42,6 @@ void Renderer::Terminate() {
 		vmaDestroyImage(allocator, depthBuffer[i], depthBufferAlloc[i]);
 	}
 	vkDestroyRenderPass(device, offscreenRenderPass, nullptr);
-
-	vmaDestroyAllocator(allocator);
 }
 
 void Renderer::StartRender() {
@@ -148,6 +145,7 @@ void Renderer::SetHandles(
 	uint32_t presentFamilyIndex, 
 	VkCommandPool commandPool, 
 	VkCommandBuffer* commandBuffers,
+	VmaAllocator allocator,
 	int MAX_FRAMES_IN_FLIGHT, 
 	int* currentFrame) {
 
@@ -161,6 +159,7 @@ void Renderer::SetHandles(
 	this->presentFamilyIndex = presentFamilyIndex;
 	this->commandPool = commandPool;
 	this->commandBuffers = commandBuffers;
+	this->allocator = allocator;
     this->MAX_FRAMES_IN_FLIGHT = MAX_FRAMES_IN_FLIGHT;
 	this->CurrentFrame = currentFrame;
 }
@@ -396,18 +395,6 @@ void Renderer::createTextureSampler() {
 	if (vkCreateSampler(device, &createInfo, nullptr, &sampler) != VK_SUCCESS) {
 		throw std::runtime_error("couldn't create sampler");
 	}
-}
-void Renderer::createAllocator() {
-	VmaAllocatorCreateInfo createInfo{};
-	createInfo.vulkanApiVersion = VK_API_VERSION_1_0;
-	createInfo.device = device;
-	createInfo.instance = instance;
-	createInfo.physicalDevice = physicalDevice;
-
-	if(vmaCreateAllocator(&createInfo, &allocator) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create the Vulkan allocator");
-	}
-	
 }
 void Renderer::CreateChunkSets() {
     //allocate the uniform buffer

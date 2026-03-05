@@ -32,6 +32,7 @@ void App::Init() {
         m_Window.GetContext().GetPresentFamily(),
         m_Window.GetContext().GetCommandPool(),
         m_Window.GetContext().GetCommandBuffers(),
+        m_Window.GetContext().GetAllocator(),
         m_Window.GetContext().MAX_FRAMES_IN_FLIGHT,
         &m_Window.GetContext().currentFrame
     );

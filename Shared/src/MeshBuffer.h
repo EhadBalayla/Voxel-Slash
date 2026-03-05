@@ -1,6 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
-//#include <vk_mem_alloc.h>
+#include <vk_mem_alloc.h>
 
 class MeshBuffer {
 public:
@@ -8,7 +8,9 @@ public:
     void Delete();
 
     VkBuffer GetBuffer() const;
+
+    VkDeviceSize indiciesOffset;
 private:
     VkBuffer buffer;
-    //VmaAllocation allocation;
+    VmaAllocation allocation;
 };

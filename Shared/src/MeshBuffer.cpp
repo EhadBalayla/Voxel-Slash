@@ -1,10 +1,11 @@
 #include "MeshBuffer.h"
+#include "Context.h"
 
 #include <stdexcept>
 
 void MeshBuffer::Create(void* verticies, size_t vertSize, void* indicies, size_t idxSize) {
-    /*VkDeviceSize bufferSize = static_cast<VkDeviceSize>(verticiesSize) + static_cast<VkDeviceSize>(indiciesSize);
-    indiciesOffset = verticiesSize;
+    VkDeviceSize bufferSize = static_cast<VkDeviceSize>(vertSize) + static_cast<VkDeviceSize>(idxSize);
+    indiciesOffset = vertSize;
 
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -14,20 +15,18 @@ void MeshBuffer::Create(void* verticies, size_t vertSize, void* indicies, size_t
     VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-    if(vmaCreateBuffer(renderer.GetAllocator(), &bufferInfo, &allocInfo, &buffer, &allocation, nullptr) != VK_SUCCESS) {
+    if(vmaCreateBuffer(GContext->GetAllocator(), &bufferInfo, &allocInfo, &buffer, &allocation, nullptr) != VK_SUCCESS) {
         throw std::runtime_error("failed to create buffer for a mesh");
     }
 
     void* bData;
-    vmaMapMemory(renderer.GetAllocator(), allocation, &bData);
-    memcpy(bData, verticiesData, verticiesSize);
-    memcpy((uint8_t*)bData + verticiesSize, indiciesData, indiciesSize);
-    vmaUnmapMemory(renderer.GetAllocator(), allocation);*/
+    vmaMapMemory(GContext->GetAllocator(), allocation, &bData);
+    memcpy(bData, verticies, vertSize);
+    memcpy((uint8_t*)bData + vertSize, indicies, idxSize);
+    vmaUnmapMemory(GContext->GetAllocator(), allocation);
 }
 void MeshBuffer::Delete() {
-    /*Renderer& renderer = GApp->m_Renderer;
-
-    vmaDestroyBuffer(renderer.GetAllocator(), buffer, allocation);*/
+    vmaDestroyBuffer(GContext->GetAllocator(), buffer, allocation);
 }
 
 VkBuffer MeshBuffer::GetBuffer() const {

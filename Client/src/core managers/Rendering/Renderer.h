@@ -56,7 +56,7 @@ public:
 	std::mutex& GetFrameDeletionMTX();
 
     //public helpers
-    void SetHandles(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkSurfaceKHR surface, uint32_t graphicsFamilyIndex, uint32_t presentFamilyIndex, VkCommandPool commandPool, VkCommandBuffer* commandBuffers, int MAX_FRAMES_IN_FLIGHT, int* currentFrame);
+    void SetHandles(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkSurfaceKHR surface, uint32_t graphicsFamilyIndex, uint32_t presentFamilyIndex, VkCommandPool commandPool, VkCommandBuffer* commandBuffers, VmaAllocator allocator, int MAX_FRAMES_IN_FLIGHT, int* currentFrame);
 	void BindVoxelDescriptor();
 	void SetViewProj(glm::mat4 view, glm::mat4 proj);
 	void SetTrans(glm::mat4 trans);
@@ -77,6 +77,7 @@ private:
 	uint32_t presentFamilyIndex;
 	VkCommandPool commandPool;
 	VkCommandBuffer* commandBuffers;
+	VmaAllocator allocator;
     int MAX_FRAMES_IN_FLIGHT;
 
     //initiating rendering
@@ -84,7 +85,6 @@ private:
 	std::vector<VkFramebuffer> offscreenFramebuffer;
 	VkDescriptorPool descriptorPool;
 	VkSampler sampler; //this sampler is for nearest filtering
-	VmaAllocator allocator;
 
 	//color buffer
 	std::vector<VkImage> colorBuffer;
@@ -113,7 +113,6 @@ private:
 	void createDepthBuffer();
     void createDescriptorPool();
     void createTextureSampler();
-	void createAllocator();
     void CreateChunkSets();
 };
 

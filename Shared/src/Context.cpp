@@ -10,6 +10,8 @@
 
 #include <GLFW/glfw3.h>
 
+Context* GContext = nullptr;
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -37,6 +39,9 @@ const std::vector<const char*> deviceExtentions = {
 };
 
 void Context::InitGPU(GLFWwindow* window) {
+	GContext = this; /*really to save on the boilerplate of a constructor, it doesnt matter either way since GContext
+	is guaranteed to be set before any of the stuff inside the "Shared" library that rely on the context call it*/
+	
 	createInstance();
 	setupDebugMessenger();
 	createSurface(window);
@@ -45,8 +50,12 @@ void Context::InitGPU(GLFWwindow* window) {
 
 	createCommandPool();
 	createCommandBuffers();
+
+	createAllocator();
 }
 void Context::TerminateGPU() {
+	vmaDestroyAllocator(allocator);
+
 	vkFreeCommandBuffers(device, commandPool, commandBuffers.size(), commandBuffers.data());
 	vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -209,6 +218,17 @@ void Context::createCommandBuffers() {
 		throw std::runtime_error("failed to create one or more of the main command buffers");
 	}
 }
+void Context::createAllocator() {
+	VmaAllocatorCreateInfo allocInfo{};
+	allocInfo.vulkanApiVersion = VK_API_VERSION_1_0;
+	allocInfo.device = device;
+	allocInfo.instance = instance;
+	allocInfo.physicalDevice = physicalDevice;
+
+	if(vmaCreateAllocator(&allocInfo, &allocator) != VK_SUCCESS) {
+		throw std::runtime_error("couldn't create allocator");
+	}
+}
 
 
 
@@ -244,6 +264,9 @@ VkCommandPool Context::GetCommandPool() const {
 }
 VkCommandBuffer* Context::GetCommandBuffers() {
 	return commandBuffers.data();
+}
+VmaAllocator Context::GetAllocator() const {
+	return allocator;
 }
 
 

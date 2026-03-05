@@ -1,5 +1,6 @@
 #pragma once
 #include "vulkan/vulkan.h"
+#include "vk_mem_alloc.h"
 #include <vector>
 #include <optional>
 
@@ -35,6 +36,7 @@ public:
 	uint32_t GetPresentFamily() const;
 	VkCommandPool GetCommandPool() const;
 	VkCommandBuffer* GetCommandBuffers();
+	VmaAllocator GetAllocator() const;
 
 	//public helpers
 	QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice device);
@@ -55,6 +57,9 @@ private:
 	uint32_t presentFamily;
 	VkCommandPool commandPool;
 	std::vector<VkCommandBuffer> commandBuffers;
+	VmaAllocator allocator;
+
+
 
 	//vulkan creation functions
 	void createInstance();
@@ -64,6 +69,7 @@ private:
 	void createLogicalDevice();
 	void createCommandPool();
 	void createCommandBuffers();
+	void createAllocator();
 
 
 
@@ -76,3 +82,5 @@ private:
 	bool isDeviceSuitable(VkPhysicalDevice device);
 	bool checkDeviceExtentionSupport(VkPhysicalDevice device);
 };
+
+extern Context* GContext;
