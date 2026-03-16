@@ -2,6 +2,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <vector>
 
 class Importer {
 public:
@@ -9,8 +10,18 @@ public:
     void ImportSkeletalMesh(const char* folderPath);
     void ImportSound(const char* folderPath);
 
-    void TraverseModelFile(const char* path);
+    void TraverseModelFile(const char* path, const char* folderPath);
+    bool IsCachingModel();
     void FreeModelCache();
 private:
+    //caching assimp's shit
+    void ProcessNode(aiNode* node, const aiScene* scene);
+    void ProcessAnimations(const aiScene* scene);
+
     Assimp::Importer importer;
+
+    const aiScene* cachedScene = nullptr;
+    std::vector<aiNode*> cachedStaticMeshes;
+    std::vector<aiNode*> cachedSkeletalMeshes;
+    std::vector<aiAnimation*> cachedAnimations;
 };

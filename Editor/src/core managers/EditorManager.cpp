@@ -287,7 +287,7 @@ void EditorManager::Render() {
                     if(GetOpenFileName(&ofn)) {
                         std::string extension = std::filesystem::path(ofn.lpstrFile).extension().string();
                         if(extension == ".fbx") {
-                            m_Importer.TraverseModelFile(ofn.lpstrFile);
+                            m_Importer.TraverseModelFile(ofn.lpstrFile, AssetsFolder.c_str());
                         }
                         else if(extension == ".png") {
 
