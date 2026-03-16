@@ -285,20 +285,12 @@ void EditorManager::Render() {
                     ofn.nMaxFile = MAX_PATH;
                     ofn.hwndOwner = nullptr;
                     if(GetOpenFileName(&ofn)) {
-                        std::string extension = std::filesystem::path(ofn.lpstrFile).extension().c_str();
-                        switch(extension) {
-                            case ".fbx": {
-                                m_Importer.TraverseModelFile();
-                                break;
-                            }
-                            case ".png": {
+                        std::string extension = std::filesystem::path(ofn.lpstrFile).extension().string();
+                        if(extension == ".fbx") {
+                            m_Importer.TraverseModelFile(ofn.lpstrFile);
+                        }
+                        else if(extension == ".png") {
 
-                                break;
-                            }
-                            default: {
-
-                                break;
-                            }
                         }
                     }
                 }
