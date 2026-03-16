@@ -1,5 +1,7 @@
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(Freetype REQUIRED)
+find_package(assimp REQUIRED)
 
 file(GLOB_RECURSE SRC_FILES 
     src/*.cpp 
@@ -27,6 +29,8 @@ target_link_libraries(VoxelSlash_Editor PRIVATE
     Shared
     glfw
     Vulkan::Vulkan
+    assimp::assimp
+    Freetype::Freetype
 )
 
 

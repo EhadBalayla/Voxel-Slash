@@ -6,6 +6,7 @@
 
 #include <Windows.h> //specifically for the dialogue boxes
 #include <ShlObj.h>
+#include <filesystem>
 
 char buff[256];
 char buff2[256];
@@ -269,7 +270,54 @@ void EditorManager::Render() {
                 CoTaskMemFree(pidl);
             }
         } else {
+            if (ImGui::BeginChild("AssetToolbar", ImVec2(0, 30), false, ImGuiWindowFlags_NoScrollbar)) {
+                if(ImGui::Button("Import Asset")) {
+                    char Title[] = "Load Prefab";
+                    char szFileName[MAX_PATH] = "";
 
+                    OPENFILENAME ofn;
+                    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+
+                    ofn.lStructSize = sizeof(OPENFILENAME);
+                    ofn.lpstrFilter = "All Files (*.*)\0*.fbx\0*.png\0";
+                    ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+                    ofn.lpstrFile = szFileName;
+                    ofn.nMaxFile = MAX_PATH;
+                    ofn.hwndOwner = nullptr;
+                    if(GetOpenFileName(&ofn)) {
+                        std::string extension = std::filesystem::path(ofn.lpstrFile).extension().c_str();
+                        switch(extension) {
+                            case ".fbx": {
+                                m_Importer.TraverseModelFile();
+                                break;
+                            }
+                            case ".png": {
+
+                                break;
+                            }
+                            default: {
+
+                                break;
+                            }
+                        }
+                    }
+                }
+                ImGui::SameLine();
+                if(ImGui::Button("Refresh")) {
+
+                }
+                ImGui::SameLine();
+                if(ImGui::Button("<-")) {
+
+                }
+
+                ImGui::EndChild();
+            }
+
+            if(ImGui::BeginChild("Asset List")) {
+
+                ImGui::EndChild();
+            }
         }
 
         ImGui::End();
