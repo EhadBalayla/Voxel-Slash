@@ -1,9 +1,11 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include "imgui.h"
 #include <vector>
-#include "Prefab.h"
 #include <string>
+#include "imgui.h"
+
+#include "Prefab.h"
+#include "Importer.h"
 
 class EditorManager {
 public:
@@ -23,4 +25,6 @@ private:
 
     bool IsAssetsFolderChosen = false;
     std::string AssetsFolder = "none";
+
+    Importer m_Importer;
 };
