@@ -1,4 +1,4 @@
-#include "Asset.h"
+#include "TransformAsset.h"
 #include "../MeshBuffer.h"
 
 struct SkeletalMeshMetadata {
@@ -7,12 +7,14 @@ struct SkeletalMeshMetadata {
     size_t indiciesSize;
 };
 
-class SkeletalMeshAsset : public Asset {
+class SkeletalMeshAsset : public TransformAsset {
 public:
     SkeletalMeshAsset();
     ~SkeletalMeshAsset();
 
     SkeletalMeshMetadata MetaData;
+
+    void Render(VkCommandBuffer cmd, glm::mat4 mtx) override;
 protected:
     void Deserialize(std::ifstream& file) override;
     void Serialize(std::ofstream& file) override;

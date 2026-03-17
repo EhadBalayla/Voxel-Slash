@@ -29,3 +29,7 @@ void SkeletalMeshAsset::Deserialize(std::ifstream& file) {
 void SkeletalMeshAsset::Serialize(std::ofstream& file) {
     file.write(reinterpret_cast<char*>(&MetaData), sizeof(SkeletalMeshMetadata));
 }
+
+void SkeletalMeshAsset::Render(VkCommandBuffer cmd, glm::mat4 mtx) {
+    
+}

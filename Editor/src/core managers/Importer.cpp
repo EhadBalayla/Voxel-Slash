@@ -1,11 +1,11 @@
 #include "Importer.h"
 #include "VertexStruct.h"
-#include "SkeletalMeshAsset.h"
+#include "AssetFormats/SkeletalMeshAsset.h"
 
 void Importer::ImportSkeletalMesh(const char* folderPath) {
     for(auto node : cachedSkeletalMeshes) {
         std::string assetName = node->mName.C_Str();
-        std::string assetPath = std::string(folderPath) + assetName;
+        std::string assetPath = std::string(folderPath) + "/" + assetName + ".vsa";
 
         std::vector<SkeletalVertex> verticies;
         std::vector<uint32_t> indicies;

@@ -3,6 +3,8 @@
 #include <string>
 #include <glm/glm.hpp>
 
+class TransformAsset;
+
 struct PrefabNode {
     PrefabNode* m_Parent = nullptr;
     std::vector<PrefabNode*> m_Children;
@@ -13,6 +15,9 @@ struct PrefabNode {
     glm::vec3 pos = glm::vec3(0.0f);
     glm::vec3 rot = glm::vec3(0.0f); //yaw/pitch/roll
     glm::vec3 scale = glm::vec3(1.0f);
+
+    //the asset that is loaded within the prefab
+    TransformAsset* m_Asset = nullptr;
 };
 void AddNewPrefabNode(PrefabNode* parentNode, std::string newName);
 void RemovePrefabNode(PrefabNode* NodeToRemove);
