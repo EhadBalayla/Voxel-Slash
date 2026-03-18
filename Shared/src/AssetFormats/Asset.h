@@ -11,6 +11,8 @@ struct AssetHeader {
     AssetType type;
 };
 
+//sexy
+
 class Asset {
 public:
     AssetHeader header;
