@@ -45,7 +45,7 @@ void DebugUI::RenderDebugUI() {
     ImGui::Begin("Debug Menu");
     ImGui::Checkbox("Show Chunk Borders", &GApp->showChunkBorders);
     ImGui::Checkbox("Load Chunks?", &GApp->LoadChunks);
-    ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", GApp->m_Player.Position.x, GApp->m_Player.Position.y, GApp->m_Player.Position.z);
+    ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", GApp->m_Player->Position.x, GApp->m_Player->Position.y, GApp->m_Player->Position.z);
     ImGui::Text("FPS: %.1f", 1.0f / GApp->deltaTime);
     ImGui::TextUnformatted(std::string("Num Of Chunks LOD0: " + std::to_string(GApp->m_World->GetChunkManager().GetChunkProvider().GetAllChunks(0).size())).c_str());
     ImGui::TextUnformatted(std::string("Num Of Chunks LOD1: " + std::to_string(GApp->m_World->GetChunkManager().GetChunkProvider().GetAllChunks(1).size())).c_str());
@@ -64,7 +64,7 @@ void DebugUI::RenderDebugUI() {
     ImGui::InputFloat("##TeleportZ", &z);
     ImGui::SameLine();
     if(ImGui::Button("Teleport")) {
-        GApp->m_Player.Position = glm::vec3(x, y, z);
+        GApp->m_Player->Position = glm::vec3(x, y, z);
     }
 
 
@@ -89,7 +89,7 @@ void DebugUI::RenderMenuDebugUI() {
     if(ImGui::Button("start")) {
         GApp->state = GameState::InGame;
         GApp->waitingFrames = 0;
-        GApp->m_Player.Position = glm::vec3(10.0f, 11.0f, 10.0f);
+        GApp->m_Player->Position = glm::vec3(10.0f, 11.0f, 10.0f);
         GApp->m_World = new World();
         GApp->m_World->GetChunkManager().UpdateChunks();
     }

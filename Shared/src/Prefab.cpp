@@ -2,6 +2,9 @@
 #include <fstream>
 #include <iostream>
 
+#include "AssetFormats/TransformAsset.h"
+#include "AssetManager.h"
+
 void AddNewPrefabNode(PrefabNode* parentNode, std::string newName) {
     PrefabNode* newNode = new PrefabNode;
     newNode->m_Name = newName;
@@ -33,6 +36,15 @@ void WritePrefabNode(PrefabNode* node, std::ofstream& file) {
     file.write(reinterpret_cast<char*>(&node->rot), sizeof(glm::vec3));
     file.write(reinterpret_cast<char*>(&node->scale), sizeof(glm::vec3));
 
+    size_t aNameSize = 0;
+    if(!node->m_Asset) {
+        file.write(reinterpret_cast<char*>(&aNameSize), sizeof(size_t));
+    } else {
+        size_t aNameSize = node->m_Asset->AssetName.size();
+        file.write(reinterpret_cast<char*>(&aNameSize), sizeof(size_t));
+        file.write(node->m_Asset->AssetName.c_str(), aNameSize);
+    }
+
     size_t childsCount = node->m_Children.size();
     file.write(reinterpret_cast<char*>(&childsCount), sizeof(size_t));
     for(auto c : node->m_Children) {
@@ -48,6 +60,15 @@ void LoadPrefabNode(PrefabNode* node, std::ifstream& file) {
     file.read(reinterpret_cast<char*>(&node->pos), sizeof(glm::vec3));
     file.read(reinterpret_cast<char*>(&node->rot), sizeof(glm::vec3));
     file.read(reinterpret_cast<char*>(&node->scale), sizeof(glm::vec3));
+
+    size_t aNameSize = 0;
+    file.read(reinterpret_cast<char*>(&aNameSize), sizeof(size_t));
+    if(aNameSize != 0) {
+        std::string name;
+        name.resize(aNameSize);
+        file.read(name.data(), aNameSize);
+        node->m_Asset = static_cast<TransformAsset*>(GAssets->GetAllAssets()[name]);
+    }
 
     size_t childsCount;
     file.read(reinterpret_cast<char*>(&childsCount), sizeof(size_t));

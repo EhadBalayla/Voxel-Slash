@@ -99,9 +99,9 @@ void ChunkManager::chunksUpdaterLoop() {
         }
         for(int i = 0; i < GApp->MaxLODLevel; i++) {
 
-            int CenterX = GApp->m_Player.ChunkCoordX / GetLODSize(i);
-            int CenterY = GApp->m_Player.ChunkCoordY / GetLODSize(i);
-            int CenterZ = GApp->m_Player.ChunkCoordZ / GetLODSize(i);
+            int CenterX = GApp->m_Player->ChunkCoordX / GetLODSize(i);
+            int CenterY = GApp->m_Player->ChunkCoordY / GetLODSize(i);
+            int CenterZ = GApp->m_Player->ChunkCoordZ / GetLODSize(i);
 
             for (int r = 0; r <= GApp->RenderDistance; r++) {
 

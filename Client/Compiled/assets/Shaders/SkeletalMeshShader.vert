@@ -1,4 +1,11 @@
 #version 450
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec3 aTangent;
+layout (location = 3) in vec2 aTexCoords;
+layout (location = 4) in ivec4 aBoneIDs;
+layout (location = 5) in vec4 aBoneWeights;
+
 layout (set = 0, binding = 0) uniform MatricesBuffer {
 	mat4 proj;
  	mat4 view;
@@ -8,25 +15,6 @@ layout ( push_constant ) uniform trans {
 	mat4 model;
 } meshTrans;
 
-vec3 vertices[8] = vec3[](
-    vec3(-0.5, -0.5, -0.5),
-    vec3( 0.5, -0.5, -0.5),
-    vec3( 0.5,  0.5, -0.5),
-    vec3(-0.5,  0.5, -0.5),
-    vec3(-0.5, -0.5,  0.5),
-    vec3( 0.5, -0.5,  0.5),
-    vec3( 0.5,  0.5,  0.5),
-    vec3(-0.5,  0.5,  0.5) 
-);
-uint indices[36] = uint[](
-    4, 5, 6, 4, 6, 7,
-    0, 1, 2, 0, 2, 3,
-    0, 3, 7, 0, 7, 4,
-    1, 5, 6, 1, 6, 2,
-    0, 1, 5, 0, 5, 4,
-    3, 2, 6, 3, 6, 7
-);
-
 void main() {
-    gl_Position = MatBO.proj * MatBO.view * meshTrans.model * vec4(vertices[indices[gl_VertexIndex]], 1.0);
+    gl_Position = MatBO.proj * MatBO.view * meshTrans.model * vec4(aPos, 1.0);
 }

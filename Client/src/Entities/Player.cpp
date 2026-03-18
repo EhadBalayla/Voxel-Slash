@@ -11,7 +11,7 @@ bool pressedJump = false;
 
 Player::Player() {
     aabb = {glm::vec3(-0.3f, 0.0f, -0.3f), glm::vec3(0.3f, 1.8f, 0.3f)};
-    prefab.Load("prefabs/Player_Prefab.pfb");
+    prefab.Load("Data/Prefabs/Player_Prefab.pfb");
 
     acceleration = 1.0f;
     maxMovementSpeed = 10.0f;
@@ -22,8 +22,8 @@ void Player::Update(float DeltaTime) {
 
     if(velocity.x || velocity.z) {
         glm::vec3 forward = glm::normalize(glm::vec3(velocity.x, 0.0f, velocity.z));
-        Rotation = FInterp(Rotation, glm::degrees(glm::atan(forward.x, forward.z)), DeltaTime, 30.0f);
-        //Rotation = glm::degrees(glm::atan(forward.x, forward.z));
+        //Rotation = FInterp(Rotation, glm::degrees(glm::atan(forward.x, forward.z)), DeltaTime, 30.0f);
+        Rotation = glm::degrees(glm::atan(forward.x, forward.z));
     }
 
     CameraPivotPosition = SmoothInterp(CameraPivotPosition, Position, DeltaTime, 10.0f);

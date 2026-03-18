@@ -1,10 +1,12 @@
-#include <unordered_set>
+#include <unordered_map>
+#include <string>
 #include "AssetFormats/Asset.h"
 
 template <typename T>
-T* CreateAsset(const char* path) {
+T* CreateAsset(const char* path, std::string name) {
     static_assert(std::is_base_of<Asset, T>::value, "T must be an Asset");
     T* asset = new T;
+    asset->AssetName = name;
     asset->Load(path);
     return asset;
 }
@@ -14,11 +16,10 @@ public:
     AssetManager();
 
     void LoadAsset(const char* path, AssetType type);
-    void UnloadAsset(Asset* asset);
 
-    std::unordered_set<Asset*>& GetAllAssets();
+    std::unordered_map<std::string, Asset*>& GetAllAssets();
 private:
-    std::unordered_set<Asset*> assets;
+    std::unordered_map<std::string, Asset*> assets;
 };
 
 extern AssetManager* GAssets;

@@ -27,7 +27,7 @@ public:
     Renderer m_Renderer;
     AudioManager m_AudioManager;
     AssetManager m_AssetManager;
-    Player m_Player;
+    Player* m_Player;
     World* m_World;
     DebugUI m_DebugUI;
 

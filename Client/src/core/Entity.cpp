@@ -4,6 +4,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "AssetFormats/TransformAsset.h"
+
 void RenderNode(PrefabNode* node, glm::mat4 parentTransform) {
 	glm::mat4 pos = glm::translate(glm::mat4(1.0f), node->pos);
 
@@ -20,8 +22,9 @@ void RenderNode(PrefabNode* node, glm::mat4 parentTransform) {
 	glm::mat4 overall = pos * rot * scale;
 	overall = parentTransform * overall;
 
-	GApp->m_Renderer.SetTrans(overall);
-	vkCmdDraw(GApp->m_Renderer.GetFrameCommandBuffer(), 36, 1, 0, 0);
+	if(node->m_Asset) {
+        node->m_Asset->Render(GApp->m_Renderer.GetFrameCommandBuffer(), GApp->m_Renderer.GetChunksPipelineLayout(), overall);
+    }
 
 	for(auto c : node->m_Children) {
 		RenderNode(c, overall);

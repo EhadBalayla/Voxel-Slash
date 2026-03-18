@@ -2,6 +2,8 @@
 
 #include "AssetFormats/SkeletalMeshAsset.h"
 
+#include <filesystem>
+
 AssetManager* GAssets = nullptr; 
 
 AssetManager::AssetManager() {
@@ -9,20 +11,17 @@ AssetManager::AssetManager() {
 }
 
 void AssetManager::LoadAsset(const char* path, AssetType type) {
+    std::string name = std::filesystem::path(path).stem().string();
     switch (type) {
-        case AssetType::SkeletalMeshAsset: 
-            assets.insert(CreateAsset<SkeletalMeshAsset>(path));
+        case AssetType::SkeletalMeshAsset:
+            assets[name] = CreateAsset<SkeletalMeshAsset>(path, name);
             break;
         case AssetType::StaticMeshAsset:
             //assets.insert(LoadAsset<StaticMeshAsset>(path));
             break;
     }
 }
-void AssetManager::UnloadAsset(Asset* asset) {
-    assets.erase(asset);
-    delete asset;
-}
 
-std::unordered_set<Asset*>& AssetManager::GetAllAssets() {
+std::unordered_map<std::string, Asset*>& AssetManager::GetAllAssets() {
     return assets;
 }

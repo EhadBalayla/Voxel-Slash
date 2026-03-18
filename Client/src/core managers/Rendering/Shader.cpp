@@ -6,6 +6,8 @@
 
 #include "../app.h"
 
+#include "VertexStruct.h"
+
 
 std::vector<char> readFile(const std::string& filename);
 VkShaderModule createShaderModule(const std::vector<char>& code);
@@ -68,6 +70,43 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
     ChunkAttributeDescription.offset = 0;
 
 
+	VkVertexInputAttributeDescription skeletalAttributeDescriptions[6] = {};
+	skeletalAttributeDescriptions[0].binding = 0;
+	skeletalAttributeDescriptions[0].location = 0;
+	skeletalAttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+	skeletalAttributeDescriptions[0].offset = offsetof(SkeletalVertex, pos);
+
+	skeletalAttributeDescriptions[1].binding = 0;
+	skeletalAttributeDescriptions[1].location = 1;
+	skeletalAttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	skeletalAttributeDescriptions[1].offset = offsetof(SkeletalVertex, normal);
+
+	skeletalAttributeDescriptions[2].binding = 0;
+	skeletalAttributeDescriptions[2].location = 2;
+	skeletalAttributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+	skeletalAttributeDescriptions[2].offset = offsetof(SkeletalVertex, tangent);
+
+	skeletalAttributeDescriptions[3].binding = 0;
+	skeletalAttributeDescriptions[3].location = 3;
+	skeletalAttributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+	skeletalAttributeDescriptions[3].offset = offsetof(SkeletalVertex, uv);
+
+	skeletalAttributeDescriptions[4].binding = 0;
+	skeletalAttributeDescriptions[4].location = 4;
+	skeletalAttributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SINT;
+	skeletalAttributeDescriptions[4].offset = offsetof(SkeletalVertex, boneIDs);
+
+	skeletalAttributeDescriptions[5].binding = 0;
+	skeletalAttributeDescriptions[5].location = 5;
+	skeletalAttributeDescriptions[5].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	skeletalAttributeDescriptions[5].offset = offsetof(SkeletalVertex, boneWeights);
+
+	VkVertexInputBindingDescription skeletalBindingDescription{};
+	skeletalBindingDescription.binding = 0;
+	skeletalBindingDescription.stride = sizeof(SkeletalVertex);
+	skeletalBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -77,6 +116,13 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 		vertexInputInfo.pVertexAttributeDescriptions = &ChunkAttributeDescription;
 		vertexInputInfo.vertexBindingDescriptionCount = 1;
 		vertexInputInfo.pVertexBindingDescriptions = &ChunkBindingDescription;
+		break;
+	}
+	case PipelineType::SkeletalMesh: {
+		vertexInputInfo.vertexAttributeDescriptionCount = 6;
+		vertexInputInfo.pVertexAttributeDescriptions = skeletalAttributeDescriptions;
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.pVertexBindingDescriptions = &skeletalBindingDescription;
 		break;
 	}
 	default: {

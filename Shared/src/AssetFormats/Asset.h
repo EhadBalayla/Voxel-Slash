@@ -16,6 +16,7 @@ struct AssetHeader {
 class Asset {
 public:
     AssetHeader header;
+    std::string AssetName;
 
     void Load(const char* path);
     void Save(const char* path);

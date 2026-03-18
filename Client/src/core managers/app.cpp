@@ -5,6 +5,7 @@
 #include "../core/Utilities.h"
 
 #include <iostream>
+#include <filesystem>
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void resize_callback(GLFWwindow* window, int width, int height);
@@ -59,6 +60,17 @@ void App::Init() {
     m_SkeletalMeshShader.LoadShader("assets/Shaders/SkeletalMeshShader_vert.spv", "assets/Shaders/SkeletalMeshShader_frag.spv", PipelineType::SkeletalMesh);
 
     RegisterAllBlocks();
+
+    for(auto& n : std::filesystem::directory_iterator("Data/NonVoxelAssets")) {
+        if(n.is_directory() || n.path().extension().string() != ".vsa") continue;
+
+        AssetType type;
+        std::ifstream f(n.path().c_str(), std::ios::binary);
+        f.read(reinterpret_cast<char*>(&type), sizeof(AssetType));
+        f.close();
+        GAssets->LoadAsset(n.path().string().c_str(), type);
+    }
+    m_Player = new Player;
 }
 void App::Loop() {
     while(!m_Window.ShouldClose()) {
@@ -81,32 +93,32 @@ void App::Loop() {
                 processInput();
                 proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
                 proj[1][1] *= -1;
-                m_Frustum = ExtractFrustum(proj * m_Player.GetViewMatrix());
+                m_Frustum = ExtractFrustum(proj * m_Player->GetViewMatrix());
 
 
-                m_Player.UpdateChunksAroundPlayer();
-                m_Player.Update(deltaTime);
+                m_Player->UpdateChunksAroundPlayer();
+                m_Player->Update(deltaTime);
 
-                m_Renderer.SetViewProj(m_Player.GetViewMatrix(), proj);
+                m_Renderer.SetViewProj(m_Player->GetViewMatrix(), proj);
                      
                 m_Renderer.StartRender();
                 m_World->RenderWorld();
                 
                 {
                     glm::mat4 mat = glm::mat4(1.0f);
-                    mat = glm::translate(glm::mat4(1.0f), m_Player.Position + glm::vec3(0.0f, m_Player.aabb.max.y / 2.0f, 0.0f));
-                    mat = glm::scale(mat, glm::vec3(0.5f, m_Player.aabb.max.y, 0.5f));
+                    mat = glm::translate(glm::mat4(1.0f), m_Player->Position + glm::vec3(0.0f, m_Player->aabb.max.y / 2.0f, 0.0f));
+                    mat = glm::scale(mat, glm::vec3(0.5f, m_Player->aabb.max.y, 0.5f));
 
                     m_BoxOutlineShader.Bind();
                     m_Renderer.SetTrans(mat);
                     vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 24, 1, 0, 0);
 
                     m_SkeletalMeshShader.Bind();
-                    m_Player.RenderPrefab();
+                    m_Player->RenderPrefab();
                 }
 
                 if(showChunkBorders) {
-                    m_Renderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Player.ChunkCoordX * 32, m_Player.ChunkCoordY * 32,m_Player.ChunkCoordZ * 32)));
+                    m_Renderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Player->ChunkCoordX * 32, m_Player->ChunkCoordY * 32,m_Player->ChunkCoordZ * 32)));
                 
                     m_Renderer.BindVoxelDescriptor();
                     m_BorderShader.Bind();
@@ -189,7 +201,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    GApp->m_Player.ProcessMouseInput(xoffset, yoffset);
+    GApp->m_Player->ProcessMouseInput(xoffset, yoffset);
 }
 void resize_callback(GLFWwindow* window, int width, int height) {
     (void)window;

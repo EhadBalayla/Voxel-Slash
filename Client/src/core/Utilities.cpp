@@ -4,9 +4,9 @@
 #include "../World/Chunk.h"
 
 bool IsChunkInRenderDistance(Chunk* c) {
-    int ChunkX = GApp->m_Player.ChunkCoordX;
-    int ChunkY = GApp->m_Player.ChunkCoordY;
-    int ChunkZ = GApp->m_Player.ChunkCoordZ;
+    int ChunkX = GApp->m_Player->ChunkCoordX;
+    int ChunkY = GApp->m_Player->ChunkCoordY;
+    int ChunkZ = GApp->m_Player->ChunkCoordZ;
 
 	int LOD_X = ChunkX / GetLODSize(c->LOD);
     int LOD_Y = ChunkY / GetLODSize(c->LOD);
@@ -19,9 +19,9 @@ bool IsChunkInRenderDistance(Chunk* c) {
 	return x <= GApp->RenderDistance && y <= GApp->RenderDistance && z <= GApp->RenderDistance;
 }
 bool IsChunkInBufferDistance(Chunk* c) {
-	int ChunkX = GApp->m_Player.ChunkCoordX;
-    int ChunkY = GApp->m_Player.ChunkCoordY;
-    int ChunkZ = GApp->m_Player.ChunkCoordZ;
+	int ChunkX = GApp->m_Player->ChunkCoordX;
+    int ChunkY = GApp->m_Player->ChunkCoordY;
+    int ChunkZ = GApp->m_Player->ChunkCoordZ;
 
 	int LOD_X = ChunkX / GetLODSize(c->LOD);
     int LOD_Y = ChunkY / GetLODSize(c->LOD);
@@ -34,9 +34,9 @@ bool IsChunkInBufferDistance(Chunk* c) {
 	return x <= GApp->RenderDistance + 1 && y <= GApp->RenderDistance + 1 && z <= GApp->RenderDistance + 1;
 }
 bool ShouldLODRender(Chunk* c) {
-	int ChunkX = GApp->m_Player.ChunkCoordX;
-    int ChunkY = GApp->m_Player.ChunkCoordY;
-    int ChunkZ = GApp->m_Player.ChunkCoordZ;
+	int ChunkX = GApp->m_Player->ChunkCoordX;
+    int ChunkY = GApp->m_Player->ChunkCoordY;
+    int ChunkZ = GApp->m_Player->ChunkCoordZ;
 
 	int LOD_X = ChunkX / GetLODSize(c->LOD);
     int LOD_Y = ChunkY / GetLODSize(c->LOD);

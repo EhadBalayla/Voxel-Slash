@@ -8,6 +8,8 @@
 #include <ShlObj.h>
 #include <filesystem>
 
+#include "AssetFormats/TransformAsset.h"
+
 char buff[256];
 char buff2[256];
 PrefabNode* cachedNode = nullptr;
@@ -261,14 +263,14 @@ void EditorManager::Render() {
                 ImGui::InputFloat3("Position: ", reinterpret_cast<float*>(&selectedNode->pos));
                 ImGui::InputFloat3("Rotation: ", reinterpret_cast<float*>(&selectedNode->rot));
                 ImGui::InputFloat3("Scale: ", reinterpret_cast<float*>(&selectedNode->scale));
-                if(ImGui::BeginCombo("Asset", "No Asset yet")) {
-                    if(ImGui::Selectable("Clear", false)) {
+                if(ImGui::BeginCombo("Asset", selectedNode->m_Asset ? selectedNode->m_Asset->AssetName.c_str() : "No Asset yet")) {
+                    if(ImGui::Selectable("Clear", !selectedNode->m_Asset)) {
                         selectedNode->m_Asset = nullptr;
                     }
                     int idx = 0;
-                    for(auto a : GAssets->GetAllAssets()) {
-                        if(ImGui::Selectable(std::to_string(idx).c_str(), false)) {
-                            selectedNode->m_Asset = reinterpret_cast<TransformAsset*>(a);
+                    for(auto& a : GAssets->GetAllAssets()) {
+                        if(ImGui::Selectable(a.first.c_str(), selectedNode->m_Asset->AssetName == a.first)) {
+                            selectedNode->m_Asset = static_cast<TransformAsset*>(a.second);
                         }
                         idx++;
                     }
