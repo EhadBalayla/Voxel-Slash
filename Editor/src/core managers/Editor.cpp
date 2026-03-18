@@ -1,5 +1,6 @@
 #include "Editor.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include "AssetFormats/TransformAsset.h"
 
 float LastTime = 0.0f;
 void RenderPrefabs(PrefabNode* node, glm::mat4 parentTrans);
@@ -88,8 +89,7 @@ void RenderPrefabs(PrefabNode* node, glm::mat4 parentTrans) {
     if(node->m_Parent) overall = parentTrans * overall;
 
     if(node->m_Asset) {
-        GEditor->m_Renderer.SetModelViewProj(GEditor->proj * GEditor->view * overall);
-        vkCmdDraw(GEditor->m_Renderer.GetFrameCommandBuffer(), 36, 1, 0, 0);
+        node->m_Asset->Render(GEditor->m_Renderer.GetFrameCommandBuffer(), GEditor->m_Renderer.Get3DPipelineLayout(), GEditor->proj * GEditor->view * overall);
     }
 
     for(auto c : node->m_Children) {

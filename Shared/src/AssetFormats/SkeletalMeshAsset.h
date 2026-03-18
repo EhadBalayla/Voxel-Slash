@@ -14,7 +14,7 @@ public:
 
     SkeletalMeshMetadata MetaData;
 
-    void Render(VkCommandBuffer cmd, glm::mat4 mtx) override;
+    void Render(VkCommandBuffer cmd, VkPipelineLayout layout, glm::mat4 mtx) override;
 protected:
     void Deserialize(std::ifstream& file) override;
     void Serialize(std::ofstream& file) override;

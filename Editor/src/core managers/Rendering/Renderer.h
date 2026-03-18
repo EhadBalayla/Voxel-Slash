@@ -46,7 +46,6 @@ public:
 
     //public helpers
     void SetHandles(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkSurfaceKHR surface, uint32_t graphicsFamilyIndex, uint32_t presentFamilyIndex, VkCommandPool commandPool, VkCommandBuffer* commandBuffers, VmaAllocator allocator, int MAX_FRAMES_IN_FLIGHT, int* currentFrame);
-	void SetModelViewProj(glm::mat4 mtx);
 	void QueueBufferDeletion(BufferAllocation buffer);
 	void FlushBufferDeletionQueue();
 

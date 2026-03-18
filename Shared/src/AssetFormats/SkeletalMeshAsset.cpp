@@ -27,6 +27,11 @@ void SkeletalMeshAsset::Serialize(std::ofstream& file) {
     file.write(reinterpret_cast<char*>(&MetaData), sizeof(SkeletalMeshMetadata));
 }
 
-void SkeletalMeshAsset::Render(VkCommandBuffer cmd, glm::mat4 mtx) {
-    
+void SkeletalMeshAsset::Render(VkCommandBuffer cmd, VkPipelineLayout layout, glm::mat4 mtx) {
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
+    VkDeviceSize offsets[] = { 0 };
+    VkBuffer buffer = mesh.GetBuffer();
+    vkCmdBindVertexBuffers(cmd, 0, 1, &buffer, offsets);
+    vkCmdBindIndexBuffer(cmd, buffer, mesh.indiciesOffset, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(cmd, MetaData.indiciesSize / sizeof(uint32_t), 1, 0, 0, 0);
 }

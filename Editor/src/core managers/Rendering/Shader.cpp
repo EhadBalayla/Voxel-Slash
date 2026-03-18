@@ -3,8 +3,11 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <cstddef>
 
 #include "../Editor.h"
+
+#include "VertexStruct.h"
 
 
 std::vector<char> readFile(const std::string& filename);
@@ -56,25 +59,49 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	viewportState.pScissors = nullptr;
 
 	//creating the vertex input
-    VkVertexInputBindingDescription ChunkBindingDescription{};
-    ChunkBindingDescription.binding = 0;
-    ChunkBindingDescription.stride = sizeof(uint32_t);
-    ChunkBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	VkVertexInputAttributeDescription attributeDescriptions[6] = {};
+	attributeDescriptions[0].binding = 0;
+	attributeDescriptions[0].location = 0;
+	attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[0].offset = offsetof(SkeletalVertex, pos);
 
-    VkVertexInputAttributeDescription ChunkAttributeDescription{};
-    ChunkAttributeDescription.binding = 0;
-    ChunkAttributeDescription.location = 0;
-    ChunkAttributeDescription.format = VK_FORMAT_R32_UINT;
-    ChunkAttributeDescription.offset = 0;
+	attributeDescriptions[1].binding = 0;
+	attributeDescriptions[1].location = 1;
+	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[1].offset = offsetof(SkeletalVertex, normal);
+
+	attributeDescriptions[2].binding = 0;
+	attributeDescriptions[2].location = 2;
+	attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[2].offset = offsetof(SkeletalVertex, tangent);
+
+	attributeDescriptions[3].binding = 0;
+	attributeDescriptions[3].location = 2;
+	attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+	attributeDescriptions[3].offset = offsetof(SkeletalVertex, uv);
+
+	attributeDescriptions[4].binding = 0;
+	attributeDescriptions[4].location = 3;
+	attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SINT;
+	attributeDescriptions[4].offset = offsetof(SkeletalVertex, boneIDs);
+
+	attributeDescriptions[5].binding = 0;
+	attributeDescriptions[5].location = 4;
+	attributeDescriptions[5].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	attributeDescriptions[5].offset = offsetof(SkeletalVertex, boneWeights);
 
 
+	VkVertexInputBindingDescription bindingDescription{};
+	bindingDescription.binding = 0;
+	bindingDescription.stride = sizeof(SkeletalVertex);
+	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;
+	vertexInputInfo.vertexAttributeDescriptionCount = 6;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 	
 
 	//creating the input assembly

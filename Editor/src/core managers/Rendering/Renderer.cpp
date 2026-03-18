@@ -157,9 +157,6 @@ void Renderer::SetHandles(
     this->MAX_FRAMES_IN_FLIGHT = MAX_FRAMES_IN_FLIGHT;
 	this->CurrentFrame = currentFrame;
 }
-void Renderer::SetModelViewProj(glm::mat4 mtx) {
-	vkCmdPushConstants(commandBuffers[*CurrentFrame], Pipe3DLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
-}
 
 void Renderer::createColorBuffer() {
 	colorBuffer.resize(MAX_FRAMES_IN_FLIGHT);
