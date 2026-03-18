@@ -84,11 +84,12 @@ void EditorManager::Render() {
     ImGui::End();
 
     if(!IsDataFolderChosen) {
+        ImGui::Begin("No Data Folder Selected");
         ImVec2 WindSize = ImGui::GetContentRegionAvail();
         ImVec2 MidOffset = ImVec2(WindSize.x / 2.0f, WindSize.y / 2.0f);
         
         ImVec2 topLeftPos = ImGui::GetCursorPos();
-        ImVec2 MidPos = ImVec2(topLeftPos.x + MidOffset.x, topLeftPos.y + MidOffset.y);
+        ImVec2 MidPos = ImVec2(MidOffset.x, MidOffset.y);
         ImGui::SetCursorPos(MidPos);
         if(ImGui::Button("Select Folder", ImVec2(100.0f, 100.0f))) {
             BROWSEINFO bi = {0};
@@ -103,10 +104,21 @@ void EditorManager::Render() {
                 if(HasNoVoxAssets && HasPrefabs) {
                     DataFolder = path;
                     IsDataFolderChosen = true;
+
+                    for(auto& n : std::filesystem::directory_iterator(DataFolder + "/NonVoxelAssets")) {
+                        if(n.is_directory() || n.path().extension().string() != ".vsa") continue;
+
+                        AssetType type;
+                        std::ifstream f(n.path().c_str(), std::ios::binary);
+                        f.read(reinterpret_cast<char*>(&type), sizeof(AssetType));
+                        f.close();
+                        GAssets->LoadAsset(n.path().string().c_str(), type);
+                    }
                 }
             }
             CoTaskMemFree(pidl);
         }
+        ImGui::End();
     } else {
         ImGui::Begin("Prefab Editing", nullptr, ImGuiWindowFlags_MenuBar);
 
@@ -250,7 +262,16 @@ void EditorManager::Render() {
                 ImGui::InputFloat3("Rotation: ", reinterpret_cast<float*>(&selectedNode->rot));
                 ImGui::InputFloat3("Scale: ", reinterpret_cast<float*>(&selectedNode->scale));
                 if(ImGui::BeginCombo("Asset", "No Asset yet")) {
-
+                    if(ImGui::Selectable("Clear", false)) {
+                        selectedNode->m_Asset = nullptr;
+                    }
+                    int idx = 0;
+                    for(auto a : GAssets->GetAllAssets()) {
+                        if(ImGui::Selectable(std::to_string(idx).c_str(), false)) {
+                            selectedNode->m_Asset = reinterpret_cast<TransformAsset*>(a);
+                        }
+                        idx++;
+                    }
                     ImGui::EndCombo();
                 }
             }
@@ -280,7 +301,7 @@ void EditorManager::Render() {
             ImVec2 topLeftPos = ImGui::GetCursorPos();
             ImGui::BeginChild("AssetToolbar", ImVec2(0, 30), false, ImGuiWindowFlags_NoScrollbar);
             if(ImGui::Button("Import Asset")) {
-                char Title[] = "Load Prefab";
+                char Title[] = "Select Asset";
                 char szFileName[MAX_PATH] = "";
                 OPENFILENAME ofn;
                 ZeroMemory(&ofn, sizeof(OPENFILENAME));
@@ -293,9 +314,10 @@ void EditorManager::Render() {
                 if(GetOpenFileName(&ofn)) {
                     std::string extension = std::filesystem::path(ofn.lpstrFile).extension().string();
                     if(extension == ".fbx") {
-                        m_Importer.TraverseModelFile(ofn.lpstrFile, DataFolder.c_str());
+                        m_Importer.TraverseModelFile(ofn.lpstrFile, std::string(DataFolder + "/NonVoxelAssets").c_str());
                     }
                     else if(extension == ".png") {
+                        m_Importer.ImportTexture(ofn.lpstrFile);
                     }
                 }
             }

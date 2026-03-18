@@ -2,6 +2,9 @@
 #include "VertexStruct.h"
 #include "AssetFormats/SkeletalMeshAsset.h"
 
+void Importer::ImportTexture(const char* path) {
+    
+}
 void Importer::ImportSkeletalMesh(const char* folderPath) {
     for(auto node : cachedSkeletalMeshes) {
         std::string assetName = node->mName.C_Str();
@@ -64,8 +67,8 @@ void Importer::ImportSkeletalMesh(const char* folderPath) {
         skeletalMesh.Save(assetPath.c_str());
 
         //reopens the file just to also write the model data, since saving a skeletal mesh only saves the metadata
-        std::ofstream file(assetPath.c_str(), std::ios::binary);
-        file.seekp(skeletalMesh.MetaData.offset);
+        std::fstream file(assetPath.c_str(), std::ios::binary | std::ios::out | std::ios::in);
+        file.seekp(skeletalMesh.MetaData.offset, std::ios::beg);
         file.write(reinterpret_cast<char*>(verticies.data()), skeletalMesh.MetaData.verticiesSize);
         file.write(reinterpret_cast<char*>(indicies.data()), skeletalMesh.MetaData.indiciesSize);
         file.close();

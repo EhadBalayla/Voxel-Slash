@@ -87,8 +87,10 @@ void RenderPrefabs(PrefabNode* node, glm::mat4 parentTrans) {
     glm::mat4 overall = pos * rot * scale;
     if(node->m_Parent) overall = parentTrans * overall;
 
-    GEditor->m_Renderer.SetModelViewProj(GEditor->proj * GEditor->view * overall);
-    vkCmdDraw(GEditor->m_Renderer.GetFrameCommandBuffer(), 36, 1, 0, 0);
+    if(node->m_Asset) {
+        GEditor->m_Renderer.SetModelViewProj(GEditor->proj * GEditor->view * overall);
+        vkCmdDraw(GEditor->m_Renderer.GetFrameCommandBuffer(), 36, 1, 0, 0);
+    }
 
     for(auto c : node->m_Children) {
         RenderPrefabs(c, overall);
