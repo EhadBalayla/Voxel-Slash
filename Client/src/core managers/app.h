@@ -5,7 +5,7 @@
 #include "Rendering/Shader.h"
 #include "Rendering/Texture.h"
 #include "AudioManager.h"
-#include "AssetManager.h"
+#include "ModInstance.h"
 #include "../Entities/Player.h"
 #include "DebugUI.h"
 #include "../World/World.h"
@@ -26,7 +26,7 @@ public:
     FullscreenQuad m_FullscreenQuad;
     Renderer m_Renderer;
     AudioManager m_AudioManager;
-    AssetManager m_AssetManager;
+    ModInstance* m_TempMod;
     Player* m_Player;
     World* m_World;
     DebugUI m_DebugUI;

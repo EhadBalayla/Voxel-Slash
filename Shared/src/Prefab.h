@@ -3,6 +3,7 @@
 #include <string>
 #include <glm/glm.hpp>
 
+class ModInstance;
 class TransformAsset;
 
 struct PrefabNode {
@@ -25,7 +26,7 @@ void RemovePrefabNode(PrefabNode* NodeToRemove);
 class Prefab {
 public:
     void Save(const char* path);
-    void Load(const char* path);
+    void Load(const char* path, ModInstance* mod);
 
     PrefabNode m_RootNode;
 };

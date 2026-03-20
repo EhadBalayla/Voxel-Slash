@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "AssetFormats/TransformAsset.h"
-#include "AssetManager.h"
+#include "ModInstance.h"
 
 void AddNewPrefabNode(PrefabNode* parentNode, std::string newName) {
     PrefabNode* newNode = new PrefabNode;
@@ -51,7 +51,7 @@ void WritePrefabNode(PrefabNode* node, std::ofstream& file) {
         WritePrefabNode(c, file);
     }
 }
-void LoadPrefabNode(PrefabNode* node, std::ifstream& file) {
+void LoadPrefabNode(PrefabNode* node, std::ifstream& file, ModInstance* mod) {
     size_t nameSize;
     file.read(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
     node->m_Name.resize(nameSize);
@@ -67,7 +67,7 @@ void LoadPrefabNode(PrefabNode* node, std::ifstream& file) {
         std::string name;
         name.resize(aNameSize);
         file.read(name.data(), aNameSize);
-        node->m_Asset = static_cast<TransformAsset*>(GAssets->GetAllAssets()[name]);
+        node->m_Asset = static_cast<TransformAsset*>(mod->GetAllAssets()[name]);
     }
 
     size_t childsCount;
@@ -76,7 +76,7 @@ void LoadPrefabNode(PrefabNode* node, std::ifstream& file) {
         PrefabNode* newNode = new PrefabNode;
         newNode->m_Parent = node;
         node->m_Children.push_back(newNode);
-        LoadPrefabNode(newNode, file);
+        LoadPrefabNode(newNode, file, mod);
     }
 }
 
@@ -90,13 +90,13 @@ void Prefab::Save(const char* path) {
 
     file.close();
 }
-void Prefab::Load(const char* path) {
+void Prefab::Load(const char* path, ModInstance* mod) {
     std::ifstream file(path, std::ios::binary);
     if(!file.is_open()) {
         std::cout << "failed to open file for loading prefab" << std::endl;
     }
 
-    LoadPrefabNode(&m_RootNode, file);
+    LoadPrefabNode(&m_RootNode, file, mod);
 
     file.close();
 }

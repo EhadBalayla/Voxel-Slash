@@ -11,7 +11,7 @@ bool pressedJump = false;
 
 Player::Player() {
     aabb = {glm::vec3(-0.3f, 0.0f, -0.3f), glm::vec3(0.3f, 1.8f, 0.3f)};
-    prefab.Load("Data/Prefabs/Player_Prefab.pfb");
+    prefab.Load("Data/Prefabs/Player_Prefab.pfb", GApp->m_TempMod);
 
     acceleration = 1.0f;
     maxMovementSpeed = 10.0f;

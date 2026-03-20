@@ -107,15 +107,7 @@ void EditorManager::Render() {
                     DataFolder = path;
                     IsDataFolderChosen = true;
 
-                    for(auto& n : std::filesystem::directory_iterator(DataFolder + "/NonVoxelAssets")) {
-                        if(n.is_directory() || n.path().extension().string() != ".vsa") continue;
-
-                        AssetType type;
-                        std::ifstream f(n.path().c_str(), std::ios::binary);
-                        f.read(reinterpret_cast<char*>(&type), sizeof(AssetType));
-                        f.close();
-                        GAssets->LoadAsset(n.path().string().c_str(), type);
-                    }
+                    GEditor->mod = new ModInstance(path);
                 }
             }
             CoTaskMemFree(pidl);
@@ -145,7 +137,7 @@ void EditorManager::Render() {
                     ofn.lpstrDefExt = "pfb";
 
                     if(GetOpenFileName(&ofn)) {
-                        m_Prefab.Load(szFileName);
+                        m_Prefab.Load(szFileName, GEditor->mod);
                     }
                 }
                 if(ImGui::MenuItem("Save Prefab")) {
@@ -268,7 +260,7 @@ void EditorManager::Render() {
                         selectedNode->m_Asset = nullptr;
                     }
                     int idx = 0;
-                    for(auto& a : GAssets->GetAllAssets()) {
+                    for(auto& a : GEditor->mod->GetAllAssets()) {
                         if(ImGui::Selectable(a.first.c_str(), selectedNode->m_Asset->AssetName == a.first)) {
                             selectedNode->m_Asset = static_cast<TransformAsset*>(a.second);
                         }

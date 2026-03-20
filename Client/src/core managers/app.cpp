@@ -61,15 +61,7 @@ void App::Init() {
 
     RegisterAllBlocks();
 
-    for(auto& n : std::filesystem::directory_iterator("Data/NonVoxelAssets")) {
-        if(n.is_directory() || n.path().extension().string() != ".vsa") continue;
-
-        AssetType type;
-        std::ifstream f(n.path().c_str(), std::ios::binary);
-        f.read(reinterpret_cast<char*>(&type), sizeof(AssetType));
-        f.close();
-        GAssets->LoadAsset(n.path().string().c_str(), type);
-    }
+    m_TempMod = new ModInstance("Data");
     m_Player = new Player;
 }
 void App::Loop() {
