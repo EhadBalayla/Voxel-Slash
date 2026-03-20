@@ -45,6 +45,7 @@ void DebugUI::RenderDebugUI() {
     ImGui::Begin("Debug Menu");
     ImGui::Checkbox("Show Chunk Borders", &GApp->showChunkBorders);
     ImGui::Checkbox("Load Chunks?", &GApp->LoadChunks);
+    ImGui::Checkbox("Do Physics?", &GApp->DoPhysics);
     ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", GApp->m_Player->Position.x, GApp->m_Player->Position.y, GApp->m_Player->Position.z);
     ImGui::Text("FPS: %.1f", 1.0f / GApp->deltaTime);
     ImGui::TextUnformatted(std::string("Num Of Chunks LOD0: " + std::to_string(GApp->m_World->GetChunkManager().GetChunkProvider().GetAllChunks(0).size())).c_str());

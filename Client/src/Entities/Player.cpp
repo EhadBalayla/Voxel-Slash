@@ -18,7 +18,7 @@ Player::Player() {
 }
 void Player::Update(float DeltaTime) {
     ProcessMovementInput();
-    MoveAndCollide(DeltaTime);
+    if(GApp->DoPhysics) MoveAndCollide(DeltaTime);
 
     if(velocity.x || velocity.z) {
         glm::vec3 forward = glm::normalize(glm::vec3(velocity.x, 0.0f, velocity.z));

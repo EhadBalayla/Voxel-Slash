@@ -1,34 +1,18 @@
 #pragma once
 #include "FastNoiseLight.h"
+#include <cstdint>
 
 class Chunk;
 class ChunkGenerator {
 public:
     ChunkGenerator();
+    ChunkGenerator(int64_t seed);
 
     void GenerateChunk(Chunk* c);
+    void ReplaceBlocks(Chunk* c);
+    void CarveCaves(Chunk* c);
 private:
-    FastNoiseLite BiomeNoise;
-
-
-    FastNoiseLite Plains1;
-    FastNoiseLite Plains2;
-    FastNoiseLite PlainsSelector;
-
-    FastNoiseLite IceSpikes1;
-    FastNoiseLite IceSpikes2;
-    FastNoiseLite IceSpikesSelector;
-
-    FastNoiseLite Mesa1;
-    FastNoiseLite Mesa2;
-    FastNoiseLite Mesa3;
-    FastNoiseLite Mesa4;
-
-    FastNoiseLite MountainBase;
-
-
-    int MakePlainsHeight(int WorldX, int WorldZ);
-    int MakeIceSpikesHeight(int WorldX, int WorldZ);
-    int MakeMesaHeight(int WorldX, int WorldZ);
-    int MakeMountainPeaks(int WorldX, int WorldZ);
+    FastNoiseLite masterNoise; // Slow, huge scale (0.0001)
+    FastNoiseLite mountainNoise;      // Medium scale (0.01)
+    FastNoiseLite detailNoise;           // 3D noise for overhangs (0.02)
 };

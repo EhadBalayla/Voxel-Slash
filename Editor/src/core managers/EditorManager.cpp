@@ -7,13 +7,17 @@
 #include <Windows.h> //specifically for the dialogue boxes
 #include <ShlObj.h>
 #include <filesystem>
+#include <iostream>
 
 #include "AssetFormats/TransformAsset.h"
+#include "Canvas.h"
 
 char buff[256];
 char buff2[256];
+char buff3[256];
 PrefabNode* cachedNode = nullptr;
 bool IsRightClickOnViewport = false;
+bool NewCanvasPopup = false;
 
 void EditorManager::Init() {
     VkDescriptorPoolSize poolSize{};
@@ -103,7 +107,8 @@ void EditorManager::Render() {
             if(SHGetPathFromIDList(pidl, path)) {
                 bool HasNoVoxAssets = std::filesystem::exists(std::filesystem::path(path) / "NonVoxelAssets");
                 bool HasPrefabs = std::filesystem::exists(std::filesystem::path(path) / "Prefabs");
-                if(HasNoVoxAssets && HasPrefabs) {
+                bool HasCanvases = std::filesystem::exists(std::filesystem::path(path) / "Canvases");
+                if(HasNoVoxAssets && HasPrefabs && HasCanvases) {
                     DataFolder = path;
                     IsDataFolderChosen = true;
 
@@ -178,6 +183,54 @@ void EditorManager::Render() {
         }
 
         ImGui::End();
+
+        ImGui::Begin("Canvas Editor", nullptr, ImGuiWindowFlags_MenuBar);
+
+        ImGuiID canvasDockspace_id = ImGui::GetID("CanvasEditingDockspace");
+        ImGui::DockSpace(canvasDockspace_id, ImVec2(0.0, 0.0), ImGuiDockNodeFlags_PassthruCentralNode);
+
+        if(ImGui::BeginMenuBar()) {
+            if(ImGui::BeginMenu("Choose Canvas")) {
+                auto& canvases = GEditor->mod->GetAllCanvases();
+                for(auto c : canvases) {
+                    if(ImGui::MenuItem(c.first.c_str(), (const char*)0, c.second == m_Canvas)) {
+                        m_Canvas = c.second;
+                    }
+                }
+                ImGui::Separator();
+                if(ImGui::MenuItem("+New Canvas")) {
+                    NewCanvasPopup = true;
+                }
+                if(ImGui::MenuItem("-Save Current Canvas")) {
+
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+
+        ImGui::End();
+
+        if(NewCanvasPopup) {
+            ImGui::OpenPopup("NewCanvasPopup");
+            NewCanvasPopup = false;
+        }
+
+        if(ImGui::BeginPopup("NewCanvasPopup")) {
+            ImGui::InputText("##SetNewNodeName", buff3, 256, ImGuiInputTextFlags_EnterReturnsTrue);
+            if(ImGui::Button("Ok")) {
+                std::string newCanvasName = buff3;
+                auto& allCanvases = GEditor->mod->GetAllCanvases();
+                if(allCanvases.find(newCanvasName) == allCanvases.end()) allCanvases[newCanvasName] = new Canvas;
+                else std::cout << "can't create a new canvas because there already exists one with the same name" << std::endl;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if(ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
 
         //all panels of the prefab editing
         {
@@ -329,6 +382,17 @@ void EditorManager::Render() {
 
             ImGui::End();
         }
+
+        //all panels of the canvas editing
+        {
+            ImGui::Begin("Canvas Viewport");
+
+            ImGui::End();
+
+            ImGui::Begin("Canvas Graph");
+
+            ImGui::End();
+        }
     }
 
     ImGui::Render();
@@ -355,6 +419,18 @@ void EditorManager::RenderPrefabNodes(PrefabNode* m_Node) {
         }
         for(auto n : m_Node->m_Children) {
             RenderPrefabNodes(n);
+        }
+        ImGui::TreePop();
+    }
+}
+
+void EditorManager::RenderUINodes(UINode* m_Node) {
+    if(ImGui::TreeNode(m_Node->m_Name.c_str())) {
+        if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+
+        }
+        for(auto n : m_Node->m_Children) {
+            RenderUINodes(n);
         }
         ImGui::TreePop();
     }

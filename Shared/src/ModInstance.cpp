@@ -1,5 +1,9 @@
 #include "ModInstance.h"
 
+#include "AssetFormats/Asset.h"
+#include "Prefab.h"
+#include "Canvas.h"
+
 #include "AssetFormats/SkeletalMeshAsset.h"
 
 #include <filesystem>
@@ -37,10 +41,20 @@ ModInstance::ModInstance(const char* ModPath) {
     for(auto& n : std::filesystem::directory_iterator(std::filesystem::path(std::string(ModPath) + "/Prefabs"))) {
         if(n.is_directory() || n.path().extension().string() != ".pfb") continue;
 
-        Prefab pfb;
-        pfb.Load(n.path().string().c_str(), this);
+        Prefab* pfb = new Prefab;
+        pfb->Load(n.path().string().c_str(), this);
         std::string name = n.path().stem().string();
         GetAllPrefabs()[name] = pfb;
+    }
+
+    //load all canvases
+    for(auto& n : std::filesystem::directory_iterator(std::filesystem::path(std::string(ModPath) + "/Canvases"))) {
+        if(n.is_directory() || n.path().extension().string() != ".cvs") continue;
+
+        Canvas* cvs = new Canvas;
+        cvs->Load(n.path().string().c_str(), this);
+        std::string name = n.path().stem().string();
+        GetAllCanvases()[name] = cvs;
     }
 }
 ModInstance::~ModInstance() {
@@ -50,6 +64,9 @@ ModInstance::~ModInstance() {
 std::unordered_map<std::string, Asset*>& ModInstance::GetAllAssets() {
     return assets;
 }
-std::unordered_map<std::string, Prefab>& ModInstance::GetAllPrefabs() {
+std::unordered_map<std::string, Prefab*>& ModInstance::GetAllPrefabs() {
     return prefabs;
+}
+std::unordered_map<std::string, Canvas*>& ModInstance::GetAllCanvases() {
+    return canvases;
 }

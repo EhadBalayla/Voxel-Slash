@@ -50,6 +50,7 @@ public:
     Frustum m_Frustum;
     bool showChunkBorders = false;
     bool LoadChunks = true;
+    bool DoPhysics = false;
     float deltaTime = 0.0f;
 
 

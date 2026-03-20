@@ -9,6 +9,9 @@
 
 #include "AssetFormats/Asset.h"
 
+class Canvas;
+class UINode;
+
 struct AssetRef {
     std::string name;
     AssetType type;
@@ -39,6 +42,11 @@ private:
     Prefab m_Prefab;
     PrefabNode* selectedNode = nullptr;
     void RenderPrefabNodes(PrefabNode* m_Node);
+
+    //canvas stuff
+    Canvas* m_Canvas = nullptr;
+    UINode* selectedUIElement = nullptr;
+    void RenderUINodes(UINode* m_Node);
 
     //importer
     Importer m_Importer;
