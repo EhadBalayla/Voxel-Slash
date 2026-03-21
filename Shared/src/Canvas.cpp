@@ -4,6 +4,33 @@
 
 #include "ModInstance.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
+void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, VkPipelineLayout layout, int ScrWidth, int ScrHeight) {
+    float left = -node->Left * ScrWidth;
+    float right = node->Right * ScrWidth;
+    float bottom = node->Bottom * ScrHeight;
+    float top = -node->Top * ScrHeight;
+
+    glm::mat4 proj = glm::ortho(left, right, bottom, top, -1.0f, 1.0f);
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(node->Position.x, node->Position.y, 0.0f));
+    model = glm::rotate(model, glm::radians(node->Rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+    model = glm::scale(model, glm::vec3(node->Size.x, node->Size.y, 1.0f));
+
+    glm::mat4 overallTrans = parentTrans * model;
+    glm::mat4 ProjTrans = proj * overallTrans;
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ProjTrans);
+    vkCmdDraw(cmd, 6, 1, 0, 0);
+
+    for(auto& n : node->m_Children) {
+        RenderCanvasNode(n, overallTrans, cmd, layout, ScrWidth, ScrHeight);
+    }
+}
+
+
+
 void WriteUINode(UINode* node, std::ofstream& file) {
     size_t nameSize = node->m_Name.size();
     file.write(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
@@ -78,4 +105,11 @@ void Canvas::Load(const char* path, ModInstance* mod) {
     }
 
     file.close();
+}
+
+
+void Canvas::Render(VkCommandBuffer cmd, VkPipelineLayout layout, int ScrWidth, int ScrHeight) {
+    for(auto& n : nodes) {
+        RenderCanvasNode(n, glm::mat4(1.0f), cmd, layout, ScrWidth, ScrHeight);
+    }
 }

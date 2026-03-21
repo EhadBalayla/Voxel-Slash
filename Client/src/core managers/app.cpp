@@ -9,29 +9,6 @@
 
 #include "Canvas.h"
 
-void RenderCanvas(UINode* node, glm::mat4 parentTrans, int ScrWidth, int ScrHeight) {
-    float left = -node->Left * ScrWidth;
-    float right = node->Right * ScrWidth;
-    float bottom = node->Bottom * ScrHeight;
-    float top = -node->Top * ScrHeight;
-
-    glm::mat4 proj = glm::ortho(left, right, bottom, top, -1.0f, 1.0f);
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(node->Position.x, node->Position.y, 0.0f));
-    model = glm::rotate(model, glm::radians(node->Rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, glm::vec3(node->Size.x, node->Size.y, 1.0f));
-
-    glm::mat4 overallTrans = parentTrans * model;
-    glm::mat4 ProjTrans = proj * overallTrans;
-    vkCmdPushConstants(GApp->m_Renderer.GetFrameCommandBuffer(), GApp->m_Renderer.GetChunksPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ProjTrans);
-    vkCmdDraw(GApp->m_Renderer.GetFrameCommandBuffer(), 6, 1, 0, 0);
-
-    for(auto& n : node->m_Children) {
-        RenderCanvas(n, overallTrans, ScrWidth, ScrHeight);
-    }
-}
-
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void resize_callback(GLFWwindow* window, int width, int height);
 
@@ -104,9 +81,7 @@ void App::Loop() {
                 m_Renderer.StartRender();
                 m_UIShader.Bind();
                 Canvas* titleScr = m_TempMod->GetAllCanvases()["TitleScreenHUD"];
-                for(auto& n : titleScr->nodes) {
-                    RenderCanvas(n, glm::mat4(1.0f), Width, Height);
-                }
+                titleScr->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetChunksPipelineLayout(), Width, Height);
                 m_Renderer.EndRender();
 
                 m_FullscreenQuad.SetTexture();

@@ -58,9 +58,7 @@ void Editor::Loop() {
 
         if(m_Editor.GetCanvas()) {
             m_2DShader.Bind();
-            for(auto& n : m_Editor.GetCanvas()->nodes) {
-                RenderCanvas(n, glm::mat4(1.0f), Width, Height);
-            }
+            m_Editor.Render();
         }
         m_Renderer.EndRender();
 
@@ -106,27 +104,5 @@ void RenderPrefabs(PrefabNode* node, glm::mat4 parentTrans) {
 
     for(auto c : node->m_Children) {
         RenderPrefabs(c, overall);
-    }
-}
-void RenderCanvas(UINode* node, glm::mat4 parentTrans, int ScrWidth, int ScrHeight) {
-    float left = -node->Left * ScrWidth;
-    float right = node->Right * ScrWidth;
-    float bottom = node->Bottom * ScrHeight;
-    float top = -node->Top * ScrHeight;
-
-    glm::mat4 proj = glm::ortho(left, right, bottom, top, -1.0f, 1.0f);
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(node->Position.x, node->Position.y, 0.0f));
-    model = glm::rotate(model, glm::radians(node->Rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, glm::vec3(node->Size.x, node->Size.y, 1.0f));
-
-    glm::mat4 overallTrans = parentTrans * model;
-    glm::mat4 ProjTrans = proj * overallTrans;
-    vkCmdPushConstants(GEditor->m_Renderer.GetFrameCommandBuffer(), GEditor->m_Renderer.Get3DPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ProjTrans);
-    vkCmdDraw(GEditor->m_Renderer.GetFrameCommandBuffer(), 6, 1, 0, 0);
-
-    for(auto& n : node->m_Children) {
-        RenderCanvas(n, overallTrans, ScrWidth, ScrHeight);
     }
 }

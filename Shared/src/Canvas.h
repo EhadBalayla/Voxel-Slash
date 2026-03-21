@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
+#include <vulkan/vulkan.h>
 
 class ModInstance;
 
@@ -26,4 +27,6 @@ public:
     void Load(const char* path, ModInstance* mod);
 
     std::vector<UINode*> nodes; //top level nodes
+    
+    void Render(VkCommandBuffer cmd, VkPipelineLayout layout, int ScrWidth, int ScrHeight);
 };
