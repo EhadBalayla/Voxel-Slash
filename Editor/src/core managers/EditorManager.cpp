@@ -391,7 +391,8 @@ void EditorManager::Render() {
         {
             ImGui::Begin("Canvas Viewport");
             if(m_Canvas) {
-                
+                ImVec2 windowSize = ImGui::GetContentRegionAvail();
+                ImGui::Image(viewportBuffers[*GEditor->m_Renderer.CurrentFrame], windowSize, ImVec2(0, 1), ImVec2(1, 0));
             }
             ImGui::End();
 
@@ -435,6 +436,9 @@ void EditorManager::Terminate() {
 
 Prefab& EditorManager::GetPrefab() {
     return m_Prefab;
+}
+Canvas* EditorManager::GetCanvas() const {
+    return m_Canvas;
 }
 
 void EditorManager::RenderPrefabNodes(PrefabNode* m_Node) {

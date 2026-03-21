@@ -25,6 +25,7 @@ public:
     void Terminate();
 
     Prefab& GetPrefab();
+    Canvas* GetCanvas() const;
 private:
     //for the chosen data folder
     bool IsDataFolderChosen = false;

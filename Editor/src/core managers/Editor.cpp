@@ -2,8 +2,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "AssetFormats/TransformAsset.h"
 
+#include "Canvas.h"
+
 float LastTime = 0.0f;
 void RenderPrefabs(PrefabNode* node, glm::mat4 parentTrans);
+void RenderCanvas(UINode* node, glm::mat4 parentTrans, glm::mat4 ortho);
+
 
 Editor::Editor() {
     GEditor = this;
@@ -32,6 +36,7 @@ void Editor::Init() {
     m_Renderer.Init();
 
     m_3DShader.LoadShader("Shaders/MeshShader_vert.spv", "Shaders/MeshShader_frag.spv", PipelineType::D3);
+    m_2DShader.LoadShader("Shaders/UIShader_vert.spv", "Shaders/UIShader_frag.spv", PipelineType::D2);
 
     m_Editor.Init();
 
@@ -50,6 +55,14 @@ void Editor::Loop() {
         m_Renderer.StartRender();
         m_3DShader.Bind();
         RenderPrefabs(&m_Editor.GetPrefab().m_RootNode, glm::mat4(1.0f));
+
+        if(m_Editor.GetCanvas()) {
+            m_2DShader.Bind();
+            glm::mat4 ortho = glm::ortho(0.0f, (float)Width, (float)Height, 0.0f, -1.0f, 1.0f);
+            for(auto& n : m_Editor.GetCanvas()->nodes) {
+                RenderCanvas(n, glm::mat4(1.0f), ortho);
+            }
+        }
         m_Renderer.EndRender();
 
         m_Editor.Render();
@@ -94,5 +107,20 @@ void RenderPrefabs(PrefabNode* node, glm::mat4 parentTrans) {
 
     for(auto c : node->m_Children) {
         RenderPrefabs(c, overall);
+    }
+}
+void RenderCanvas(UINode* node, glm::mat4 parentTrans, glm::mat4 ortho) {
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(node->Position.x, node->Position.y, 0.0f));
+    model = glm::rotate(model, glm::radians(node->Rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+    model = glm::scale(model, glm::vec3(node->Size.x, node->Size.y, 1.0f));
+
+    glm::mat4 overallTrans = parentTrans * model;
+    glm::mat4 ProjTrans = ortho * overallTrans;
+    vkCmdPushConstants(GEditor->m_Renderer.GetFrameCommandBuffer(), GEditor->m_Renderer.Get3DPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ProjTrans);
+    vkCmdDraw(GEditor->m_Renderer.GetFrameCommandBuffer(), 6, 1, 0, 0);
+
+    for(auto& n : node->m_Children) {
+        RenderCanvas(n, overallTrans, ortho);
     }
 }

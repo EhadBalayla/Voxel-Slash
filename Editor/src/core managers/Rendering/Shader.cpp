@@ -98,10 +98,17 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexAttributeDescriptionCount = 6;
-	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	if(type == PipelineType::D3) {
+		vertexInputInfo.vertexAttributeDescriptionCount = 6;
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	} else {
+		vertexInputInfo.vertexAttributeDescriptionCount = 0;
+		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+		vertexInputInfo.vertexBindingDescriptionCount = 0;
+		vertexInputInfo.pVertexBindingDescriptions = nullptr;
+	}
 	
 
 	//creating the input assembly
