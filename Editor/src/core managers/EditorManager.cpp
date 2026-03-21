@@ -196,6 +196,7 @@ void EditorManager::Render() {
                 for(auto c : canvases) {
                     if(ImGui::MenuItem(c.first.c_str(), (const char*)0, c.second == m_Canvas)) {
                         m_Canvas = c.second;
+                        selectedCanvasName = c.first;
                     }
                 }
                 ImGui::Separator();
@@ -203,7 +204,10 @@ void EditorManager::Render() {
                     NewCanvasPopup = true;
                 }
                 if(ImGui::MenuItem("-Save Current Canvas")) {
-
+                    if(m_Canvas) {
+                        std::string path = DataFolder + "/Canvases/" + selectedCanvasName + ".cvs";
+                        m_Canvas->Save(path.c_str());
+                    }
                 }
                 if(ImGui::MenuItem("--Deselect Current Canvas")) {
                     m_Canvas = nullptr;
@@ -309,6 +313,9 @@ void EditorManager::Render() {
                     cachedNode = selectedNode;
                     ImGui::OpenPopup("NewNodePopup");
                 }
+
+                ImGui::SeparatorText("Transform");
+
                 ImGui::InputFloat3("Position: ", reinterpret_cast<float*>(&selectedNode->pos));
                 ImGui::InputFloat3("Rotation: ", reinterpret_cast<float*>(&selectedNode->rot));
                 ImGui::InputFloat3("Scale: ", reinterpret_cast<float*>(&selectedNode->scale));
@@ -413,9 +420,19 @@ void EditorManager::Render() {
                     if(ImGui::InputText("UI Node Name: ", buff4, 256)) {
                         selectedUIElement->m_Name = buff4;
                     }
+
+                    ImGui::SeparatorText("Transform");
+
                     ImGui::InputFloat2("UI Node Position: ", reinterpret_cast<float*>(&selectedUIElement->Position));
                     ImGui::InputFloat("UI Node Rotation", &selectedUIElement->Rotation);
                     ImGui::InputFloat2("UI Node Size: ", reinterpret_cast<float*>(&selectedUIElement->Size));
+
+                    ImGui::SeparatorText("Anchor");
+
+                    ImGui::SliderFloat("UI Node Left: ", &selectedUIElement->Left, 0.0f, 1.0f);
+                    ImGui::SliderFloat("UI Node Right: ", &selectedUIElement->Right, 0.0f, 1.0f);
+                    ImGui::SliderFloat("UI Node Bottom: ", &selectedUIElement->Bottom, 0.0f, 1.0f);
+                    ImGui::SliderFloat("UI Node Top: ", &selectedUIElement->Top, 0.0f, 1.0f);
                 }
             }
             ImGui::End();

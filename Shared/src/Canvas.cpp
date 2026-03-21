@@ -13,6 +13,11 @@ void WriteUINode(UINode* node, std::ofstream& file) {
     file.write(reinterpret_cast<char*>(&node->Rotation), sizeof(float));
     file.write(reinterpret_cast<char*>(&node->Size), sizeof(glm::vec2));
 
+    file.write(reinterpret_cast<char*>(&node->Left), sizeof(float));
+    file.write(reinterpret_cast<char*>(&node->Right), sizeof(float));
+    file.write(reinterpret_cast<char*>(&node->Bottom), sizeof(float));
+    file.write(reinterpret_cast<char*>(&node->Top), sizeof(float));
+
     size_t childsCount = node->m_Children.size();
     file.write(reinterpret_cast<char*>(&childsCount), sizeof(size_t));
     for(auto c : node->m_Children) {
@@ -28,6 +33,11 @@ void LoadUINode(UINode* node, std::ifstream& file, ModInstance* mod) {
     file.read(reinterpret_cast<char*>(&node->Position), sizeof(glm::vec2));
     file.read(reinterpret_cast<char*>(&node->Rotation), sizeof(float));
     file.read(reinterpret_cast<char*>(&node->Size), sizeof(glm::vec2));
+
+    file.read(reinterpret_cast<char*>(&node->Left), sizeof(float));
+    file.read(reinterpret_cast<char*>(&node->Right), sizeof(float));
+    file.read(reinterpret_cast<char*>(&node->Bottom), sizeof(float));
+    file.read(reinterpret_cast<char*>(&node->Top), sizeof(float));
 
     size_t childsCount;
     file.read(reinterpret_cast<char*>(&childsCount), sizeof(size_t));

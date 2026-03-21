@@ -14,6 +14,9 @@ struct UINode {
     glm::vec2 Position = glm::vec2(0.0f);
     float Rotation = 0.0f;
     glm::vec2 Size = glm::vec2(1.0f);
+
+    //anchors for the UINode
+    float Left = 0.0f, Right = 1.0f, Bottom = 1.0f, Top = 0.0f;
 };
 void AddNewUINode(UINode* parentNode, std::string newName);
 

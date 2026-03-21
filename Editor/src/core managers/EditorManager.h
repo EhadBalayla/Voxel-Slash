@@ -47,6 +47,7 @@ private:
     //canvas stuff
     Canvas* m_Canvas = nullptr;
     UINode* selectedUIElement = nullptr;
+    std::string selectedCanvasName;
     void RenderUINodes(UINode* m_Node);
 
     //importer
