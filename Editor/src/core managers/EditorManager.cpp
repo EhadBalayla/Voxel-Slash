@@ -15,6 +15,7 @@
 char buff[256];
 char buff2[256];
 char buff3[256];
+char buff4[256];
 PrefabNode* cachedNode = nullptr;
 bool IsRightClickOnViewport = false;
 bool NewCanvasPopup = false;
@@ -204,6 +205,9 @@ void EditorManager::Render() {
                 if(ImGui::MenuItem("-Save Current Canvas")) {
 
                 }
+                if(ImGui::MenuItem("--Deselect Current Canvas")) {
+                    m_Canvas = nullptr;
+                }
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -386,11 +390,33 @@ void EditorManager::Render() {
         //all panels of the canvas editing
         {
             ImGui::Begin("Canvas Viewport");
-
+            if(m_Canvas) {
+                
+            }
             ImGui::End();
 
             ImGui::Begin("Canvas Graph");
+            if(m_Canvas) {
+                if(ImGui::Button("Add Top Element")) {
+                    m_Canvas->nodes.push_back(new UINode);
+                }
+                for(auto& n : m_Canvas->nodes) {
+                    RenderUINodes(n);
+                }
+            }
+            ImGui::End();
 
+            ImGui::Begin("UI Node Properties");
+            if(m_Canvas) {
+                if(selectedUIElement) {
+                    if(ImGui::InputText("UI Node Name: ", buff4, 256)) {
+                        selectedUIElement->m_Name = buff4;
+                    }
+                    ImGui::InputFloat2("UI Node Position: ", reinterpret_cast<float*>(&selectedUIElement->Position));
+                    ImGui::InputFloat("UI Node Rotation", &selectedUIElement->Rotation);
+                    ImGui::InputFloat2("UI Node Size: ", reinterpret_cast<float*>(&selectedUIElement->Size));
+                }
+            }
             ImGui::End();
         }
     }
@@ -427,7 +453,8 @@ void EditorManager::RenderPrefabNodes(PrefabNode* m_Node) {
 void EditorManager::RenderUINodes(UINode* m_Node) {
     if(ImGui::TreeNode(m_Node->m_Name.c_str())) {
         if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-
+            selectedUIElement = m_Node;
+            strcpy(buff4, selectedUIElement->m_Name.c_str());
         }
         for(auto n : m_Node->m_Children) {
             RenderUINodes(n);

@@ -20,7 +20,23 @@ void WriteUINode(UINode* node, std::ofstream& file) {
     }
 }
 void LoadUINode(UINode* node, std::ifstream& file, ModInstance* mod) {
+    size_t nameSize;
+    file.read(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+    node->m_Name.resize(nameSize);
+    file.read(reinterpret_cast<char*>(node->m_Name.data()), nameSize);
 
+    file.read(reinterpret_cast<char*>(&node->Position), sizeof(glm::vec2));
+    file.read(reinterpret_cast<char*>(&node->Rotation), sizeof(float));
+    file.read(reinterpret_cast<char*>(&node->Size), sizeof(glm::vec2));
+
+    size_t childsCount;
+    file.read(reinterpret_cast<char*>(&childsCount), sizeof(size_t));
+    for(size_t i = 0; i < childsCount; i++) {
+        UINode* newNode = new UINode;
+        newNode->m_Parent = node;
+        node->m_Children.push_back(newNode);
+        LoadUINode(newNode, file, mod);
+    }
 }
 
 void Canvas::Save(const char* path) {

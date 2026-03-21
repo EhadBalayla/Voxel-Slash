@@ -72,7 +72,7 @@ void LoadPrefabNode(PrefabNode* node, std::ifstream& file, ModInstance* mod) {
 
     size_t childsCount;
     file.read(reinterpret_cast<char*>(&childsCount), sizeof(size_t));
-    for(int i = 0; i < childsCount; i++) {
+    for(size_t i = 0; i < childsCount; i++) {
         PrefabNode* newNode = new PrefabNode;
         newNode->m_Parent = node;
         node->m_Children.push_back(newNode);
