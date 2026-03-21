@@ -436,6 +436,62 @@ void EditorManager::Render() {
                 }
             }
             ImGui::End();
+
+            ImGui::Begin("UI Element Properties");
+            if(m_Canvas) {
+                if(selectedUIElement) {
+                    const char* ElemTypes[] = {"No Type", "Image Element", "Button Element", "Text Element"};
+                    int chosenType = selectedUIElement->m_Element ? static_cast<int>(selectedUIElement->m_Element->GetType()) : 0;
+                    if(ImGui::BeginCombo("Element Type: ", ElemTypes[chosenType])) {
+                        for(int i = 0; i < sizeof(ElemTypes) / sizeof(char*); i++) {
+                            if(ImGui::Selectable(ElemTypes[i], i == chosenType)) {
+                                if(i != chosenType) { //means we need to switch types
+                                    if(selectedUIElement->m_Element) delete selectedUIElement->m_Element;
+                                    if(i > 0) {
+                                        switch(static_cast<UIType>(i)) {
+                                            case UIType::Image:
+                                            selectedUIElement->m_Element = new UIImage;
+                                            break;
+                                            case UIType::Button:
+                                            //selectedUIElement->m_Element = new UIButton;
+                                            break;
+                                            case UIType::Text:
+                                            //selectedUIElement->m_Element = new UIText;
+                                            break;
+                                        } 
+                                    }
+                                    else {
+                                        selectedUIElement->m_Element = nullptr;
+                                    }
+
+                                }
+                            }
+                        }
+                        ImGui::EndCombo();
+                    }
+                    if(selectedUIElement->m_Element) {
+                        switch(selectedUIElement->m_Element->GetType()) {
+                            case UIType::Image:
+                            if(ImGui::BeginCombo("Texture: ", "none")) {
+
+                                ImGui::EndCombo();
+                            }
+                            break;
+                            case UIType::Button:
+
+                            break;
+                            case UIType::Text:
+
+                            break;
+                        }
+                    }
+                }
+            }
+            ImGui::End();
+
+            ImGui::Begin("Canvas Animations");
+
+            ImGui::End();
         }
     }
 

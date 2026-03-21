@@ -4,6 +4,30 @@
 #include <vulkan/vulkan.h>
 
 class ModInstance;
+class TextureAsset;
+
+enum class UIType {
+    Image = 1,
+    Button = 2,
+    Text = 3,
+    ProgressBar = 4,
+};
+
+class UIElement {
+public:
+    virtual ~UIElement() = default;
+
+    virtual void Render(VkCommandBuffer cmd) = 0;
+    virtual UIType GetType() const = 0;
+};
+
+class UIImage : public UIElement {
+public:
+    void Render(VkCommandBuffer cmd) override;
+    UIType GetType() const override;
+
+    TextureAsset* m_Asset = nullptr;
+};
 
 struct UINode {
     UINode* m_Parent = nullptr;
@@ -18,8 +42,12 @@ struct UINode {
 
     //anchors for the UINode
     float Left = 0.0f, Right = 1.0f, Bottom = 1.0f, Top = 0.0f;
+
+    //contents of the node
+    UIElement* m_Element = nullptr;
 };
 void AddNewUINode(UINode* parentNode, std::string newName);
+void SetUIElement(UINode* node, UIType type);
 
 class Canvas {
 public:

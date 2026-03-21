@@ -5,6 +5,8 @@
 enum class AssetType : uint8_t {
     SkeletalMeshAsset = 0,
     StaticMeshAsset = 1,
+    TextureAsset = 2,
+    
 };
 
 struct AssetHeader {

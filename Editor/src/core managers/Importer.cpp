@@ -1,9 +1,13 @@
 #include "Importer.h"
 #include "VertexStruct.h"
 #include "AssetFormats/SkeletalMeshAsset.h"
+#include "stb_image.h"
 
 void Importer::ImportTexture(const char* path) {
+    int Width, Height, Channels;
+    unsigned char* pixelData = stbi_load(path, &Width, &Height, &Channels, 4);
     
+    stbi_image_free(pixelData);
 }
 void Importer::ImportSkeletalMesh(const char* folderPath) {
     for(auto node : cachedSkeletalMeshes) {

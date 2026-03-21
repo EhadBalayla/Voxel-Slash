@@ -113,3 +113,12 @@ void Canvas::Render(VkCommandBuffer cmd, VkPipelineLayout layout, int ScrWidth, 
         RenderCanvasNode(n, glm::mat4(1.0f), cmd, layout, ScrWidth, ScrHeight);
     }
 }
+
+
+
+void UIImage::Render(VkCommandBuffer cmd) {
+
+}
+UIType UIImage::GetType() const {
+    return UIType::Image;
+}
