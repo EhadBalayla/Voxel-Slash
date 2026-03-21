@@ -1,12 +1,29 @@
 #include "Importer.h"
 #include "VertexStruct.h"
 #include "AssetFormats/SkeletalMeshAsset.h"
+#include "AssetFormats/TextureAsset.h"
 #include "stb_image.h"
 
-void Importer::ImportTexture(const char* path) {
+void Importer::ImportTexture(const char* path, const char* importPath) {
     int Width, Height, Channels;
     unsigned char* pixelData = stbi_load(path, &Width, &Height, &Channels, 4);
     
+    TextureAsset asset;
+
+    asset.MetaData.Width = Width;
+    asset.MetaData.Height = Height;
+    asset.MetaData.Channels = Channels;
+
+    asset.MetaData.DataOffset = sizeof(AssetHeader) + sizeof(TextureMetaData);
+    asset.MetaData.DataSize = Width * Height * Channels;
+
+    asset.Save(importPath);
+
+    std::fstream file(importPath, std::ios::binary | std::ios::in | std::ios::out); //reopening the file to patch it with the pixel data of the texture
+    file.seekp(asset.MetaData.DataOffset);
+    file.write(reinterpret_cast<char*>(pixelData), asset.MetaData.DataSize);
+    file.close();
+
     stbi_image_free(pixelData);
 }
 void Importer::ImportSkeletalMesh(const char* folderPath) {

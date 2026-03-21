@@ -2,6 +2,7 @@
 #include <string>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
+#include <fstream>
 
 class ModInstance;
 class TextureAsset;
@@ -19,12 +20,18 @@ public:
 
     virtual void Render(VkCommandBuffer cmd) = 0;
     virtual UIType GetType() const = 0;
+
+    virtual void Save(std::ofstream& file) = 0;
+    virtual void Load(std::ifstream& file, ModInstance* mod) = 0;
 };
 
 class UIImage : public UIElement {
 public:
     void Render(VkCommandBuffer cmd) override;
     UIType GetType() const override;
+
+    void Save(std::ofstream& file) override;
+    void Load(std::ifstream& file, ModInstance* mod) override;
 
     TextureAsset* m_Asset = nullptr;
 };

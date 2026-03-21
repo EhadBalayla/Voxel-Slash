@@ -5,6 +5,7 @@
 #include "Canvas.h"
 
 #include "AssetFormats/SkeletalMeshAsset.h"
+#include "AssetFormats/TextureAsset.h"
 
 #include <filesystem>
 
@@ -29,10 +30,13 @@ ModInstance::ModInstance(const char* ModPath) {
         std::string name = n.path().stem().string();
         switch (type) {
             case AssetType::SkeletalMeshAsset:
-                GetAllAssets()[name] = CreateAsset<SkeletalMeshAsset>(n.path().string().c_str(), name);
+                assets[name] = CreateAsset<SkeletalMeshAsset>(n.path().string().c_str(), name);
                 break;
             case AssetType::StaticMeshAsset:
                 //assets.insert(LoadAsset<StaticMeshAsset>(path));
+                break;
+            case AssetType::TextureAsset:
+                assets[name] = CreateAsset<TextureAsset>(n.path().string().c_str(), name);
                 break;
         }
     }

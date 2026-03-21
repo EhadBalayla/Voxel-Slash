@@ -23,4 +23,5 @@ protected:
     void Serialize(std::ofstream& file) override;
 private:
     Texture m_Texture;
+    bool CreatedTexture = false;
 };

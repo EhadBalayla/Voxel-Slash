@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "AssetFormats/TransformAsset.h"
+#include "AssetFormats/TextureAsset.h"
 #include "Canvas.h"
 
 char buff[256];
@@ -364,18 +365,19 @@ void EditorManager::Render() {
                 OPENFILENAME ofn;
                 ZeroMemory(&ofn, sizeof(OPENFILENAME));
                 ofn.lStructSize = sizeof(OPENFILENAME);
-                ofn.lpstrFilter = "All Files (*.*)\0*.fbx\0*.png\0";
+                ofn.lpstrFilter = "All Files\0*.*\0";
                 ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
                 ofn.lpstrFile = szFileName;
                 ofn.nMaxFile = MAX_PATH;
                 ofn.hwndOwner = nullptr;
                 if(GetOpenFileName(&ofn)) {
                     std::string extension = std::filesystem::path(ofn.lpstrFile).extension().string();
+                    std::string name = std::filesystem::path(ofn.lpstrFile).stem().string();
                     if(extension == ".fbx") {
                         m_Importer.TraverseModelFile(ofn.lpstrFile, std::string(DataFolder + "/NonVoxelAssets").c_str());
                     }
-                    else if(extension == ".png") {
-                        m_Importer.ImportTexture(ofn.lpstrFile);
+                    else if(extension == ".png" || extension == ".jpg") {
+                        m_Importer.ImportTexture(ofn.lpstrFile, std::string(DataFolder + "/NonVoxelAssets/" + name + ".vsa").c_str());
                     }
                 }
             }
@@ -471,18 +473,29 @@ void EditorManager::Render() {
                     }
                     if(selectedUIElement->m_Element) {
                         switch(selectedUIElement->m_Element->GetType()) {
-                            case UIType::Image:
-                            if(ImGui::BeginCombo("Texture: ", "none")) {
+                            case UIType::Image: {
+                                UIImage* img = static_cast<UIImage*>(selectedUIElement->m_Element);
+                                std::string comboPreview = img->m_Asset ? img->m_Asset->AssetName : "None";
+                                if(ImGui::BeginCombo("Texture: ", comboPreview.c_str())) {
+                                    for(auto& a : GEditor->mod->GetAllAssets()) {
+                                        if(a.second->header.type != AssetType::TextureAsset) continue;
 
-                                ImGui::EndCombo();
+                                        if(ImGui::Selectable(a.first.c_str(), img->m_Asset ? (a.first == img->m_Asset->AssetName) : false)) {
+                                            img->m_Asset = static_cast<TextureAsset*>(a.second);
+                                        }
+                                    }
+                                    ImGui::EndCombo();
+                                }
+                                break;
                             }
-                            break;
-                            case UIType::Button:
+                            case UIType::Button: {
 
-                            break;
-                            case UIType::Text:
+                                break;
+                            }
+                            case UIType::Text: {
 
-                            break;
+                                break;
+                            }
                         }
                     }
                 }

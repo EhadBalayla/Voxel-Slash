@@ -6,7 +6,7 @@
 
 class Importer {
 public:
-    void ImportTexture(const char* folderPath);
+    void ImportTexture(const char* path, const char* importPath);
     void ImportSkeletalMesh(const char* folderPath);
     void ImportSound(const char* folderPath);
 

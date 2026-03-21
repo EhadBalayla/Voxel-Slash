@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "ModInstance.h"
+#include "AssetFormats/TextureAsset.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -45,6 +46,15 @@ void WriteUINode(UINode* node, std::ofstream& file) {
     file.write(reinterpret_cast<char*>(&node->Bottom), sizeof(float));
     file.write(reinterpret_cast<char*>(&node->Top), sizeof(float));
 
+    uint32_t type = 0;
+    if(node->m_Element) {
+        type = static_cast<uint32_t>(node->m_Element->GetType());
+        file.write(reinterpret_cast<char*>(&type), sizeof(uint32_t));
+        node->m_Element->Save(file);
+    } else {
+        file.write(reinterpret_cast<char*>(&type), sizeof(uint32_t));
+    }
+
     size_t childsCount = node->m_Children.size();
     file.write(reinterpret_cast<char*>(&childsCount), sizeof(size_t));
     for(auto c : node->m_Children) {
@@ -65,6 +75,23 @@ void LoadUINode(UINode* node, std::ifstream& file, ModInstance* mod) {
     file.read(reinterpret_cast<char*>(&node->Right), sizeof(float));
     file.read(reinterpret_cast<char*>(&node->Bottom), sizeof(float));
     file.read(reinterpret_cast<char*>(&node->Top), sizeof(float));
+
+    uint32_t type = 0;
+    file.read(reinterpret_cast<char*>(&type), sizeof(uint32_t));
+    if(type > 0) {
+        switch (static_cast<UIType>(type)) {
+            case UIType::Image:
+                node->m_Element = new UIImage;
+            break;
+            case UIType::Button:
+
+            break;
+            case UIType::Text:
+            
+            break;
+        }
+        node->m_Element->Load(file, mod);
+    }
 
     size_t childsCount;
     file.read(reinterpret_cast<char*>(&childsCount), sizeof(size_t));
@@ -121,4 +148,23 @@ void UIImage::Render(VkCommandBuffer cmd) {
 }
 UIType UIImage::GetType() const {
     return UIType::Image;
+}
+void UIImage::Save(std::ofstream& file) {
+    size_t nameSize = 0;
+    if(m_Asset) {
+        nameSize = m_Asset->AssetName.size();
+        file.write(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+        file.write(reinterpret_cast<char*>(m_Asset->AssetName.data()), nameSize);
+    }
+    else file.write(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+}
+void UIImage::Load(std::ifstream& file, ModInstance* mod) {
+    size_t nameSize = 0;
+    file.read(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+    if(nameSize > 0) {
+        std::string assetName;
+        assetName.resize(nameSize);
+        file.read(reinterpret_cast<char*>(assetName.data()), nameSize);
+        m_Asset = static_cast<TextureAsset*>(mod->GetAllAssets()[assetName]);
+    }
 }
