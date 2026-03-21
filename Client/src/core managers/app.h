@@ -36,6 +36,7 @@ public:
     Shader m_BorderShader;
     Shader m_BoxOutlineShader;
     Shader m_SkeletalMeshShader;
+    Shader m_UIShader;
 
     //textures
     Texture m_TerrainAtlas;

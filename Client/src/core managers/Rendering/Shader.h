@@ -8,7 +8,8 @@ enum class PipelineType {
     Chunk,
     BoxOutline,
     SkeletalMesh,
-    StaticMesh
+    StaticMesh,
+    UIShader,
 };
 
 class Shader
