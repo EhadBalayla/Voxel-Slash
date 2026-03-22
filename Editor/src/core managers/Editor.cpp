@@ -58,7 +58,7 @@ void Editor::Loop() {
 
         if(m_Editor.GetCanvas()) {
             m_2DShader.Bind();
-            m_Editor.GetCanvas()->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.Get3DPipelineLayout(), Width, Height);
+            m_Editor.GetCanvas()->Render(m_Renderer.GetFrameCommandBuffer(), GContext->GetSingleTexPPLayout(), m_Renderer.GetSampler(), Width, Height);
         }
         m_Renderer.EndRender();
 

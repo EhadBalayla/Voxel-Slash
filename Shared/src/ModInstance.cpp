@@ -21,7 +21,7 @@ T* CreateAsset(const char* path, std::string name) {
 ModInstance::ModInstance(const char* ModPath) {
     //load all non voxel assets
     for(auto& n : std::filesystem::directory_iterator(std::filesystem::path(std::string(ModPath) + "/NonVoxelAssets"))) {
-        if(n.is_directory() || n.path().extension().string() != ".vsa") continue;
+        if(n.is_directory() || n.path().extension().string() != ".vsa" || !n.exists()) continue;
 
         AssetType type;
         std::ifstream f(n.path().c_str(), std::ios::binary);

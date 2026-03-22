@@ -6,6 +6,7 @@
 
 class ModInstance;
 class TextureAsset;
+class Texture;
 
 enum class UIType {
     Image = 1,
@@ -18,7 +19,7 @@ class UIElement {
 public:
     virtual ~UIElement() = default;
 
-    virtual void Render(VkCommandBuffer cmd) = 0;
+    virtual void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) = 0;
     virtual UIType GetType() const = 0;
 
     virtual void Save(std::ofstream& file) = 0;
@@ -27,13 +28,19 @@ public:
 
 class UIImage : public UIElement {
 public:
-    void Render(VkCommandBuffer cmd) override;
+    UIImage();
+
+    void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) override;
     UIType GetType() const override;
 
     void Save(std::ofstream& file) override;
     void Load(std::ifstream& file, ModInstance* mod) override;
 
     TextureAsset* m_Asset = nullptr;
+private:
+    VkDescriptorPool pool;
+    std::vector<VkDescriptorSet> sets; //for all the textures
+    Texture* texturesPerSet[3] = { nullptr }; //basically referencing which texture each descriptor set holds, so we will know to update if needed
 };
 
 struct UINode {
@@ -63,5 +70,5 @@ public:
 
     std::vector<UINode*> nodes; //top level nodes
     
-    void Render(VkCommandBuffer cmd, VkPipelineLayout layout, int ScrWidth, int ScrHeight);
+    void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, int ScrWidth, int ScrHeight);
 };

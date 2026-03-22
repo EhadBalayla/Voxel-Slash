@@ -18,6 +18,8 @@ public:
     ~TextureAsset();
 
     TextureMetaData MetaData;
+
+    Texture& GetTexture();
 protected:
     void Deserialize(std::ifstream& file) override;
     void Serialize(std::ofstream& file) override;

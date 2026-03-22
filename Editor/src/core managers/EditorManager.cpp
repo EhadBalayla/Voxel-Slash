@@ -477,6 +477,9 @@ void EditorManager::Render() {
                                 UIImage* img = static_cast<UIImage*>(selectedUIElement->m_Element);
                                 std::string comboPreview = img->m_Asset ? img->m_Asset->AssetName : "None";
                                 if(ImGui::BeginCombo("Texture: ", comboPreview.c_str())) {
+                                    if (ImGui::Selectable("Clear", !img->m_Asset)) {
+                                        img->m_Asset = nullptr;
+                                    }
                                     for(auto& a : GEditor->mod->GetAllAssets()) {
                                         if(a.second->header.type != AssetType::TextureAsset) continue;
 

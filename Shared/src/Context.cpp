@@ -10,6 +10,7 @@
 #undef max
 
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 Context* GContext = nullptr;
 
@@ -53,6 +54,8 @@ void Context::InitGPU(GLFWwindow* window) {
 	createCommandBuffers();
 
 	createAllocator();
+
+	createSingleTexLayouts();
 }
 void Context::TerminateGPU() {
 	vmaDestroyAllocator(allocator);
@@ -231,6 +234,38 @@ void Context::createAllocator() {
 	}
 }
 
+void Context::createSingleTexLayouts() {
+	VkDescriptorSetLayoutBinding texBinding{};
+	texBinding.binding = 0;
+	texBinding.descriptorCount = 1;
+	texBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	texBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+	VkDescriptorSetLayoutCreateInfo setLayoutInfo{};
+	setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	setLayoutInfo.bindingCount = 1;
+	setLayoutInfo.pBindings = &texBinding;
+	if (vkCreateDescriptorSetLayout(device, &setLayoutInfo, nullptr, &singleTexLayout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create descriptor set layout for single texture layouts");
+	}
+
+	VkPushConstantRange range{};
+	range.offset = 0;
+	range.size = sizeof(glm::mat4);
+	range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+	VkPipelineLayoutCreateInfo ppLayoutInfo{};
+	ppLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	ppLayoutInfo.setLayoutCount = 1;
+	ppLayoutInfo.pSetLayouts = &singleTexLayout;
+	ppLayoutInfo.pushConstantRangeCount = 1;
+	ppLayoutInfo.pPushConstantRanges = &range;
+
+	if (vkCreatePipelineLayout(device, &ppLayoutInfo, nullptr, &singleTexPipelineLayout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create pipeline layout for single texture layouts");
+	}
+}
+
 
 
 VkInstance Context::GetInstance() const {
@@ -268,6 +303,12 @@ VkCommandBuffer* Context::GetCommandBuffers() {
 }
 VmaAllocator Context::GetAllocator() const {
 	return allocator;
+}
+VkDescriptorSetLayout Context::GetSingleTexLayout() const {
+	return singleTexLayout;
+}
+VkPipelineLayout Context::GetSingleTexPPLayout() const {
+	return singleTexPipelineLayout;
 }
 
 

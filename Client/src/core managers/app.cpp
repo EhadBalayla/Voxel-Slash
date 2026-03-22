@@ -81,7 +81,7 @@ void App::Loop() {
                 m_Renderer.StartRender();
                 m_UIShader.Bind();
                 Canvas* titleScr = m_TempMod->GetAllCanvases()["TitleScreenHUD"];
-                titleScr->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetChunksPipelineLayout(), Width, Height);
+                titleScr->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetChunksPipelineLayout(), m_Renderer.GetSampler(), Width, Height);
                 m_Renderer.EndRender();
 
                 m_FullscreenQuad.SetTexture();

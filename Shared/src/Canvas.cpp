@@ -4,10 +4,11 @@
 
 #include "ModInstance.h"
 #include "AssetFormats/TextureAsset.h"
+#include "Context.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
-void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, VkPipelineLayout layout, int ScrWidth, int ScrHeight) {
+void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, int ScrWidth, int ScrHeight) {
     float left = -node->Left * ScrWidth;
     float right = node->Right * ScrWidth;
     float bottom = node->Bottom * ScrHeight;
@@ -22,11 +23,13 @@ void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, 
 
     glm::mat4 overallTrans = parentTrans * model;
     glm::mat4 ProjTrans = proj * overallTrans;
-    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &ProjTrans);
-    vkCmdDraw(cmd, 6, 1, 0, 0);
+
+    if(node->m_Element) {
+        node->m_Element->Render(cmd, layout, smp, ProjTrans);
+    }
 
     for(auto& n : node->m_Children) {
-        RenderCanvasNode(n, overallTrans, cmd, layout, ScrWidth, ScrHeight);
+        RenderCanvasNode(n, overallTrans, cmd, layout, smp, ScrWidth, ScrHeight);
     }
 }
 
@@ -135,16 +138,65 @@ void Canvas::Load(const char* path, ModInstance* mod) {
 }
 
 
-void Canvas::Render(VkCommandBuffer cmd, VkPipelineLayout layout, int ScrWidth, int ScrHeight) {
+void Canvas::Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, int ScrWidth, int ScrHeight) {
     for(auto& n : nodes) {
-        RenderCanvasNode(n, glm::mat4(1.0f), cmd, layout, ScrWidth, ScrHeight);
+        RenderCanvasNode(n, glm::mat4(1.0f), cmd, layout, smp, ScrWidth, ScrHeight);
     }
 }
 
 
+UIImage::UIImage() {
+    VkDescriptorPoolSize poolSize{};
+    poolSize.descriptorCount = GContext->MAX_FRAMES_IN_FLIGHT;
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-void UIImage::Render(VkCommandBuffer cmd) {
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.maxSets = GContext->MAX_FRAMES_IN_FLIGHT;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    
+    if (vkCreateDescriptorPool(GContext->GetDevice(), &poolInfo, nullptr, &pool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool for descriptor sets of a UIImage element");
+    }
+    
+    std::vector<VkDescriptorSetLayout> layouts(GContext->MAX_FRAMES_IN_FLIGHT, GContext->GetSingleTexLayout());
+    VkDescriptorSetAllocateInfo setsInfo{};
+    setsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    setsInfo.descriptorPool = pool;
+    setsInfo.descriptorSetCount = GContext->MAX_FRAMES_IN_FLIGHT;
+    setsInfo.pSetLayouts = layouts.data();
+    sets.resize(GContext->MAX_FRAMES_IN_FLIGHT);
+    if (vkAllocateDescriptorSets(GContext->GetDevice(), &setsInfo, sets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor setsof a UIImage element");
+    }
+}
+void UIImage::Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) {
+    if(m_Asset) {
+        if (texturesPerSet[GContext->currentFrame] != &m_Asset->GetTexture()) {
+            VkDescriptorImageInfo imgInfo{};
+            imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imgInfo.imageView = m_Asset->GetTexture().GetImageView();
+            imgInfo.sampler = smp;
 
+            VkWriteDescriptorSet write{};
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            write.descriptorCount = 1;
+            write.pImageInfo = &imgInfo;
+            write.dstArrayElement = 0;
+            write.dstSet = sets[GContext->currentFrame];
+            write.dstBinding = 0;
+
+            vkUpdateDescriptorSets(GContext->GetDevice(), 1, &write, 0, nullptr);
+
+            texturesPerSet[GContext->currentFrame] = &m_Asset->GetTexture();
+        }
+
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &sets[GContext->currentFrame], 0, nullptr);
+        vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
+        vkCmdDraw(cmd, 6, 1, 0, 0);
+    }
 }
 UIType UIImage::GetType() const {
     return UIType::Image;

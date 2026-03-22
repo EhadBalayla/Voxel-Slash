@@ -2,6 +2,10 @@
 
 layout (location = 0) out vec4 FragColor;
 
+layout (location = 0) in vec2 uv;
+
+layout (set = 0, binding = 0) uniform sampler2D tex;
+
 void main() {
-    FragColor = vec4(1.0);
+    FragColor = texture(tex, uv);
 }

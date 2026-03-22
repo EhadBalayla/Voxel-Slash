@@ -142,6 +142,15 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachment.blendEnable = VK_FALSE;
 
+	colorBlendAttachment.blendEnable = type == PipelineType::D2 ? VK_TRUE : VK_FALSE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
 	VkPipelineColorBlendAttachmentState attachments[] = { colorBlendAttachment };
 
 	VkPipelineColorBlendStateCreateInfo colorBlendState{};
@@ -185,7 +194,7 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pColorBlendState = &colorBlendState;
 	pipelineInfo.pDepthStencilState = &depthStencilState;
-	pipelineInfo.layout = GEditor->m_Renderer.Get3DPipelineLayout();
+	pipelineInfo.layout = type == PipelineType::D3 ? GEditor->m_Renderer.Get3DPipelineLayout() : GEditor->m_Window.GetContext().GetSingleTexPPLayout();
 	pipelineInfo.renderPass = GEditor->m_Renderer.GetOffscreenRenderPass();
 	pipelineInfo.subpass = 0;
 

@@ -37,6 +37,8 @@ public:
 	VkCommandPool GetCommandPool() const;
 	VkCommandBuffer* GetCommandBuffers();
 	VmaAllocator GetAllocator() const;
+	VkDescriptorSetLayout GetSingleTexLayout() const;
+	VkPipelineLayout GetSingleTexPPLayout() const;
 
 	//public helpers
 	QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice device);
@@ -59,6 +61,13 @@ private:
 	std::vector<VkCommandBuffer> commandBuffers;
 	VmaAllocator allocator;
 
+	//layouts that are going to be repeated for both the editor and game, such as single texture layouts for in game UI or PBR texture layouts for meshes
+	VkDescriptorSetLayout singleTexLayout;
+	VkPipelineLayout singleTexPipelineLayout;
+
+	VkDescriptorSetLayout pbrTexLayout;
+	VkPipelineLayout pbrTexPipelineLayout;
+
 
 
 	//vulkan creation functions
@@ -70,6 +79,9 @@ private:
 	void createCommandPool();
 	void createCommandBuffers();
 	void createAllocator();
+
+	//vulkan secondary creation functions
+	void createSingleTexLayouts();
 
 
 

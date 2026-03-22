@@ -5,6 +5,8 @@ class Texture {
 public:
     void Create(void* pixelData, int Width, int Height);
     void Delete();
+
+    VkImageView GetImageView() const;
 private:
     VkImage image;
     VkImageView imageView;

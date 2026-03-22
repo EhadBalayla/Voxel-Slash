@@ -15,7 +15,7 @@ void Importer::ImportTexture(const char* path, const char* importPath) {
     asset.MetaData.Channels = Channels;
 
     asset.MetaData.DataOffset = sizeof(AssetHeader) + sizeof(TextureMetaData);
-    asset.MetaData.DataSize = Width * Height * Channels;
+    asset.MetaData.DataSize = Width * Height * 4;
 
     asset.Save(importPath);
 
