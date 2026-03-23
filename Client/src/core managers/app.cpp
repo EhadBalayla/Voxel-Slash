@@ -73,7 +73,13 @@ void App::Init() {
         if(N->m_Name == "SP Button") {
             UIButton* btn = static_cast<UIButton*>(N->m_Element);
             btn->OnHovered = []() { std::cout << "hovering on SP button" << std::endl; };
-            btn->OnPress = []() {std::cout << "pressing on SP button" << std::endl;};
+            btn->OnPress = []() {
+                GApp->state = GameState::InGame;
+                GApp->waitingFrames = 0;
+                GApp->m_Player->Position = glm::vec3(10.0f, 11.0f, 10.0f);
+                GApp->m_World = new World();
+                GApp->m_World->GetChunkManager().UpdateChunks();
+            };
         }
         else if(N->m_Name == "MP Button") {
             UIButton* btn = static_cast<UIButton*>(N->m_Element);
