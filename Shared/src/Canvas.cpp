@@ -4,12 +4,13 @@
 
 #include "ModInstance.h"
 #include "AssetFormats/TextureAsset.h"
+#include "AssetFormats/FontAsset.h"
 #include "Context.h"
 #include "Window.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
-void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, int ScrWidth, int ScrHeight) {
+void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, VkSampler smp, int ScrWidth, int ScrHeight) {
     float left = -node->Left * ScrWidth;
     float right = node->Right * ScrWidth;
     float bottom = node->Bottom * ScrHeight;
@@ -26,11 +27,11 @@ void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, 
     glm::mat4 ProjTrans = proj * overallTrans;
 
     if(node->m_Element) {
-        node->m_Element->Render(cmd, layout, smp, ProjTrans);
+        node->m_Element->Render(cmd, smp, ProjTrans);
     }
 
     for(auto& n : node->m_Children) {
-        RenderCanvasNode(n, overallTrans, cmd, layout, smp, ScrWidth, ScrHeight);
+        RenderCanvasNode(n, overallTrans, cmd, smp, ScrWidth, ScrHeight);
     }
 }
 
@@ -91,7 +92,7 @@ void LoadUINode(UINode* node, std::ifstream& file, ModInstance* mod) {
                 node->m_Element = new UIButton;
             break;
             case UIType::Text:
-            
+                node->m_Element = new UIText;
             break;
         }
         node->m_Element->Load(file, mod);
@@ -154,9 +155,9 @@ void Canvas::Tick() {
 }
 
 
-void Canvas::Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, int ScrWidth, int ScrHeight) {
+void Canvas::Render(VkCommandBuffer cmd, VkSampler smp, int ScrWidth, int ScrHeight) {
     for(auto& n : nodes) {
-        RenderCanvasNode(n, glm::mat4(1.0f), cmd, layout, smp, ScrWidth, ScrHeight);
+        RenderCanvasNode(n, glm::mat4(1.0f), cmd, smp, ScrWidth, ScrHeight);
     }
 }
 
@@ -187,7 +188,7 @@ UIImage::UIImage() {
         throw std::runtime_error("failed to allocate descriptor setsof a UIImage element");
     }
 }
-void UIImage::Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) {
+void UIImage::Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) {
     if(m_Asset) {
         if (texturesPerSet[GContext->currentFrame] != &m_Asset->GetTexture()) {
             VkDescriptorImageInfo imgInfo{};
@@ -209,8 +210,9 @@ void UIImage::Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp
             texturesPerSet[GContext->currentFrame] = &m_Asset->GetTexture();
         }
 
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &sets[GContext->currentFrame], 0, nullptr);
-        vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, *GContext->SingleImagePipeline);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, GContext->GetSingleTexPPLayout(), 0, 1, &sets[GContext->currentFrame], 0, nullptr);
+        vkCmdPushConstants(cmd, GContext->GetSingleTexPPLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
         vkCmdDraw(cmd, 6, 1, 0, 0);
     }
 }
@@ -264,7 +266,7 @@ UIButton::UIButton() {
         throw std::runtime_error("failed to allocate descriptor setsof a UIImage element");
     }
 }
-void UIButton::Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) {
+void UIButton::Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) {
     if(m_Asset) {
         if (texturesPerSet[GContext->currentFrame] != &m_Asset->GetTexture()) {
             VkDescriptorImageInfo imgInfo{};
@@ -306,8 +308,9 @@ void UIButton::Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler sm
             texturesPerSet[GContext->currentFrame] = nullptr;
         //}
     }
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &sets[GContext->currentFrame], 0, nullptr);
-    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, *GContext->SingleImagePipeline);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, GContext->GetSingleTexPPLayout(), 0, 1, &sets[GContext->currentFrame], 0, nullptr);
+    vkCmdPushConstants(cmd, GContext->GetSingleTexPPLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
     vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 void UIButton::Tick() {
@@ -363,4 +366,102 @@ void UIButton::Load(std::ifstream& file, ModInstance* mod) {
         file.read(reinterpret_cast<char*>(assetName.data()), nameSize);
         m_Asset = static_cast<TextureAsset*>(mod->GetAllAssets()[assetName]);
     }
+}
+
+
+
+UIText::UIText() {
+    VkDescriptorPoolSize poolSize{};
+    poolSize.descriptorCount = GContext->MAX_FRAMES_IN_FLIGHT;
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.maxSets = GContext->MAX_FRAMES_IN_FLIGHT;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    
+    if (vkCreateDescriptorPool(GContext->GetDevice(), &poolInfo, nullptr, &pool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool for descriptor sets of a UIImage element");
+    }
+    
+    std::vector<VkDescriptorSetLayout> layouts(GContext->MAX_FRAMES_IN_FLIGHT, GContext->GetSingleTexLayout());
+    VkDescriptorSetAllocateInfo setsInfo{};
+    setsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    setsInfo.descriptorPool = pool;
+    setsInfo.descriptorSetCount = GContext->MAX_FRAMES_IN_FLIGHT;
+    setsInfo.pSetLayouts = layouts.data();
+    sets.resize(GContext->MAX_FRAMES_IN_FLIGHT);
+    if (vkAllocateDescriptorSets(GContext->GetDevice(), &setsInfo, sets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor setsof a UIImage element");
+    }
+}
+void UIText::Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) {
+    if(!m_Asset) return;
+
+    if(texturesPerSet[GContext->currentFrame] != &m_Asset->GetFontAtlas()) {
+        VkDescriptorImageInfo imgInfo{};
+        imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imgInfo.imageView = m_Asset->GetFontAtlas().GetImageView();
+        imgInfo.sampler = smp;
+
+        VkWriteDescriptorSet write{};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.descriptorCount = 1;
+        write.pImageInfo = &imgInfo;
+        write.dstArrayElement = 0;
+        write.dstSet = sets[GContext->currentFrame];
+        write.dstBinding = 0;
+
+        vkUpdateDescriptorSets(GContext->GetDevice(), 1, &write, 0, nullptr);
+
+        texturesPerSet[GContext->currentFrame] = &m_Asset->GetFontAtlas();
+    }
+    
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, *GContext->TextPipeline);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, GContext->GetSingleTexPPLayout(), 0, 1, &sets[GContext->currentFrame], 0, nullptr);
+
+    float cursorX = 0.0f;
+    for(auto& c : text) {
+        CharInfo info = m_Asset->GetCharacter(static_cast<int>(c));
+
+		glm::vec3 advPos = glm::vec3(cursorX + info.Bearing.x * TextSize, -info.Bearing.y * TextSize, 0.0f);
+		glm::vec3 relScale = glm::vec3(info.Size.x * TextSize, info.Size.y * TextSize, 0.0f);
+
+		glm::mat4 offsetPos = glm::scale(glm::translate(glm::mat4(1.0f), advPos), relScale);
+        glm::mat4 overall = mtx * offsetPos;
+
+        vkCmdPushConstants(cmd, GContext->GetSingleTexPPLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &overall);
+        vkCmdPushConstants(cmd, GContext->GetSingleTexPPLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), sizeof(uint32_t), &info.idx);
+        vkCmdDraw(cmd, 6, 1, 0, 0);
+				
+		cursorX += (info.Advance >> 6) * TextSize;
+    }
+}
+UIType UIText::GetType() const {
+    return UIType::Text;
+}
+void UIText::Save(std::ofstream& file) {
+    size_t nameSize = 0;
+    if(m_Asset) {
+        nameSize = m_Asset->AssetName.size();
+        file.write(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+        file.write(reinterpret_cast<char*>(m_Asset->AssetName.data()), nameSize);
+    }
+    else file.write(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+
+    file.write(reinterpret_cast<char*>(&TextSize), sizeof(int));
+}
+void UIText::Load(std::ifstream& file, ModInstance* mod) {
+    size_t nameSize = 0;
+    file.read(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+    if(nameSize > 0) {
+        std::string assetName;
+        assetName.resize(nameSize);
+        file.read(reinterpret_cast<char*>(assetName.data()), nameSize);
+        m_Asset = static_cast<FontAsset*>(mod->GetAllAssets()[assetName]);
+    }
+
+    file.read(reinterpret_cast<char*>(&TextSize), sizeof(size_t));
 }

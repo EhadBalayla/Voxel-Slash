@@ -46,6 +46,10 @@ public:
 
 	const int MAX_FRAMES_IN_FLIGHT = 3;
 	int currentFrame = 0;
+
+	//temporary remember to delete later once i'll think of a better architecture
+	VkPipeline* SingleImagePipeline;
+	VkPipeline* TextPipeline;
 private:
 	//initiating Vulkan
 	VkInstance instance;

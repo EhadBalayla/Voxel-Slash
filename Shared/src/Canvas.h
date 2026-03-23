@@ -8,6 +8,7 @@
 
 class ModInstance;
 class TextureAsset;
+class FontAsset;
 class Texture;
 struct UINode;
 
@@ -24,7 +25,7 @@ public:
 
     virtual ~UIElement() = default;
 
-    virtual void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) = 0;
+    virtual void Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) = 0;
     virtual void Tick() {}
     virtual UIType GetType() const = 0;
 
@@ -36,7 +37,7 @@ class UIImage : public UIElement {
 public:
     UIImage();
 
-    void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) override;
+    void Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) override;
     UIType GetType() const override;
 
     void Save(std::ofstream& file) override;
@@ -53,7 +54,7 @@ class UIButton : public UIElement {
 public:
     UIButton();
 
-    void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) override;
+    void Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) override;
     void Tick() override;
     UIType GetType() const override;
 
@@ -71,6 +72,25 @@ private:
 
     bool IsHovering = false;
     bool IsClicking = false;
+};
+
+class UIText : public UIElement {
+public:
+    UIText();
+
+    void Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx);
+    UIType GetType() const override;
+
+    void Save(std::ofstream& file) override;
+    void Load(std::ifstream& file, ModInstance* mod) override;
+
+    FontAsset* m_Asset = nullptr;
+    int TextSize = 1;
+    std::string text = "Sexy Text";
+private:
+    VkDescriptorPool pool;
+    std::vector<VkDescriptorSet> sets; //for all the textures
+    Texture* texturesPerSet[3] = { nullptr }; //basically referencing which texture each descriptor set holds, so we will know to update if needed
 };
 
 struct UINode {
@@ -101,7 +121,7 @@ public:
     std::vector<UINode*> nodes; //top level nodes
     
     void Tick();
-    void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, int ScrWidth, int ScrHeight);
+    void Render(VkCommandBuffer cmd, VkSampler smp, int ScrWidth, int ScrHeight);
 private:
     std::unordered_map<std::string, UINode*> NameNodeMap;
 };

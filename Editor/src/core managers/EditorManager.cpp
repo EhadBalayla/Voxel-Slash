@@ -11,12 +11,14 @@
 
 #include "AssetFormats/TransformAsset.h"
 #include "AssetFormats/TextureAsset.h"
+#include "AssetFormats/FontAsset.h"
 #include "Canvas.h"
 
 char buff[256];
 char buff2[256];
 char buff3[256];
 char buff4[256];
+char buff5[256];
 PrefabNode* cachedNode = nullptr;
 bool IsRightClickOnViewport = false;
 bool NewCanvasPopup = false;
@@ -326,7 +328,9 @@ void EditorManager::Render() {
                     }
                     int idx = 0;
                     for(auto& a : GEditor->mod->GetAllAssets()) {
-                        if(ImGui::Selectable(a.first.c_str(), selectedNode->m_Asset->AssetName == a.first)) {
+                        if(a.second->header.type != AssetType::SkeletalMeshAsset) continue;
+
+                        if(ImGui::Selectable(/*a.first.c_str()*/ "sex"/*, selectedNode->m_Asset->AssetName == a.first*/)) {
                             selectedNode->m_Asset = static_cast<TransformAsset*>(a.second);
                         }
                         idx++;
@@ -379,6 +383,9 @@ void EditorManager::Render() {
                     else if(extension == ".png" || extension == ".jpg") {
                         m_Importer.ImportTexture(ofn.lpstrFile, std::string(DataFolder + "/NonVoxelAssets/" + name + ".vsa").c_str());
                     }
+                    else if(extension == ".ttf") {
+                        m_Importer.ImportFont(ofn.lpstrFile, std::string(DataFolder + "/NonVoxelAssets/" + name + ".vsa").c_str());
+                    }
                 }
             }
             ImGui::SameLine();
@@ -419,7 +426,7 @@ void EditorManager::Render() {
             ImGui::Begin("UI Node Properties");
             if(m_Canvas) {
                 if(selectedUIElement) {
-                    if(ImGui::InputText("UI Node Name: ", buff4, 256)) {
+                    if(ImGui::InputText("UI Node Name: ", buff4, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
                         selectedUIElement->m_Name = buff4;
                     }
 
@@ -458,7 +465,7 @@ void EditorManager::Render() {
                                             selectedUIElement->m_Element = new UIButton;
                                             break;
                                             case UIType::Text:
-                                            //selectedUIElement->m_Element = new UIText;
+                                            selectedUIElement->m_Element = new UIText;
                                             break;
                                         } 
                                     }
@@ -510,7 +517,24 @@ void EditorManager::Render() {
                                 break;
                             }
                             case UIType::Text: {
+                                UIText* txt = static_cast<UIText*>(selectedUIElement->m_Element);
+                                std::string comboPreview = txt->m_Asset ? txt->m_Asset->AssetName : "None";
+                                if(ImGui::BeginCombo("Font: ", comboPreview.c_str())) {
+                                    if (ImGui::Selectable("Clear", !txt->m_Asset)) {
+                                        txt->m_Asset = nullptr;
+                                    }
+                                    for(auto& a : GEditor->mod->GetAllAssets()) {
+                                        if(a.second->header.type != AssetType::FontAsset) continue;
 
+                                        if(ImGui::Selectable(a.first.c_str(), txt->m_Asset ? (a.first == txt->m_Asset->AssetName) : false)) {
+                                            txt->m_Asset = static_cast<FontAsset*>(a.second);
+                                        }
+                                    }
+                                    ImGui::EndCombo();
+                                }
+                                if(ImGui::InputText("Text: ", buff5, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+                                    txt->text = buff5;
+                                }
                                 break;
                             }
                         }

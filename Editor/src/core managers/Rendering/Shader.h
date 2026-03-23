@@ -16,6 +16,8 @@ public:
     void UnloadShader();
 
     void Bind();
+
+    VkPipeline* GetPipeline();
 private:
     VkPipeline graphicsPipeline;
 };

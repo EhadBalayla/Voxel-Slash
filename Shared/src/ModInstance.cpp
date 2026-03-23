@@ -6,6 +6,7 @@
 
 #include "AssetFormats/SkeletalMeshAsset.h"
 #include "AssetFormats/TextureAsset.h"
+#include "AssetFormats/FontAsset.h"
 
 #include <filesystem>
 
@@ -37,6 +38,9 @@ ModInstance::ModInstance(const char* ModPath) {
                 break;
             case AssetType::TextureAsset:
                 assets[name] = CreateAsset<TextureAsset>(n.path().string().c_str(), name);
+                break;
+            case AssetType::FontAsset:
+                assets[name] = CreateAsset<FontAsset>(n.path().string().c_str(), name);
                 break;
         }
     }

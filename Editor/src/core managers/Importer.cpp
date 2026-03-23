@@ -1,8 +1,15 @@
 #include "Importer.h"
-#include "VertexStruct.h"
+
+//includes of the assets
 #include "AssetFormats/SkeletalMeshAsset.h"
 #include "AssetFormats/TextureAsset.h"
+#include "AssetFormats/FontAsset.h"
+
+//includes of the libraries need for import (assimp is included in the Importer.h itself so i can make variables for caching etc...)
 #include "stb_image.h"
+#include "VertexStruct.h"
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 void Importer::ImportTexture(const char* path, const char* importPath) {
     int Width, Height, Channels;
@@ -25,6 +32,74 @@ void Importer::ImportTexture(const char* path, const char* importPath) {
     file.close();
 
     stbi_image_free(pixelData);
+}
+void Importer::ImportFont(const char* path, const char* importPath) {
+    FT_Library library;
+	if (FT_Init_FreeType(&library)) {
+		return;
+	}
+
+	FT_Face face;
+	if (FT_New_Face(library, path, 0, &face)) {
+		return;
+	}
+
+    constexpr int cellSize = 64;
+	constexpr int cellLineCount = 16;
+	constexpr int cellRowCount = 16;
+	FT_Set_Pixel_Sizes(face, 0, cellSize);
+
+    const int ATLAS_SIZE = cellLineCount * cellSize;
+    size_t pixelBufferSize = ATLAS_SIZE * ATLAS_SIZE * 4;
+    unsigned char* pixelBuffer = (unsigned char*)calloc(pixelBufferSize, 1);
+
+    std::vector<CharInfo> Characters;
+
+    for (unsigned char c = 0; c < 128; c++) {
+		if (!FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+
+			int cellX = c % 16;
+			int cellY = c / 16;
+
+			for (int x = 0; x < face->glyph->bitmap.width; x++) {
+				for (int y = 0; y < face->glyph->bitmap.rows; y++) {
+					unsigned char alpha = face->glyph->bitmap.buffer[y * face->glyph->bitmap.width + x];
+
+					int cursorX = cellX * cellSize + x;
+					int cursorY = cellY * cellSize + y;
+
+					pixelBuffer[(cursorY * ATLAS_SIZE + cursorX) * 4] = 255;
+					pixelBuffer[(cursorY * ATLAS_SIZE + cursorX) * 4 + 1] = 255;
+					pixelBuffer[(cursorY * ATLAS_SIZE + cursorX) * 4 + 2] = 255;
+					pixelBuffer[(cursorY * ATLAS_SIZE + cursorX) * 4 + 3] = alpha;
+				}
+			}
+
+			CharInfo ch{};
+            ch.idx = static_cast<uint32_t>(c);
+			ch.Advance = face->glyph->advance.x;
+			ch.Bearing = { face->glyph->bitmap_left, face->glyph->bitmap_top };
+			ch.Size = { face->glyph->bitmap.width, face->glyph->bitmap.rows };
+
+			Characters.push_back(ch);
+		}
+	}
+
+    FontAsset newFont;
+
+    newFont.MetaData.DataOffset = sizeof(AssetHeader) + sizeof(FontMetaData);
+    newFont.MetaData.CharCount = Characters.size();
+    newFont.MetaData.AtlasBufferSize = pixelBufferSize;
+
+    newFont.Save(importPath);
+
+    std::fstream file(importPath, std::ios::binary | std::ios::in | std::ios::out);
+    file.seekp(newFont.MetaData.DataOffset);
+    file.write(reinterpret_cast<char*>(Characters.data()), sizeof(CharInfo) * newFont.MetaData.CharCount);
+    file.write(reinterpret_cast<char*>(pixelBuffer), pixelBufferSize);
+    file.close();
+
+    free(pixelBuffer);
 }
 void Importer::ImportSkeletalMesh(const char* folderPath) {
     for(auto node : cachedSkeletalMeshes) {

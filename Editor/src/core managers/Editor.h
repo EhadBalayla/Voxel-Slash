@@ -13,6 +13,7 @@ public:
     Renderer m_Renderer;
     Shader m_3DShader;
     Shader m_2DShader;
+    Shader m_TextShader;
     ModInstance* mod = nullptr;
 
     Camera m_Camera;

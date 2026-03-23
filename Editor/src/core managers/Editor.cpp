@@ -37,6 +37,10 @@ void Editor::Init() {
 
     m_3DShader.LoadShader("Shaders/MeshShader_vert.spv", "Shaders/MeshShader_frag.spv", PipelineType::D3);
     m_2DShader.LoadShader("Shaders/UIShader_vert.spv", "Shaders/UIShader_frag.spv", PipelineType::D2);
+    m_TextShader.LoadShader("Shaders/TextShader_vert.spv", "Shaders/TextShader_frag.spv", PipelineType::D2);
+
+    GContext->SingleImagePipeline = m_2DShader.GetPipeline();
+    GContext->TextPipeline = m_TextShader.GetPipeline();
 
     m_Editor.Init();
 
@@ -58,7 +62,7 @@ void Editor::Loop() {
 
         if(m_Editor.GetCanvas()) {
             m_2DShader.Bind();
-            m_Editor.GetCanvas()->Render(m_Renderer.GetFrameCommandBuffer(), GContext->GetSingleTexPPLayout(), m_Renderer.GetSampler(), Width, Height);
+            m_Editor.GetCanvas()->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetSampler(), Width, Height);
         }
         m_Renderer.EndRender();
 

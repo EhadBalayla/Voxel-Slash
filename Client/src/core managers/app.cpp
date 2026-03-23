@@ -61,6 +61,7 @@ void App::Init() {
     m_BoxOutlineShader.LoadShader("assets/Shaders/BoxOutline_vert.spv", "assets/Shaders/BoxOutline_frag.spv", PipelineType::BoxOutline);
     m_SkeletalMeshShader.LoadShader("assets/Shaders/SkeletalMeshShader_vert.spv", "assets/Shaders/SkeletalMeshShader_frag.spv", PipelineType::SkeletalMesh);
     m_UIShader.LoadShader("assets/Shaders/UIShader_vert.spv", "assets/Shaders/UIShader_frag.spv", PipelineType::UIShader);
+    m_TextShader.LoadShader("assets/Shaders/TextShader_vert.spv", "assets/Shaders/TextShader_frag.spv", PipelineType::UIShader);
 
     RegisterAllBlocks();
 
@@ -100,10 +101,9 @@ void App::Loop() {
         switch(state) {
             case GameState::MainMenu: {
                 m_Renderer.StartRender();
-                m_UIShader.Bind();
                 Canvas* titleScr = m_TempMod->GetAllCanvases()["TitleScreenHUD"];
                 titleScr->Tick();
-                titleScr->Render(m_Renderer.GetFrameCommandBuffer(), GContext->GetSingleTexPPLayout(), m_Renderer.GetSampler(), Width, Height);
+                titleScr->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetSampler(), Width, Height);
                 m_Renderer.EndRender();
 
                 m_FullscreenQuad.SetTexture();
