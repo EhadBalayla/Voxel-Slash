@@ -64,8 +64,23 @@ void App::Init() {
 
     RegisterAllBlocks();
 
+    //to be deleted later
     m_TempMod = new ModInstance("Data");
     m_Player = new Player;
+
+    Canvas* titleScr = m_TempMod->GetAllCanvases()["TitleScreenHUD"];
+    for(auto& N : titleScr->nodes) {
+        if(N->m_Name == "SP Button") {
+            UIButton* btn = static_cast<UIButton*>(N->m_Element);
+            btn->OnHovered = []() { std::cout << "hovering on SP button" << std::endl; };
+            btn->OnPress = []() {std::cout << "pressing on SP button" << std::endl;};
+        }
+        else if(N->m_Name == "MP Button") {
+            UIButton* btn = static_cast<UIButton*>(N->m_Element);
+            btn->OnHovered = []() { std::cout << "hovering on MP button" << std::endl; };
+            btn->OnPress = []() {std::cout << "pressing on MP button" << std::endl;};
+        }
+    }
 }
 void App::Loop() {
     while(!m_Window.ShouldClose()) {
@@ -81,6 +96,7 @@ void App::Loop() {
                 m_Renderer.StartRender();
                 m_UIShader.Bind();
                 Canvas* titleScr = m_TempMod->GetAllCanvases()["TitleScreenHUD"];
+                titleScr->Tick();
                 titleScr->Render(m_Renderer.GetFrameCommandBuffer(), GContext->GetSingleTexPPLayout(), m_Renderer.GetSampler(), Width, Height);
                 m_Renderer.EndRender();
 

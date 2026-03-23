@@ -1,6 +1,8 @@
 #include "Window.h"
 #include <iostream>
 
+Window* GWindow = nullptr;
+
 void Window::InitGLFW() {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -16,6 +18,10 @@ void Window::TerminateGLFW() {
 
 
 void Window::CreateWindow(const char* name, int Width, int Height) {
+	//same with context, to save on a constructor, 
+	//and this function is guaranteed to be called before anyone accesses the pointer anyways
+	GWindow = this;
+
     m_GLFWwindow = glfwCreateWindow(Width, Height, name, NULL, NULL);
 
     if (!m_GLFWwindow){

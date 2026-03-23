@@ -36,3 +36,5 @@ private:
     Context m_Context;
     Swapchain m_Swapchain;
 };
+
+extern Window* GWindow;

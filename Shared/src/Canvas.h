@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <unordered_map>
 #include <string>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
@@ -8,6 +9,7 @@
 class ModInstance;
 class TextureAsset;
 class Texture;
+struct UINode;
 
 enum class UIType {
     Image = 1,
@@ -18,6 +20,8 @@ enum class UIType {
 
 class UIElement {
 public:
+    UINode* m_Node = nullptr;
+
     virtual ~UIElement() = default;
 
     virtual void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) = 0;
@@ -50,15 +54,23 @@ public:
     UIButton();
 
     void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) override;
+    void Tick() override;
     UIType GetType() const override;
 
     void Save(std::ofstream& file) override;
     void Load(std::ifstream& file, ModInstance* mod) override;
     TextureAsset* m_Asset = nullptr;
+
+    //callbacks
+    void(*OnHovered)() = nullptr;
+    void(*OnPress)() = nullptr;
 private:
     VkDescriptorPool pool;
     std::vector<VkDescriptorSet> sets; //for all the textures
     Texture* texturesPerSet[3] = { nullptr }; //basically referencing which texture each descriptor set holds, so we will know to update if needed
+
+    bool IsHovering = false;
+    bool IsClicking = false;
 };
 
 struct UINode {
@@ -85,8 +97,11 @@ class Canvas {
 public:
     void Save(const char* path);
     void Load(const char* path, ModInstance* mod);
-
+    
     std::vector<UINode*> nodes; //top level nodes
     
+    void Tick();
     void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, int ScrWidth, int ScrHeight);
+private:
+    std::unordered_map<std::string, UINode*> NameNodeMap;
 };

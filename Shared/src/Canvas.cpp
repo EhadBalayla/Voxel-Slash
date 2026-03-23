@@ -5,6 +5,7 @@
 #include "ModInstance.h"
 #include "AssetFormats/TextureAsset.h"
 #include "Context.h"
+#include "Window.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -94,6 +95,7 @@ void LoadUINode(UINode* node, std::ifstream& file, ModInstance* mod) {
             break;
         }
         node->m_Element->Load(file, mod);
+        node->m_Element->m_Node = node;
     }
 
     size_t childsCount;
@@ -103,6 +105,14 @@ void LoadUINode(UINode* node, std::ifstream& file, ModInstance* mod) {
         newNode->m_Parent = node;
         node->m_Children.push_back(newNode);
         LoadUINode(newNode, file, mod);
+    }
+}
+void TickUINode(UINode* node) {
+    if(node->m_Element && node->m_Element->GetType() == UIType::Button) {
+        node->m_Element->Tick();
+    }
+    for(auto& n : node->m_Children) {
+        TickUINode(n);
     }
 }
 
@@ -135,6 +145,12 @@ void Canvas::Load(const char* path, ModInstance* mod) {
     }
 
     file.close();
+}
+
+void Canvas::Tick() {
+    for(auto& n : nodes) {
+        TickUINode(n);
+    }
 }
 
 
@@ -293,6 +309,38 @@ void UIButton::Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler sm
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &sets[GContext->currentFrame], 0, nullptr);
     vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
     vkCmdDraw(cmd, 6, 1, 0, 0);
+}
+void UIButton::Tick() {
+    double xpos, ypos;
+    int Width, Height;
+    glfwGetCursorPos(GWindow->GetGLFWwindow(), &xpos, &ypos);
+    glfwGetWindowSize(GWindow->GetGLFWwindow(), &Width, &Height);
+    
+    float CenterX = m_Node->Position.x + (m_Node->Left * Width);
+    float CenterY = m_Node->Position.y + (m_Node->Bottom * Height);
+
+    if(xpos >= CenterX - m_Node->Size.x / 2.0f && xpos <= CenterX + m_Node->Size.x / 2.0f &&
+       ypos >= CenterY - m_Node->Size.y / 2.0f && ypos <= CenterY + m_Node->Size.y / 2.0f) {
+        if(!IsHovering) {
+            IsHovering = true;
+            if(OnHovered) OnHovered();
+        }
+    }
+    else {
+        if(IsHovering) {
+            IsHovering = false;
+        }
+    }
+
+    if(IsHovering) {
+        if(!IsClicking && glfwGetMouseButton(GWindow->GetGLFWwindow(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+            IsClicking = true;
+            if(OnPress) OnPress();
+        }
+    }
+    if((IsClicking && glfwGetMouseButton(GWindow->GetGLFWwindow(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) || !IsHovering) {
+        IsClicking = false;
+    }
 }
 UIType UIButton::GetType() const {
     return UIType::Button;
