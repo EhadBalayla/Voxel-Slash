@@ -470,7 +470,7 @@ void Renderer::CreateChunkSets() {
 
         VkDescriptorImageInfo AtlasInfo{};
         AtlasInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        AtlasInfo.imageView = GApp->m_TerrainAtlas.Get();
+        AtlasInfo.imageView = GApp->m_TerrainAtlas.GetImageView();
         AtlasInfo.sampler = sampler;
 
 

@@ -1,3 +1,4 @@
+#pragma once
 #include "Asset.h"
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>

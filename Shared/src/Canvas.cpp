@@ -87,7 +87,7 @@ void LoadUINode(UINode* node, std::ifstream& file, ModInstance* mod) {
                 node->m_Element = new UIImage;
             break;
             case UIType::Button:
-
+                node->m_Element = new UIButton;
             break;
             case UIType::Text:
             
@@ -211,6 +211,102 @@ void UIImage::Save(std::ofstream& file) {
     else file.write(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
 }
 void UIImage::Load(std::ifstream& file, ModInstance* mod) {
+    size_t nameSize = 0;
+    file.read(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+    if(nameSize > 0) {
+        std::string assetName;
+        assetName.resize(nameSize);
+        file.read(reinterpret_cast<char*>(assetName.data()), nameSize);
+        m_Asset = static_cast<TextureAsset*>(mod->GetAllAssets()[assetName]);
+    }
+}
+
+
+UIButton::UIButton() {
+    VkDescriptorPoolSize poolSize{};
+    poolSize.descriptorCount = GContext->MAX_FRAMES_IN_FLIGHT;
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.maxSets = GContext->MAX_FRAMES_IN_FLIGHT;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    
+    if (vkCreateDescriptorPool(GContext->GetDevice(), &poolInfo, nullptr, &pool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool for descriptor sets of a UIImage element");
+    }
+    
+    std::vector<VkDescriptorSetLayout> layouts(GContext->MAX_FRAMES_IN_FLIGHT, GContext->GetSingleTexLayout());
+    VkDescriptorSetAllocateInfo setsInfo{};
+    setsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    setsInfo.descriptorPool = pool;
+    setsInfo.descriptorSetCount = GContext->MAX_FRAMES_IN_FLIGHT;
+    setsInfo.pSetLayouts = layouts.data();
+    sets.resize(GContext->MAX_FRAMES_IN_FLIGHT);
+    if (vkAllocateDescriptorSets(GContext->GetDevice(), &setsInfo, sets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor setsof a UIImage element");
+    }
+}
+void UIButton::Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) {
+    if(m_Asset) {
+        if (texturesPerSet[GContext->currentFrame] != &m_Asset->GetTexture()) {
+            VkDescriptorImageInfo imgInfo{};
+            imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imgInfo.imageView = m_Asset->GetTexture().GetImageView();
+            imgInfo.sampler = smp;
+
+            VkWriteDescriptorSet write{};
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            write.descriptorCount = 1;
+            write.pImageInfo = &imgInfo;
+            write.dstArrayElement = 0;
+            write.dstSet = sets[GContext->currentFrame];
+            write.dstBinding = 0;
+
+            vkUpdateDescriptorSets(GContext->GetDevice(), 1, &write, 0, nullptr);
+
+            texturesPerSet[GContext->currentFrame] = &m_Asset->GetTexture();
+        }
+    } else {
+        //if(texturesPerSet[GContext->currentFrame] != nullptr) {
+            VkDescriptorImageInfo imgInfo{};
+            imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imgInfo.imageView = GContext->GetDummyTexture().GetImageView();
+            imgInfo.sampler = smp;
+
+            VkWriteDescriptorSet write{};
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            write.descriptorCount = 1;
+            write.pImageInfo = &imgInfo;
+            write.dstArrayElement = 0;
+            write.dstSet = sets[GContext->currentFrame];
+            write.dstBinding = 0;
+
+            vkUpdateDescriptorSets(GContext->GetDevice(), 1, &write, 0, nullptr);
+
+            texturesPerSet[GContext->currentFrame] = nullptr;
+        //}
+    }
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &sets[GContext->currentFrame], 0, nullptr);
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtx);
+    vkCmdDraw(cmd, 6, 1, 0, 0);
+}
+UIType UIButton::GetType() const {
+    return UIType::Button;
+}
+void UIButton::Save(std::ofstream& file) {
+    size_t nameSize = 0;
+    if(m_Asset) {
+        nameSize = m_Asset->AssetName.size();
+        file.write(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+        file.write(reinterpret_cast<char*>(m_Asset->AssetName.data()), nameSize);
+    }
+    else file.write(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
+}
+void UIButton::Load(std::ifstream& file, ModInstance* mod) {
     size_t nameSize = 0;
     file.read(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
     if(nameSize > 0) {

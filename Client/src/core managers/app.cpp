@@ -50,7 +50,7 @@ void App::Init() {
 
     
     //load textures
-    m_TerrainAtlas.LoadTexture("assets/Textures/TerrainAtlas.png");
+    m_TerrainAtlas.LoadFromFile("assets/Textures/TerrainAtlas.png");
     
     //load the descriptor sets
     m_Renderer.StartDescriptors();
@@ -157,7 +157,7 @@ void App::Terminate() {
 
     m_Renderer.EndDescriptors();
 
-    m_TerrainAtlas.UnloadTexture();
+    m_TerrainAtlas.Delete();
 
     m_AudioManager.Terminate();
     

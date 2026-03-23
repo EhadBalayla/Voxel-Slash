@@ -171,3 +171,15 @@ void Texture::Delete() {
 VkImageView Texture::GetImageView() const {
     return imageView;
 }
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+void Texture::LoadFromFile(const char* path) {
+    int Width, Height, Channels;
+    unsigned char* pixelData = stbi_load(path, &Width, &Height, &Channels, 4);
+
+    Create(pixelData, Width, Height);
+
+    stbi_image_free(pixelData);
+}

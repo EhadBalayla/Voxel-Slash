@@ -3,7 +3,7 @@
 #include "Rendering/FullscreenQuad.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/Shader.h"
-#include "Rendering/Texture.h"
+#include "Texture.h"
 #include "AudioManager.h"
 #include "ModInstance.h"
 #include "../Entities/Player.h"

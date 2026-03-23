@@ -56,6 +56,12 @@ void Context::InitGPU(GLFWwindow* window) {
 	createAllocator();
 
 	createSingleTexLayouts();
+
+	unsigned char* dummyTexPixels = (unsigned char*)malloc(4); //a single pixel of RGBA
+	dummyTexPixels[0] = 255; dummyTexPixels[1] = 255; dummyTexPixels[2] = 255; dummyTexPixels[3] = 255;
+	dummyTexture.Create(dummyTexPixels, 1, 1);
+	free(dummyTexPixels);
+
 }
 void Context::TerminateGPU() {
 	vmaDestroyAllocator(allocator);
@@ -264,6 +270,9 @@ void Context::createSingleTexLayouts() {
 	if (vkCreatePipelineLayout(device, &ppLayoutInfo, nullptr, &singleTexPipelineLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout for single texture layouts");
 	}
+}
+Texture& Context::GetDummyTexture() {
+	return dummyTexture;
 }
 
 

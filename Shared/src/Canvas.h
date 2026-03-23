@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
@@ -20,6 +21,7 @@ public:
     virtual ~UIElement() = default;
 
     virtual void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) = 0;
+    virtual void Tick() {}
     virtual UIType GetType() const = 0;
 
     virtual void Save(std::ofstream& file) = 0;
@@ -36,6 +38,22 @@ public:
     void Save(std::ofstream& file) override;
     void Load(std::ifstream& file, ModInstance* mod) override;
 
+    TextureAsset* m_Asset = nullptr;
+private:
+    VkDescriptorPool pool;
+    std::vector<VkDescriptorSet> sets; //for all the textures
+    Texture* texturesPerSet[3] = { nullptr }; //basically referencing which texture each descriptor set holds, so we will know to update if needed
+};
+
+class UIButton : public UIElement {
+public:
+    UIButton();
+
+    void Render(VkCommandBuffer cmd, VkPipelineLayout layout, VkSampler smp, glm::mat4 mtx) override;
+    UIType GetType() const override;
+
+    void Save(std::ofstream& file) override;
+    void Load(std::ifstream& file, ModInstance* mod) override;
     TextureAsset* m_Asset = nullptr;
 private:
     VkDescriptorPool pool;

@@ -455,7 +455,7 @@ void EditorManager::Render() {
                                             selectedUIElement->m_Element = new UIImage;
                                             break;
                                             case UIType::Button:
-                                            //selectedUIElement->m_Element = new UIButton;
+                                            selectedUIElement->m_Element = new UIButton;
                                             break;
                                             case UIType::Text:
                                             //selectedUIElement->m_Element = new UIText;
@@ -492,7 +492,21 @@ void EditorManager::Render() {
                                 break;
                             }
                             case UIType::Button: {
+                                UIButton* btn = static_cast<UIButton*>(selectedUIElement->m_Element);
+                                std::string comboPreview = btn->m_Asset ? btn->m_Asset->AssetName : "None";
+                                if(ImGui::BeginCombo("Texture: ", comboPreview.c_str())) {
+                                    if (ImGui::Selectable("Clear", !btn->m_Asset)) {
+                                        btn->m_Asset = nullptr;
+                                    }
+                                    for(auto& a : GEditor->mod->GetAllAssets()) {
+                                        if(a.second->header.type != AssetType::TextureAsset) continue;
 
+                                        if(ImGui::Selectable(a.first.c_str(), btn->m_Asset ? (a.first == btn->m_Asset->AssetName) : false)) {
+                                            btn->m_Asset = static_cast<TextureAsset*>(a.second);
+                                        }
+                                    }
+                                    ImGui::EndCombo();
+                                }
                                 break;
                             }
                             case UIType::Text: {

@@ -1,6 +1,5 @@
 #pragma once
-#include "vulkan/vulkan.h"
-#include "vk_mem_alloc.h"
+#include "Texture.h"
 #include <vector>
 #include <optional>
 
@@ -39,6 +38,7 @@ public:
 	VmaAllocator GetAllocator() const;
 	VkDescriptorSetLayout GetSingleTexLayout() const;
 	VkPipelineLayout GetSingleTexPPLayout() const;
+	Texture& GetDummyTexture();
 
 	//public helpers
 	QueueFamilyIndicies findQueueFamilies(VkPhysicalDevice device);
@@ -67,6 +67,9 @@ private:
 
 	VkDescriptorSetLayout pbrTexLayout;
 	VkPipelineLayout pbrTexPipelineLayout;
+
+	//default texture
+	Texture dummyTexture;
 
 
 
