@@ -7,7 +7,6 @@
 #include "AudioManager.h"
 #include "ModInstance.h"
 #include "../Entities/Player.h"
-#include "DebugUI.h"
 #include "../World/World.h"
 
 #include "../World/Block.h"
@@ -29,7 +28,6 @@ public:
     ModInstance* m_TempMod;
     Player* m_Player;
     World* m_World;
-    DebugUI m_DebugUI;
 
     //shaders
     Shader m_OpaqueShader;
@@ -52,7 +50,7 @@ public:
     Frustum m_Frustum;
     bool showChunkBorders = false;
     bool LoadChunks = true;
-    bool DoPhysics = false;
+    bool DoPhysics = true;
     float deltaTime = 0.0f;
 
 

@@ -320,7 +320,7 @@ void UIButton::Tick() {
     glfwGetWindowSize(GWindow->GetGLFWwindow(), &Width, &Height);
     
     float CenterX = m_Node->Position.x + (m_Node->Left * Width);
-    float CenterY = m_Node->Position.y + (m_Node->Bottom * Height);
+    float CenterY = m_Node->Position.y + (m_Node->Top * Height);
 
     if(xpos >= CenterX - m_Node->Size.x / 2.0f && xpos <= CenterX + m_Node->Size.x / 2.0f &&
        ypos >= CenterY - m_Node->Size.y / 2.0f && ypos <= CenterY + m_Node->Size.y / 2.0f) {

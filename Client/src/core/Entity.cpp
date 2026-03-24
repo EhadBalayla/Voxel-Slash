@@ -33,7 +33,7 @@ void RenderNode(PrefabNode* node, glm::mat4 parentTransform) {
 
 void Entity::RenderPrefab() {
 	glm::mat4 start = glm::mat4(1.0f);
-	start = glm::translate(start, Position + glm::vec3(0.0f, aabb.max.y / 2.0f, 0.0f));
+	start = glm::translate(start, Position);
 	start = glm::rotate(start, glm::radians(Rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 	RenderNode(&prefab.m_RootNode, start);
 }

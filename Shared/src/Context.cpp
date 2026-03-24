@@ -58,7 +58,7 @@ void Context::InitGPU(GLFWwindow* window) {
 	createSingleTexLayouts();
 
 	unsigned char* dummyTexPixels = (unsigned char*)malloc(4); //a single pixel of RGBA
-	dummyTexPixels[0] = 255; dummyTexPixels[1] = 255; dummyTexPixels[2] = 255; dummyTexPixels[3] = 255;
+	dummyTexPixels[0] = 0; dummyTexPixels[1] = 0; dummyTexPixels[2] = 0; dummyTexPixels[3] = 255;
 	dummyTexture.Create(dummyTexPixels, 1, 1);
 	free(dummyTexPixels);
 

@@ -43,8 +43,6 @@ void App::Init() {
 
     m_FullscreenQuad.CreateFullscreenQuad();
 
-    m_DebugUI.Init();
-
 
     m_AudioManager.Init();
 
@@ -73,7 +71,6 @@ void App::Init() {
     for(auto& N : titleScr->nodes) {
         if(N->m_Name == "SP Button") {
             UIButton* btn = static_cast<UIButton*>(N->m_Element);
-            btn->OnHovered = []() { std::cout << "hovering on SP button" << std::endl; };
             btn->OnPress = []() {
                 GApp->state = GameState::InGame;
                 GApp->waitingFrames = 0;
@@ -82,10 +79,44 @@ void App::Init() {
                 GApp->m_World->GetChunkManager().UpdateChunks();
             };
         }
-        else if(N->m_Name == "MP Button") {
+
+        if(N->m_Name == "DecrementLODCountButton") {
             UIButton* btn = static_cast<UIButton*>(N->m_Element);
-            btn->OnHovered = []() { std::cout << "hovering on MP button" << std::endl; };
-            btn->OnPress = []() {std::cout << "pressing on MP button" << std::endl;};
+            btn->OnPress = []() {
+                GApp->MaxLODLevel--;
+                if(GApp->MaxLODLevel < 1) GApp->MaxLODLevel = 1;
+            };
+        }
+        if(N->m_Name == "IncrementLODCountButton") {
+            UIButton* btn = static_cast<UIButton*>(N->m_Element);
+            btn->OnPress = []() {
+                GApp->MaxLODLevel++;
+                if(GApp->MaxLODLevel > 6) GApp->MaxLODLevel = 6;
+            };
+        }
+        if(N->m_Name == "DecrementRDButton") {
+            UIButton* btn = static_cast<UIButton*>(N->m_Element);
+            btn->OnPress = []() {
+                GApp->RenderDistance--;
+                if(GApp->RenderDistance < 3) GApp->RenderDistance = 3;
+            };
+        }
+        if(N->m_Name == "IncrementRDButton") {
+            UIButton* btn = static_cast<UIButton*>(N->m_Element);
+            btn->OnPress = []() {
+                GApp->RenderDistance++;
+                if(GApp->RenderDistance > 12) GApp->RenderDistance = 12;
+            };
+        }
+    }
+
+    Canvas* debugMenuHUD = m_TempMod->GetAllCanvases()["DebugMenuHUD"];
+    for(auto& n : debugMenuHUD->nodes) {
+        if(n->m_Name == "BackToMenu") {
+            UIButton* btn = static_cast<UIButton*>(n->m_Element);
+            btn->OnPress = []() {
+                GApp->waitingFrames = 1;
+            };
         }
     }
 
@@ -106,6 +137,16 @@ void App::Loop() {
                 m_Renderer.StartRender();
                 Canvas* titleScr = m_TempMod->GetAllCanvases()["TitleScreenHUD"];
                 titleScr->Tick();
+                for(auto& N : titleScr->nodes) {
+                    if(N->m_Name == "LOD Count Text") {
+                        UIText* txt = static_cast<UIText*>(N->m_Element);
+                        txt->text = std::to_string(MaxLODLevel);
+                    }
+                    if(N->m_Name == "RD Text") {
+                        UIText* txt = static_cast<UIText*>(N->m_Element);
+                        txt->text = std::to_string(RenderDistance);
+                    }
+                }
                 titleScr->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetSampler(), Width, Height);
                 m_Renderer.EndRender();
 
@@ -113,7 +154,6 @@ void App::Loop() {
 
                 m_Window.StartFullscreenRender();
                 m_FullscreenQuad.Draw();
-                m_DebugUI.RenderMenuDebugUI();
                 m_Window.EndFullscreenRender();
                 break;
             }
@@ -154,6 +194,36 @@ void App::Loop() {
                 }
 
                 Canvas* debugMenuHUD = m_TempMod->GetAllCanvases()["DebugMenuHUD"];
+                for(int i = 0; i < debugMenuHUD->nodes.size(); i++) {
+                    UIText* txt = static_cast<UIText*>(debugMenuHUD->nodes[i]->m_Element);
+                    switch(i) {
+                        case 0:
+                            txt->text = "X: " + std::to_string(m_Player->Position.x) + ", Y: " + std::to_string(m_Player->Position.y) + ", Z: " + std::to_string(m_Player->Position.z);
+                        break;
+                        case 1:
+                            txt->text = "Chunks Cound LOD0: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(0).size());
+                        break;
+                        case 2:
+                            txt->text = "Chunks Cound LOD1: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(1).size());
+                        break;
+                        case 3:
+                            txt->text = "Chunks Cound LOD2: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(2).size());
+                        break;
+                        case 4:
+                            txt->text = "Chunks Cound LOD3: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(3).size());
+                        break;
+                        case 5:
+                            txt->text = "Chunks Cound LOD4: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(4).size());
+                        break;
+                        case 6:
+                            txt->text = "Chunks Cound LOD5: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(5).size());
+                        break;
+                        case 7:
+                            txt->text = "FPS: " + std::to_string(1.0f / GApp->deltaTime);
+                        break;
+                    }
+                }
+                debugMenuHUD->Tick();
                 debugMenuHUD->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetSampler(), Width, Height);
                 m_Renderer.EndRender();
 
@@ -161,7 +231,6 @@ void App::Loop() {
 
                 m_Window.StartFullscreenRender();
                 m_FullscreenQuad.Draw();
-                m_DebugUI.RenderDebugUI();
                 m_Window.EndFullscreenRender();
                 } else {
                     waitingFrames++;
@@ -188,8 +257,6 @@ void App::Terminate() {
     m_TerrainAtlas.Delete();
 
     m_AudioManager.Terminate();
-    
-    m_DebugUI.Terminate();
     
     m_Renderer.Terminate();
     
@@ -252,14 +319,4 @@ void App::processInput()
     } else {
         firstClick = false;
     }
-        
-
-    /*if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_W) == GLFW_PRESS)
-        m_Camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_S) == GLFW_PRESS)
-        m_Camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_A) == GLFW_PRESS)
-        m_Camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(m_Window.GetGLFWwindow(), GLFW_KEY_D) == GLFW_PRESS)
-        m_Camera.ProcessKeyboard(RIGHT, deltaTime);*/
 }
