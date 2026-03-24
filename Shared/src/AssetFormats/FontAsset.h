@@ -4,7 +4,8 @@
 #include <glm/glm.hpp>
 
 struct CharInfo {
-	uint32_t idx;
+	glm::vec2 uvStart;
+    glm::vec2 uvOffset;
 	unsigned int Advance;
 	glm::ivec2 Bearing;
 	glm::ivec2 Size;

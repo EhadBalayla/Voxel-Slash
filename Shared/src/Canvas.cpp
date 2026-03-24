@@ -426,17 +426,18 @@ void UIText::Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) {
     for(auto& c : text) {
         CharInfo info = m_Asset->GetCharacter(static_cast<int>(c));
 
-		glm::vec3 advPos = glm::vec3(cursorX + info.Bearing.x * TextSize, -info.Bearing.y * TextSize, 0.0f);
-		glm::vec3 relScale = glm::vec3(info.Size.x * TextSize, info.Size.y * TextSize, 0.0f);
+		glm::vec3 advPos = glm::vec3(cursorX + info.Bearing.x, -info.Bearing.y, 0.0f);
+		glm::vec3 relScale = glm::vec3(info.Size.x, info.Size.y, 0.0f);
 
 		glm::mat4 offsetPos = glm::scale(glm::translate(glm::mat4(1.0f), advPos), relScale);
         glm::mat4 overall = mtx * offsetPos;
 
         vkCmdPushConstants(cmd, GContext->GetSingleTexPPLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &overall);
-        vkCmdPushConstants(cmd, GContext->GetSingleTexPPLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), sizeof(uint32_t), &info.idx);
+        vkCmdPushConstants(cmd, GContext->GetSingleTexPPLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), sizeof(glm::vec2), &info.uvStart);
+        vkCmdPushConstants(cmd, GContext->GetSingleTexPPLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4) + sizeof(glm::vec2), sizeof(glm::vec2), &info.uvOffset);
         vkCmdDraw(cmd, 6, 1, 0, 0);
 				
-		cursorX += (info.Advance >> 6) * TextSize;
+		cursorX += (info.Advance >> 6);
     }
 }
 UIType UIText::GetType() const {
@@ -451,7 +452,9 @@ void UIText::Save(std::ofstream& file) {
     }
     else file.write(reinterpret_cast<char*>(&nameSize), sizeof(size_t));
 
-    file.write(reinterpret_cast<char*>(&TextSize), sizeof(int));
+    size_t textSize = text.size();
+    file.write(reinterpret_cast<char*>(&textSize), sizeof(size_t));
+    if(textSize > 0) file.write(reinterpret_cast<char*>(text.data()), textSize);
 }
 void UIText::Load(std::ifstream& file, ModInstance* mod) {
     size_t nameSize = 0;
@@ -463,5 +466,10 @@ void UIText::Load(std::ifstream& file, ModInstance* mod) {
         m_Asset = static_cast<FontAsset*>(mod->GetAllAssets()[assetName]);
     }
 
-    file.read(reinterpret_cast<char*>(&TextSize), sizeof(size_t));
+    size_t textSize;
+    file.read(reinterpret_cast<char*>(&textSize), sizeof(size_t));
+    if(textSize > 0) {
+        text.resize(textSize);
+        file.read(reinterpret_cast<char*>(text.data()), textSize);
+    }
 }

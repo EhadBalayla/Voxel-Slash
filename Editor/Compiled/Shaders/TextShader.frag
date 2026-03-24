@@ -15,6 +15,6 @@ void main() {
 	float alpha = color.a;
 	
 	if(alpha <= 0.0) discard;
-	
+
 	FragColor = vec4(1.0, 1.0, 1.0, alpha);
 }

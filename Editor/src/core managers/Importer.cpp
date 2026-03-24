@@ -76,7 +76,8 @@ void Importer::ImportFont(const char* path, const char* importPath) {
 			}
 
 			CharInfo ch{};
-            ch.idx = static_cast<uint32_t>(c);
+            ch.uvStart = { (cellX * cellSize) / (float)ATLAS_SIZE, (cellY * cellSize) / (float)ATLAS_SIZE };
+            ch.uvOffset = { face->glyph->bitmap.width / (float)ATLAS_SIZE, face->glyph->bitmap.rows / (float)ATLAS_SIZE };
 			ch.Advance = face->glyph->advance.x;
 			ch.Bearing = { face->glyph->bitmap_left, face->glyph->bitmap_top };
 			ch.Size = { face->glyph->bitmap.width, face->glyph->bitmap.rows };

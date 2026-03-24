@@ -85,7 +85,6 @@ public:
     void Load(std::ifstream& file, ModInstance* mod) override;
 
     FontAsset* m_Asset = nullptr;
-    int TextSize = 1;
     std::string text = "Sexy Text";
 private:
     VkDescriptorPool pool;

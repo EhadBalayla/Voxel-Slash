@@ -88,6 +88,9 @@ void App::Init() {
             btn->OnPress = []() {std::cout << "pressing on MP button" << std::endl;};
         }
     }
+
+    GContext->SingleImagePipeline = m_UIShader.GetPipeline();
+    GContext->TextPipeline = m_TextShader.GetPipeline();
 }
 void App::Loop() {
     while(!m_Window.ShouldClose()) {
@@ -149,6 +152,9 @@ void App::Loop() {
                     m_BorderShader.Bind();
                     vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 36, 1, 0, 0);
                 }
+
+                Canvas* debugMenuHUD = m_TempMod->GetAllCanvases()["DebugMenuHUD"];
+                debugMenuHUD->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetSampler(), Width, Height);
                 m_Renderer.EndRender();
 
                 m_FullscreenQuad.SetTexture();
