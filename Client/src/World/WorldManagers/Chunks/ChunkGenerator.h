@@ -13,10 +13,12 @@ public:
     void CarveCaves(Chunk* c);
 private:
     FastNoiseLite continentalNoise;
+    //land noises
     FastNoiseLite landSelectorNoise;
     FastNoiseLite flatNoise;
     FastNoiseLite hillyNoise;
     FastNoiseLite mountainNoise;
-    FastNoiseLite noise1;
-    FastNoiseLite noise2;
+
+    //detail noise
+    FastNoiseLite detailNoise;
 };

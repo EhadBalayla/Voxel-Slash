@@ -59,17 +59,13 @@ ChunkGenerator::ChunkGenerator(int64_t seed) {
     mountainNoise.SetFractalLacunarity(2.0f);
 
 
-    noise1.SetSeed(seed + 1);
-    noise1.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    noise1.SetFractalOctaves(6);
-    noise1.SetFrequency(0.05);
-    noise1.SetFractalLacunarity(2.0f);
-
-    noise2.SetSeed(seed + 2);
-    noise2.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    noise2.SetFractalOctaves(6);
-    noise2.SetFrequency(0.0075);
-    noise2.SetFractalLacunarity(2.0f);
+    //detail noises
+    detailNoise.SetSeed(seed);
+    detailNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    detailNoise.SetFractalOctaves(6);
+    detailNoise.SetFrequency(0.05f);
+    detailNoise.SetFractalLacunarity(1.7f);
+    detailNoise.SetFractalGain(0.4f);
 }
 void ChunkGenerator::GenerateChunk(Chunk* c) {
     int LODSize = GetLODSize(c->LOD);
@@ -85,6 +81,10 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
 
             Height = continental;
 
+            float flatFactor = 0.0f;
+            float hillFactor = 0.0f;
+            float mountainFactor = 0.0f;
+
             if(continental > 0.0) { //if there is land
                 float n1 = flatNoise.GetNoise((float)WorldX, (float)WorldZ);
                 float n2 = hillyNoise.GetNoise((float)WorldX, (float)WorldZ);
@@ -96,9 +96,9 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
 
                 float landSelector = (landSelectorNoise.GetNoise((float)WorldX, (float)WorldZ) + 1.0f) * 0.5f;
 
-                float flatFactor = std::clamp((0.33f - landSelector) / 0.33f, 0.0f, 1.0f);
-                float hillFactor = std::clamp((landSelector - 0.0f) / 0.33f, 0.0f, 1.0f) * std::clamp((0.66f - landSelector) / 0.33f, 0.0f, 1.0f);
-                float mountainFactor = std::clamp((landSelector - 0.66f) / 0.34f, 0.0f, 1.0f);
+                flatFactor = std::clamp((0.33f - landSelector) / 0.33f, 0.0f, 1.0f);
+                hillFactor = std::clamp((landSelector - 0.0f) / 0.33f, 0.0f, 1.0f) * std::clamp((0.66f - landSelector) / 0.33f, 0.0f, 1.0f);
+                mountainFactor = std::clamp((landSelector - 0.66f) / 0.34f, 0.0f, 1.0f);
                 
                 Height += flat * flatFactor + hilly * hillFactor + mountainous * mountainFactor;
             } else { //if there is no land (most likely an ocean)
@@ -111,10 +111,16 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
                 int idx = IndexAt(x, y, z);
 
 
-                float Density = 0.0f;
-                Density = std::clamp(Height - WorldY, -1.0f, 1.0f);
+                float Density = Height - WorldY;
 
-                //Density = noise1.GetNoise((float)WorldX, (float)WorldY, (float)WorldZ) - noise2.GetNoise((float)WorldX, (float)WorldY, (float)WorldZ);
+                float microAmplitude = 0.0f;
+                microAmplitude += flatFactor * 0.5f;
+                microAmplitude += hillFactor * 1.5f;
+                microAmplitude += mountainFactor * 3.5f;
+                
+                float detail = detailNoise.GetNoise((float)WorldX * 1.5f, (float)WorldY * 3.5f, (float)WorldZ * 1.5f) * microAmplitude;
+                
+                Density += detail;
 
                 if(Density > 0.0f) {
                     c->m_Blocks[idx] = BlockType::Stone;
