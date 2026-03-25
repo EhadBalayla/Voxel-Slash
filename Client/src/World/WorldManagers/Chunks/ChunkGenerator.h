@@ -12,7 +12,11 @@ public:
     void ReplaceBlocks(Chunk* c);
     void CarveCaves(Chunk* c);
 private:
-    FastNoiseLite masterNoise; // Slow, huge scale (0.0001)
-    FastNoiseLite mountainNoise;      // Medium scale (0.01)
-    FastNoiseLite detailNoise;           // 3D noise for overhangs (0.02)
+    FastNoiseLite continentalNoise;
+    FastNoiseLite flatNoise;
+    FastNoiseLite hillyNoise;
+    FastNoiseLite mountainNoise;
+    FastNoiseLite landSelectorNoise;
+    FastNoiseLite noise1;
+    FastNoiseLite noise2;
 };

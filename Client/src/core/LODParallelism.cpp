@@ -8,6 +8,8 @@ void ChunkGen(void* p1, void* p2) {
     ChunkManager* manager = static_cast<ChunkManager*>(p2);
     
     manager->GetChunkGenerator().GenerateChunk(c);
+    manager->GetChunkGenerator().ReplaceBlocks(c);
+    manager->GetChunkGenerator().CarveCaves(c);
     c->IsGenerated = true;
     c->IsInJob = false;
     
