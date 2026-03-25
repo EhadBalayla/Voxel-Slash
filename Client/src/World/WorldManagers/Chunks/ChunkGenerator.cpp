@@ -138,7 +138,33 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
     }
 }
 void ChunkGenerator::ReplaceBlocks(Chunk* c) {
-
+    for(int x = 0; x < Chunk_Length; x++) {
+        for(int z = 0; z < Chunk_Length; z++) {
+            int GrassCountXZ = -1; //counting blocks down
+            for(int y = Chunk_Length - 1; y >= 0; y--) {
+                int idx = IndexAt(x, y, z);
+                    
+                if(c->m_Blocks[idx] != BlockType::Air) {
+                    if(y == Chunk_Length - 1) {
+                        c->m_Blocks[idx] = BlockType::Grass;
+                        c->HasAnything = true;
+                        GrassCountXZ = 0;
+                    }
+                    else {
+                        if(c->m_Blocks[IndexAt(x, y + 1, z)] == BlockType::Air) {
+                            c->m_Blocks[idx] = BlockType::Grass;
+                            c->HasAnything = true;
+                            GrassCountXZ = 0;
+                        }
+                        else {
+                            if(GrassCountXZ > -1 && GrassCountXZ < 3) { c->m_Blocks[idx] = BlockType::Dirt;   GrassCountXZ++; }
+                            else { c->m_Blocks[idx] = BlockType::Stone; };
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 void ChunkGenerator::CarveCaves(Chunk* c) {
 
