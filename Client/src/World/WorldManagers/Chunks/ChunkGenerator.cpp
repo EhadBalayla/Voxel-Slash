@@ -85,7 +85,7 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
             float hillFactor = 0.0f;
             float mountainFactor = 0.0f;
 
-            if(continental > 0.0) { //if there is land
+            //if(continental > 0.0) { //if there is land
                 float n1 = flatNoise.GetNoise((float)WorldX, (float)WorldZ);
                 float n2 = hillyNoise.GetNoise((float)WorldX, (float)WorldZ);
                 float n3 = mountainNoise.GetNoise((float)WorldX, (float)WorldZ);
@@ -101,9 +101,9 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
                 mountainFactor = std::clamp((landSelector - 0.66f) / 0.34f, 0.0f, 1.0f);
                 
                 Height += flat * flatFactor + hilly * hillFactor + mountainous * mountainFactor;
-            } else { //if there is no land (most likely an ocean)
+            //} else { //if there is no land (most likely an ocean)
                 
-            }
+            //}
 
             for(int y = 0; y < Chunk_Length; y++) {
                 int WorldY = y * LODSize + c->ChunkY * Chunk_Length * LODSize;
@@ -127,7 +127,7 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
                     c->HasAnything = true;
                 } else {
                     if(WorldY <= 0) {
-                        c->m_Blocks[idx] = BlockType::Dirt; // i dont have water yet, so just temporarily
+                        c->m_Blocks[idx] = BlockType::Water;
                         c->HasAnything = true;
                     } else {
                         c->m_Blocks[idx] = BlockType::Air;
@@ -144,7 +144,7 @@ void ChunkGenerator::ReplaceBlocks(Chunk* c) {
             for(int y = Chunk_Length - 1; y >= 0; y--) {
                 int idx = IndexAt(x, y, z);
                     
-                if(c->m_Blocks[idx] != BlockType::Air) {
+                if(c->m_Blocks[idx] != BlockType::Air && c->m_Blocks[idx] != BlockType::Water) {
                     if(y == Chunk_Length - 1) {
                         c->m_Blocks[idx] = BlockType::Grass;
                         c->HasAnything = true;

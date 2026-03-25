@@ -165,7 +165,7 @@ void App::Loop() {
 
 
                 m_Player->UpdateChunksAroundPlayer();
-                m_Player->Update(deltaTime);
+                m_Player->Update(0.001);
 
                 m_Renderer.SetViewProj(m_Player->GetViewMatrix(), proj);
                      
@@ -271,7 +271,7 @@ void App::RegisterAllBlocks() {
     BlockRegistery[BlockType::Stone] = {{3, 3, 3, 3, 3, 3}};
     BlockRegistery[BlockType::Grass] = {{0, 2, 1, 1, 1, 1}};
     BlockRegistery[BlockType::Dirt] = {{2, 2, 2, 2, 2, 2}};
-    BlockRegistery[BlockType::Mystery] = {{4, 4, 4, 4, 4, 4}};
+    BlockRegistery[BlockType::Water] = {{255, 255, 255, 255, 255, 255}};
 }
 
 

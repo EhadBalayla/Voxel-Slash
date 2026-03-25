@@ -25,7 +25,7 @@ uint32_t GetVertex(glm::ivec3 pos, int blockCorner, int texCorner, uint8_t texOf
 
     return ret;
 }
-void AddFace(glm::ivec3 pos, Face face, uint32_t& indexOffset, uint8_t texOffset, std::vector<uint32_t>& verticies/*, std::vector<uint32_t>& indicies*/) {
+void AddFace(glm::ivec3 pos, Face face, uint32_t& indexOffset, uint8_t texOffset, std::vector<uint32_t>& verticies) {
     uint32_t v1, v2, v3, v4;
     uint8_t faceID = static_cast<uint8_t>(face);
 

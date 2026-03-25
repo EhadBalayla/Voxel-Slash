@@ -48,10 +48,10 @@ void main() {
         Lighting = ambientLight + directionalLight * 0.6;
     }
 
-	uint indexX = texOffset % uint(8);
-	uint indexY = texOffset / uint(8);
-	float uvX =  float(indexX) / 8.0;
-	float uvY = float(indexY) / 8.0;
+	uint indexX = texOffset % uint(16);
+	uint indexY = texOffset / uint(16);
+	float uvX =  float(indexX) / 16.0;
+	float uvY = float(indexY) / 16.0;
 	vec2 uvOffset = decodeUVoffset(texCorner);
 
 	TexCoords = vec2(uvX, uvY) + uvOffset;
@@ -76,7 +76,7 @@ uvec3 decodeCorner(uint corner) {
 }
 vec2 decodeUVoffset(uint texCorner) {
 	const vec2 offsets[4] = vec2[4](
-		vec2(0, 0), vec2(0.125, 0), vec2(0.125, 0.125), vec2(0, 0.125)
+		vec2(0, 0), vec2(0.0625, 0), vec2(0.0625, 0.0625), vec2(0, 0.0625)
 	);
 	return offsets[texCorner];
 }

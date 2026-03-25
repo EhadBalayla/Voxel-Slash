@@ -6,7 +6,9 @@ enum class BlockType : uint8_t {
     Stone = 1,
     Grass = 2,
     Dirt = 3,
-    Mystery = 4,
+    Sand = 4,
+
+    Water = 69,
 };
 
 struct BlockUV {
