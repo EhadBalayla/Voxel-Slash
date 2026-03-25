@@ -21,13 +21,15 @@ ChunkGenerator::ChunkGenerator() : ChunkGenerator(static_cast<int64_t>(std::time
 ChunkGenerator::ChunkGenerator(int64_t seed) {
     std::cout << seed << std::endl;
 
+    //the noise for where there is a continent and where there is ocean
     continentalNoise.SetSeed(seed);
     continentalNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    continentalNoise.SetFractalOctaves(5);
     continentalNoise.SetFrequency(0.001f);
+    continentalNoise.SetFractalOctaves(5);
     continentalNoise.SetFractalGain(0.42f);
     continentalNoise.SetFractalLacunarity(2.0f);
     
+    //all noises for a continent
     landSelectorNoise.SetSeed(seed + 1);
     landSelectorNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
     landSelectorNoise.SetFrequency(0.0005f);
@@ -37,17 +39,24 @@ ChunkGenerator::ChunkGenerator(int64_t seed) {
 
     flatNoise.SetSeed(seed + 2);
     flatNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    flatNoise.SetFractalOctaves(6);
     flatNoise.SetFrequency(0.015f);
+    flatNoise.SetFractalOctaves(6);
     flatNoise.SetFractalGain(0.5f);
     flatNoise.SetFractalLacunarity(2.5f);
 
     hillyNoise.SetSeed(seed + 3);
     hillyNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    hillyNoise.SetFractalOctaves(6);
     hillyNoise.SetFrequency(0.005f);
+    hillyNoise.SetFractalOctaves(6);
     hillyNoise.SetFractalGain(0.55f);
     hillyNoise.SetFractalLacunarity(2.0f);
+
+    mountainNoise.SetSeed(seed);
+    mountainNoise.SetNoiseType(FastNoiseLite::NoiseType_Cellular);
+    mountainNoise.SetFrequency(0.002f);
+    mountainNoise.SetFractalOctaves(5);
+    mountainNoise.SetFractalGain(0.5f);
+    mountainNoise.SetFractalLacunarity(2.0f);
 
 
     noise1.SetSeed(seed + 1);
@@ -77,15 +86,21 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
             Height = continental;
 
             if(continental > 0.0) { //if there is land
-                float flat = std::pow(flatNoise.GetNoise((float)WorldX, (float)WorldZ), 5.0f) * -5.0f + 0.5f;
-                float hilly = (std::pow((hillyNoise.GetNoise((float)WorldX, (float)WorldZ) + 1.0f) * -0.5f, 2.0) + 0.25f) * 30.0f;
+                float n1 = flatNoise.GetNoise((float)WorldX, (float)WorldZ);
+                float n2 = hillyNoise.GetNoise((float)WorldX, (float)WorldZ);
+                float n3 = mountainNoise.GetNoise((float)WorldX, (float)WorldZ);
+
+                float flat = std::pow(n1, 5.0f) * -5.0f + 0.5f;
+                float hilly = (std::pow((n2 + 1.0f) * -0.5f, 2.0) + 0.25f) * 30.0f;
+                float mountainous = ((n3 + 1.0f) * 0.5f) * 600.0f + 30.0f + n1 * 10.0f;
 
                 float landSelector = (landSelectorNoise.GetNoise((float)WorldX, (float)WorldZ) + 1.0f) * 0.5f;
 
-                float hillFactor = landSelector;   // 0 = flat, 1 = hilly
-                float flatFactor = 1.0f - hillFactor;
+                float flatFactor = std::clamp((0.33f - landSelector) / 0.33f, 0.0f, 1.0f);
+                float hillFactor = std::clamp((landSelector - 0.0f) / 0.33f, 0.0f, 1.0f) * std::clamp((0.66f - landSelector) / 0.33f, 0.0f, 1.0f);
+                float mountainFactor = std::clamp((landSelector - 0.66f) / 0.34f, 0.0f, 1.0f);
                 
-                Height += flat * flatFactor + hilly * hillFactor;
+                Height += flat * flatFactor + hilly * hillFactor + mountainous * mountainFactor;
             } else { //if there is no land (most likely an ocean)
                 
             }
