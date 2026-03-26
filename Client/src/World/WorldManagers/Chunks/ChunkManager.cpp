@@ -44,7 +44,6 @@ void ChunkManager::Render() {
     if(c) renderReadySet.insert(c);
 
 
-    GApp->m_Renderer.BindVoxelDescriptor();
     GApp->m_OpaqueShader.Bind();
     for(auto it = renderReadySet.begin(); it != renderReadySet.end();) {
         Chunk* c = *it;

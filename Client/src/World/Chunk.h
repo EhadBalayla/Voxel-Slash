@@ -20,7 +20,7 @@ struct ChunkMesh {
     uint32_t opaqueCount;
 };
 struct ChunkMeshData {
-    std::vector<uint32_t> opaqueVerticies;
+    std::vector<uint32_t> opaqueFaces;
 };
 
 class Chunk {

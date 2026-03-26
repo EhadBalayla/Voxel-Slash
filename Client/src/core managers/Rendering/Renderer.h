@@ -45,11 +45,13 @@ public:
 	VkCommandBuffer GetFrameCommandBuffer();
 	int GetMaxFramesInFlight();
 
-	VkSampler GetSampler();
-	VkRenderPass GetOffscreenRenderPass();
-	VkDescriptorSetLayout GetChunksSetLayout();
-	VkPipelineLayout GetChunksPipelineLayout();
-	VmaAllocator GetAllocator();
+	VkSampler GetSampler() const;
+	VkRenderPass GetOffscreenRenderPass() const;
+	VkDescriptorSetLayout GetChunksSetLayout() const;
+	VkDescriptorSetLayout GetChunkMeshLayout() const;
+	VkDescriptorSet GetChunksSet(int idx) const;
+	VkPipelineLayout GetChunksPipelineLayout() const;
+	VmaAllocator GetAllocator() const;
 	VkImage GetColorBuffer();
 	VkImageView GetColorBufferView();
 
@@ -57,11 +59,8 @@ public:
 
     //public helpers
     void SetHandles(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkSurfaceKHR surface, uint32_t graphicsFamilyIndex, uint32_t presentFamilyIndex, VkCommandPool commandPool, VkCommandBuffer* commandBuffers, VmaAllocator allocator, int MAX_FRAMES_IN_FLIGHT, int* currentFrame);
-	void BindVoxelDescriptor();
 	void SetViewProj(glm::mat4 view, glm::mat4 proj);
 	void SetTrans(glm::mat4 trans);
-	void QueueBufferDeletion(BufferAllocation buffer);
-	void FlushBufferDeletionQueue();
 
 
     int* CurrentFrame = nullptr;
@@ -86,6 +85,7 @@ private:
 	VkDescriptorPool descriptorPool;
 	VkSampler sampler; //this sampler is for nearest filtering
 
+	//Gbuffer
 	//color buffer
 	std::vector<VkImage> colorBuffer;
 	std::vector<VkImageView> colorBufferView;
@@ -100,6 +100,7 @@ private:
     UniformBuffer ChunkBuffer;
     std::vector<VkDescriptorSet> ChunkSets;
     VkDescriptorSetLayout ChunkSetLayout;
+	VkDescriptorSetLayout ChunkMeshLayout;
 	VkPipelineLayout ChunksPipelineLayout;
 
 	//deletion stuff

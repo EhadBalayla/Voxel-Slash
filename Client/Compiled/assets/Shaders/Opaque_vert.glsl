@@ -1,82 +1,110 @@
 #version 450
-layout (location = 0) in uint vert;
 
+//outputs to fragment shader
+layout (location = 0) out vec2 TexCoords;
+layout (location = 1) out float Lighting;
+
+//remember to remove at some point too
 layout (set = 0, binding = 0) uniform MatricesBuffer {
 	mat4 proj;
  	mat4 view;
 } MatBO;
 
-layout (std140, set = 0, binding = 2) readonly buffer TransBuffer {
-	mat4 trans[];
-} TransBO;
-
+//the 3D matrix
 layout ( push_constant ) uniform trans {
 	mat4 model;
 } meshTrans;
 
-layout (location = 0) out vec2 TexCoords;
-layout (location = 1) out float Lighting;
+//the chunk mesh
+layout (set = 1, binding = 0) readonly buffer ChunkMesh {
+	uint faces[];
+} Mesh;
 
-uvec3 decodePos(uint pos);
-uvec3 decodeCorner(uint corner);
-vec2 decodeUVoffset(uint texCorner);
+
+//reconstruction constants
+const uvec3 verticies[8] = uvec3[8](
+    uvec3(0,0,0), uvec3(1,0,0), uvec3(1,0,1), uvec3(0,0,1),
+    uvec3(0,1,0), uvec3(1,1,0), uvec3(1,1,1), uvec3(0,1,1)
+);
+const uint faceVertIndicies[6][6] = uint[6][6] (
+	uint[6] (4, 5, 6, 6, 7, 4),
+	uint[6] (0, 3, 2, 2, 1, 0),
+	uint[6] (0, 4, 7, 7, 3, 0),
+	uint[6] (1, 2, 6, 6, 5, 1),
+	uint[6] (3, 7, 6, 6, 2, 3),
+	uint[6] (0, 1, 5, 5, 4, 0)
+);
+
+const vec2 uvs[4] = vec2[4](
+	vec2(0, 0), vec2(0.0625, 0), vec2(0.0625, 0.0625), vec2(0, 0.0625)
+);
+const uint faceUVIndicies[6][6] = uint[6][6] (
+	uint[6] (0, 1, 2, 2, 3, 0),
+	uint[6] (3, 2, 1, 1, 0, 3),
+	uint[6] (3, 0, 1, 1, 2, 3),
+	uint[6] (2, 3, 0, 0, 1, 2),
+	uint[6] (3, 0, 1, 1, 2, 3),
+	uint[6] (2, 3, 0, 0, 1, 2)
+);
+
+const uint FACE_TOP    = 0u;
+const uint FACE_BOTTOM = 1u;
+const uint FACE_LEFT   = 2u;
+const uint FACE_RIGHT  = 3u;
+const uint FACE_FRONT  = 4u;
+const uint FACE_BACK   = 5u;
+
+
+//forward declarations
+uvec3 DecodePos(uint Face);
+uint DecodeAtlasIdx(uint Face);
+uint DecodeFaceType(uint Face);
 
 void main() {
-    uint pos = vert & 0xFFFFu;
-    uint corner = (vert >> 15) & 7u;
-	uint texCorner = (vert >> 18) & 3u;
-	uint texOffset = (vert >> 20) & 0xFFu;
-	uint faceID = (vert >> 28) & 7u;
+	uint faceIdx = gl_VertexIndex / 6u; //which face are we on
+	uint idxFace = gl_VertexIndex % 6u; //index inside the face
 
-    uvec3 aPos = decodePos(pos);
-    uvec3 aCorner = decodeCorner(corner);
+	//picking face
+	uint Face = Mesh.faces[faceIdx];
 
-    gl_Position = MatBO.proj * MatBO.view * meshTrans.model * vec4(aPos + aCorner, 1.0);
+	//decoding face
+	uvec3 Pos = DecodePos(Face);
+	uint AtlasIDX = DecodeAtlasIdx(Face);
+	uint faceType = DecodeFaceType(Face);
 
-    // Lighting based on face direction
-    // Top face: brightest, Bottom: darkest, Sides: medium
-    float ambientLight = 0.4;
-    float directionalLight = 0.6;
-    
-    if(faceID == 0u) { // Top
-        Lighting = ambientLight + directionalLight * 1.0;
-    } else if(faceID == 1u) { // Bottom
-        Lighting = ambientLight + directionalLight * 0.2;
-    } else if(faceID == 2u || faceID == 3u) { // Left/Right
-        Lighting = ambientLight + directionalLight * 0.4;
+	//extracting vertex
+	uvec3 vertex = verticies[faceVertIndicies[faceType][idxFace]] + Pos;
+	gl_Position = MatBO.proj * MatBO.view * meshTrans.model * vec4(vertex, 1.0);
+
+	//extracting UV
+	uint texIdxX = AtlasIDX % 16u;
+	uint texIdxY = AtlasIDX / 16u;
+	vec2 startUVs = vec2(float(texIdxX) / 16.0, float(texIdxY) / 16.0);
+	vec2 offsetUVs = uvs[faceUVIndicies[faceType][idxFace]];
+	TexCoords = startUVs + offsetUVs;
+
+	//extracting face shading
+	if(faceType == FACE_TOP) { // Top
+        Lighting = 1.0;
+    } else if(faceType == FACE_BOTTOM) { // Bottom
+        Lighting = 0.2;
+    } else if(faceType == FACE_LEFT || faceType == FACE_RIGHT) { // Left/Right
+        Lighting = 0.4;
     } else { // Front/Back
-        Lighting = ambientLight + directionalLight * 0.6;
+        Lighting = 0.6;
     }
-
-	uint indexX = texOffset % uint(16);
-	uint indexY = texOffset / uint(16);
-	float uvX =  float(indexX) / 16.0;
-	float uvY = float(indexY) / 16.0;
-	vec2 uvOffset = decodeUVoffset(texCorner);
-
-	TexCoords = vec2(uvX, uvY) + uvOffset;
 }
 
-uvec3 decodePos(uint pos) {
+uvec3 DecodePos(uint Face) {
 	uvec3 ret;
-	ret.x = pos & 31u;
-	pos >>= 5u;
-	ret.z = pos & 31u;
-	pos >>= 5u;
-	ret.y = pos & 31u;
-	
+	ret.x = Face & 0x1F;
+	ret.z = (Face >> 5) & 0x1F;
+	ret.y = (Face >> 10) & 0x1F;
 	return ret;
 }
-uvec3 decodeCorner(uint corner) {
-	const uvec3 offsets[8] = uvec3[8](
-        uvec3(0,0,0), uvec3(1,0,0), uvec3(1,0,1), uvec3(0,0,1),
-        uvec3(0,1,0), uvec3(1,1,0), uvec3(1,1,1), uvec3(0,1,1)
-    );
-	return offsets[corner];
+uint DecodeAtlasIdx(uint Face) {
+	return (Face >> 15) & 0xFF;
 }
-vec2 decodeUVoffset(uint texCorner) {
-	const vec2 offsets[4] = vec2[4](
-		vec2(0, 0), vec2(0.0625, 0), vec2(0.0625, 0.0625), vec2(0, 0.0625)
-	);
-	return offsets[texCorner];
+uint DecodeFaceType(uint Face) {
+	return (Face >> 23) & 0x7;
 }

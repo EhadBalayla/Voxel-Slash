@@ -85,25 +85,21 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
             float hillFactor = 0.0f;
             float mountainFactor = 0.0f;
 
-            //if(continental > 0.0) { //if there is land
-                float n1 = flatNoise.GetNoise((float)WorldX, (float)WorldZ);
-                float n2 = hillyNoise.GetNoise((float)WorldX, (float)WorldZ);
-                float n3 = mountainNoise.GetNoise((float)WorldX, (float)WorldZ);
+            float n1 = flatNoise.GetNoise((float)WorldX, (float)WorldZ);
+            float n2 = hillyNoise.GetNoise((float)WorldX, (float)WorldZ);
+            float n3 = mountainNoise.GetNoise((float)WorldX, (float)WorldZ);
 
-                float flat = std::pow(n1, 5.0f) * -5.0f + 0.5f;
-                float hilly = (std::pow((n2 + 1.0f) * -0.5f, 2.0) + 0.25f) * 30.0f;
-                float mountainous = ((n3 + 1.0f) * 0.5f) * 600.0f + 30.0f + n1 * 10.0f;
+            float flat = std::pow(n1, 5.0f) * -5.0f + 0.5f;
+            float hilly = (std::pow((n2 + 1.0f) * -0.5f, 2.0) + 0.25f) * 30.0f;
+            float mountainous = ((n3 + 1.0f) * 0.5f) * 600.0f + 30.0f + n1 * 10.0f;
 
-                float landSelector = (landSelectorNoise.GetNoise((float)WorldX, (float)WorldZ) + 1.0f) * 0.5f;
+            float landSelector = (landSelectorNoise.GetNoise((float)WorldX, (float)WorldZ) + 1.0f) * 0.5f;
 
-                flatFactor = std::clamp((0.33f - landSelector) / 0.33f, 0.0f, 1.0f);
-                hillFactor = std::clamp((landSelector - 0.0f) / 0.33f, 0.0f, 1.0f) * std::clamp((0.66f - landSelector) / 0.33f, 0.0f, 1.0f);
-                mountainFactor = std::clamp((landSelector - 0.66f) / 0.34f, 0.0f, 1.0f);
+            flatFactor = std::clamp((0.33f - landSelector) / 0.33f, 0.0f, 1.0f);
+            hillFactor = std::clamp((landSelector - 0.0f) / 0.33f, 0.0f, 1.0f) * std::clamp((0.66f - landSelector) / 0.33f, 0.0f, 1.0f);
+            mountainFactor = std::clamp((landSelector - 0.66f) / 0.34f, 0.0f, 1.0f);
                 
-                Height += flat * flatFactor + hilly * hillFactor + mountainous * mountainFactor;
-            //} else { //if there is no land (most likely an ocean)
-                
-            //}
+            Height += flat * flatFactor + hilly * hillFactor + mountainous * mountainFactor;
 
             for(int y = 0; y < Chunk_Length; y++) {
                 int WorldY = y * LODSize + c->ChunkY * Chunk_Length * LODSize;
@@ -157,7 +153,7 @@ void ChunkGenerator::ReplaceBlocks(Chunk* c) {
                             GrassCountXZ = 0;
                         }
                         else {
-                            if(GrassCountXZ > -1 && GrassCountXZ < 3) { c->m_Blocks[idx] = BlockType::Dirt;   GrassCountXZ++; }
+                            if(GrassCountXZ > -1 && GrassCountXZ < 2) { c->m_Blocks[idx] = BlockType::Dirt;   GrassCountXZ++; }
                             else { c->m_Blocks[idx] = BlockType::Stone; };
                         }
                     }

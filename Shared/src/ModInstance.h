@@ -12,10 +12,12 @@ public:
     ~ModInstance();
 
     std::unordered_map<std::string, Asset*>& GetAllAssets();
+    std::unordered_map<std::string, Asset*>& GetAllDependantAssets();
     std::unordered_map<std::string, Prefab*>& GetAllPrefabs();
     std::unordered_map<std::string, Canvas*>& GetAllCanvases();
 private:
     std::unordered_map<std::string, Asset*> assets;
+    std::unordered_map<std::string, Asset*> dependantAssets;
     std::unordered_map<std::string, Prefab*> prefabs;
     std::unordered_map<std::string, Canvas*> canvases;
 };

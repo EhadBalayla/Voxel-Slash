@@ -188,8 +188,9 @@ void App::Loop() {
                 if(showChunkBorders) {
                     m_Renderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Player->ChunkCoordX * 32, m_Player->ChunkCoordY * 32,m_Player->ChunkCoordZ * 32)));
                 
-                    m_Renderer.BindVoxelDescriptor();
                     m_BorderShader.Bind();
+                    VkDescriptorSet sets[] = { m_Renderer.GetChunksSet(GContext->currentFrame) };
+                    vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Renderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
                     vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 36, 1, 0, 0);
                 }
 

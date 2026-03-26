@@ -124,7 +124,7 @@ void LODParallelism::chunksUploadIteratorLoop() {
                     it = uploadPendingSet.erase(it);
                     continue;
                 }
-                if(c->GetMeshData().opaqueVerticies.size() > 0) {
+                if(c->GetMeshData().opaqueFaces.size() > 0) {
                     UploadChunk(c); 
                     it = uploadPendingSet.erase(it);
                     continue;

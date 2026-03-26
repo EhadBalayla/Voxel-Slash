@@ -1,16 +1,20 @@
 #pragma once
 #include "vk_mem_alloc.h"
+#include <vector>
 
 class ChunkBuffer {
 public:
-    void Update(void* verticiesData, size_t verticiesSize);
+    void Update(void* facesData, size_t facesSize);
     void Delete();
 
-    VkBuffer& GetBuffer();
+    VkBuffer GetBuffer() const;
+    VkDescriptorSet GetDescriptorSet(int idx) const;
 private:
-	//SubAllocation allocation;
     VmaAllocation allocation;
     VkBuffer buffer;
+
+    VkDescriptorPool pool;
+    std::vector<VkDescriptorSet> sets;
 
     bool IsAllocated = false;
 };

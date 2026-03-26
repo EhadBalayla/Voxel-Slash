@@ -58,18 +58,6 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	viewportState.pScissors = nullptr;
 
 	//creating the vertex input
-    VkVertexInputBindingDescription ChunkBindingDescription{};
-    ChunkBindingDescription.binding = 0;
-    ChunkBindingDescription.stride = sizeof(uint32_t);
-    ChunkBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    VkVertexInputAttributeDescription ChunkAttributeDescription{};
-    ChunkAttributeDescription.binding = 0;
-    ChunkAttributeDescription.location = 0;
-    ChunkAttributeDescription.format = VK_FORMAT_R32_UINT;
-    ChunkAttributeDescription.offset = 0;
-
-
 	VkVertexInputAttributeDescription skeletalAttributeDescriptions[6] = {};
 	skeletalAttributeDescriptions[0].binding = 0;
 	skeletalAttributeDescriptions[0].location = 0;
@@ -111,13 +99,6 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	switch (type) {
-	case PipelineType::Chunk: {
-		vertexInputInfo.vertexAttributeDescriptionCount = 1;
-		vertexInputInfo.pVertexAttributeDescriptions = &ChunkAttributeDescription;
-		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.pVertexBindingDescriptions = &ChunkBindingDescription;
-		break;
-	}
 	case PipelineType::SkeletalMesh: {
 		vertexInputInfo.vertexAttributeDescriptionCount = 6;
 		vertexInputInfo.pVertexAttributeDescriptions = skeletalAttributeDescriptions;

@@ -108,19 +108,25 @@ int Renderer::GetMaxFramesInFlight() {
 }
 
 
-VkSampler Renderer::GetSampler() {
+VkSampler Renderer::GetSampler() const {
 	return sampler;
 }
-VkRenderPass Renderer::GetOffscreenRenderPass() {
+VkRenderPass Renderer::GetOffscreenRenderPass() const {
 	return offscreenRenderPass;
 }
-VkDescriptorSetLayout Renderer::GetChunksSetLayout() {
+VkDescriptorSetLayout Renderer::GetChunksSetLayout() const {
 	return ChunkSetLayout;
 }
-VkPipelineLayout Renderer::GetChunksPipelineLayout() {
+VkDescriptorSetLayout Renderer::GetChunkMeshLayout() const {
+	return ChunkMeshLayout;
+}
+VkDescriptorSet Renderer::GetChunksSet(int idx) const {
+	return ChunkSets[idx];
+}
+VkPipelineLayout Renderer::GetChunksPipelineLayout() const {
 	return ChunksPipelineLayout;
 }
-VmaAllocator Renderer::GetAllocator() {
+VmaAllocator Renderer::GetAllocator() const {
 	return allocator;
 }
 std::mutex& Renderer::GetFrameDeletionMTX() {
@@ -162,15 +168,12 @@ void Renderer::SetHandles(
     this->MAX_FRAMES_IN_FLIGHT = MAX_FRAMES_IN_FLIGHT;
 	this->CurrentFrame = currentFrame;
 }
-void Renderer::BindVoxelDescriptor() {
-	vkCmdBindDescriptorSets(commandBuffers[*CurrentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, ChunksPipelineLayout, 0, 1, &ChunkSets[*CurrentFrame], 0, nullptr);
-}
 void Renderer::SetViewProj(glm::mat4 view, glm::mat4 proj) {
 	MatricesBufferStruct MBO = {proj, view};
 	memcpy(ChunkBuffer.BuffersMapped[*CurrentFrame], &MBO, sizeof(MBO));
 }
 void Renderer::SetTrans(glm::mat4 trans) {
-	vkCmdPushConstants(GetFrameCommandBuffer(), GetChunksPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
+	vkCmdPushConstants(commandBuffers[*CurrentFrame], ChunksPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
 }
 
 void Renderer::createColorBuffer() {
@@ -427,8 +430,27 @@ void Renderer::CreateChunkSets() {
         throw std::runtime_error("failed to create chunks' descriptor set layout");
     }
 
+	//create the set layout for mesh buffer
+	VkDescriptorSetLayoutBinding meshBinding{};
+	meshBinding.binding = 0;
+	meshBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	meshBinding.descriptorCount = 1;
+	meshBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+	VkDescriptorSetLayoutCreateInfo meshLayoutInfo{};
+	meshLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	meshLayoutInfo.pBindings = &meshBinding;
+	meshLayoutInfo.bindingCount = 1;
+
+	if (vkCreateDescriptorSetLayout(device, &meshLayoutInfo, nullptr, &ChunkMeshLayout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create chunks mesh' descriptor set layout");
+	}
+
 
 	//create the pipeline layout
+	VkDescriptorSetLayout ppSetLayouts[] = { ChunkSetLayout, ChunkMeshLayout };
+	uint32_t setLayoutCounts = 2;
+
 	VkPushConstantRange modelTransformRange{};
 	modelTransformRange.offset = 0;
 	modelTransformRange.size = sizeof(glm::mat4);
@@ -436,8 +458,8 @@ void Renderer::CreateChunkSets() {
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = &ChunkSetLayout;
+	pipelineLayoutInfo.setLayoutCount = setLayoutCounts;
+	pipelineLayoutInfo.pSetLayouts = ppSetLayouts;
 	pipelineLayoutInfo.pushConstantRangeCount = 1;
 	pipelineLayoutInfo.pPushConstantRanges = &modelTransformRange;
 
