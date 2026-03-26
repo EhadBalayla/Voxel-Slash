@@ -164,8 +164,8 @@ void App::Loop() {
                 m_Frustum = ExtractFrustum(proj * m_Player->GetViewMatrix());
 
 
-                m_Player->UpdateChunksAroundPlayer();
-                m_Player->Update(0.001);
+                //m_Player->UpdateChunksAroundPlayer();
+                //m_Player->Update(0.001);
 
                 m_Renderer.SetViewProj(m_Player->GetViewMatrix(), proj);
                      

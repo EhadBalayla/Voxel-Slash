@@ -17,6 +17,7 @@ Player::Player() {
     maxMovementSpeed = 10.0f;
 }
 void Player::Update(float DeltaTime) {
+    UpdateChunksAroundPlayer();
     ProcessMovementInput();
     if(GApp->DoPhysics) MoveAndCollide(DeltaTime);
 

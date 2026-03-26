@@ -1,7 +1,7 @@
 #pragma once
 #include <thread>
 
-constexpr float tickDuration = 1.0f / 20.0f; //20 ticks per second
+constexpr float tickDuration = 1.0f / 60.0f; //20 ticks per second
 
 class TickManager {
 public:

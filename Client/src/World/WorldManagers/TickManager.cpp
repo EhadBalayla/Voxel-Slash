@@ -3,6 +3,8 @@
 #include <iostream>
 #include <chrono>
 
+#include "../../core managers/app.h"
+
 TickManager::TickManager() {
     tickThread = std::thread(&TickManager::TickLoop, this);
 }
@@ -14,8 +16,8 @@ TickManager::~TickManager() {
 void TickManager::TickLoop() {
     while(ThreadLooping) {
         auto tickStart = std::chrono::steady_clock::now();
-
-        std::cout << "Ticking Right Now, ";
+        
+        GApp->m_Player->Update(tickDuration);
 
         auto tickEnd = std::chrono::steady_clock::now();
         std::chrono::duration<float> elapsed = tickEnd - tickStart;
