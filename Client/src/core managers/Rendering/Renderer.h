@@ -10,7 +10,7 @@
 
 struct UniformBuffer {
 	std::vector<VkBuffer> Buffers;
-	std::vector<VkDeviceMemory> BuffersMemory;
+	std::vector<VmaAllocation> BuffersAllocation;
 	std::vector<void*> BuffersMapped;
 
 	void Create(VkDeviceSize bufferSize, bool IsUniform /*true if uniform buffer, false if storage buffer*/);

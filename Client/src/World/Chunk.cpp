@@ -12,19 +12,6 @@ enum class Face {
 	Back
 };
 
-uint32_t GetVertex(glm::ivec3 pos, int blockCorner, int texCorner, uint8_t texOffset, uint8_t faceID) {
-    uint32_t ret = 0;
-    
-    ret |= (faceID & 7) << 28;
-    ret |= texOffset << 20;
-    ret |= texCorner << 18;
-    ret |= blockCorner << 15;
-    ret |= (pos.y << 10);
-    ret |= (pos.z << 5);
-    ret |= pos.x;
-
-    return ret;
-}
 uint32_t GetFace(glm::ivec3 pos, uint8_t texIndex, uint8_t faceDir) {
     uint32_t ret = 0;
 
@@ -39,55 +26,6 @@ uint32_t GetFace(glm::ivec3 pos, uint8_t texIndex, uint8_t faceDir) {
 void AddFace(glm::ivec3 pos, Face face, uint8_t texOffset, std::vector<uint32_t>& faces) {
     faces.push_back(GetFace(pos, texOffset, static_cast<uint8_t>(face)));
     return;
-
-    uint32_t v1, v2, v3, v4;
-    uint8_t faceID = static_cast<uint8_t>(face);
-
-    switch(face) {
-        case Face::Top:
-        v1 = GetVertex(pos, 4, 0, texOffset, faceID);
-        v2 = GetVertex(pos, 5, 1, texOffset, faceID);
-        v3 = GetVertex(pos, 6, 2, texOffset, faceID);
-        v4 = GetVertex(pos, 7, 3, texOffset, faceID);
-        break;
-        case Face::Bottom:
-        v1 = GetVertex(pos, 0, 3, texOffset, faceID);
-        v2 = GetVertex(pos, 3, 2, texOffset, faceID);
-        v3 = GetVertex(pos, 2, 1, texOffset, faceID);
-        v4 = GetVertex(pos, 1, 0, texOffset, faceID);
-        break;
-        case Face::Left:
-        v1 = GetVertex(pos, 0, 3, texOffset, faceID);
-        v2 = GetVertex(pos, 4, 0, texOffset, faceID);
-        v3 = GetVertex(pos, 7, 1, texOffset, faceID);
-        v4 = GetVertex(pos, 3, 2, texOffset, faceID);
-        break;
-        case Face::Right:
-        v1 = GetVertex(pos, 1, 2, texOffset, faceID);
-        v2 = GetVertex(pos, 2, 3, texOffset, faceID);
-        v3 = GetVertex(pos, 6, 0, texOffset, faceID);
-        v4 = GetVertex(pos, 5, 1, texOffset, faceID);
-        break;
-        case Face::Front:
-        v1 = GetVertex(pos, 3, 3, texOffset, faceID);
-        v2 = GetVertex(pos, 7, 0, texOffset, faceID);
-        v3 = GetVertex(pos, 6, 1, texOffset, faceID);
-        v4 = GetVertex(pos, 2, 2, texOffset, faceID);
-        break; 
-        case Face::Back:
-        v1 = GetVertex(pos, 0, 2, texOffset, faceID);
-        v2 = GetVertex(pos, 1, 3, texOffset, faceID);
-        v3 = GetVertex(pos, 5, 0, texOffset, faceID);
-        v4 = GetVertex(pos, 4, 1, texOffset, faceID);
-        break; 
-    }
-
-    /*verticies.push_back(v1);
-    verticies.push_back(v2);
-    verticies.push_back(v3);
-    verticies.push_back(v3);
-    verticies.push_back(v4);
-    verticies.push_back(v1);*/
 }
 
 

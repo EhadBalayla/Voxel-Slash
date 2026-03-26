@@ -179,6 +179,8 @@ void App::Loop() {
 
                     m_BoxOutlineShader.Bind();
                     m_Renderer.SetTrans(mat);
+                    VkDescriptorSet sets[] = { m_Renderer.GetChunksSet(GContext->currentFrame) };
+                    vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Renderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
                     vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 24, 1, 0, 0);
 
                     m_SkeletalMeshShader.Bind();

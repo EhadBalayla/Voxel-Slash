@@ -5,8 +5,6 @@
 
 #include "../app.h"
 
-#include "VulkanUtilities.h"
-
 void Renderer::Init() {
 	createOffscreenPass();
 	createColorBuffer();
@@ -525,20 +523,31 @@ void Renderer::CreateChunkSets() {
 void UniformBuffer::Create(VkDeviceSize bufferSize, bool IsUniform) {
 	Renderer& renderer = GApp->m_Renderer;
 	Buffers.resize(renderer.GetMaxFramesInFlight());
-	BuffersMemory.resize(renderer.GetMaxFramesInFlight());
+	BuffersAllocation.resize(renderer.GetMaxFramesInFlight());
 	BuffersMapped.resize(renderer.GetMaxFramesInFlight());
 
-	VkBufferUsageFlagBits usage = IsUniform ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-	for (int i = 0; i < renderer.GetMaxFramesInFlight(); i++) {
-		VKUtils::createBuffer(bufferSize, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, Buffers[i], BuffersMemory[i]);
-		vkMapMemory(renderer.GetDevice(), BuffersMemory[i], 0, bufferSize, 0, &BuffersMapped[i]);
+	//allocating the regular mesh buffer
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = bufferSize;
+    bufferInfo.usage = IsUniform ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+
+	for(int i = 0; i < GContext->MAX_FRAMES_IN_FLIGHT; i++) {
+		if(vmaCreateBuffer(renderer.GetAllocator(), &bufferInfo, &allocInfo, &Buffers[i], &BuffersAllocation[i], nullptr) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate mesh buffer of a chunk");
+		}
+
+    	vmaMapMemory(renderer.GetAllocator(), BuffersAllocation[i], &BuffersMapped[i]);
 	}
 }
 void UniformBuffer::Delete() {
 	Renderer& renderer = GApp->m_Renderer;
 	for (int i = 0; i < renderer.GetMaxFramesInFlight(); i++) {
-		vkUnmapMemory(renderer.GetDevice(), BuffersMemory[i]);
-		vkDestroyBuffer(renderer.GetDevice(), Buffers[i], nullptr);
-		vkFreeMemory(renderer.GetDevice(), BuffersMemory[i], nullptr);
+		vmaUnmapMemory(renderer.GetAllocator(), BuffersAllocation[i]);
+		vmaDestroyBuffer(renderer.GetAllocator(), Buffers[i], BuffersAllocation[i]);
 	}
 }
