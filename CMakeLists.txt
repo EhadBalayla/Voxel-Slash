@@ -15,5 +15,7 @@ if(MSVC)
 endif()
 
 add_subdirectory(Shared)
+add_subdirectory(ServerCode)
 add_subdirectory(Client)
 add_subdirectory(Editor)
+add_subdirectory(Server)
