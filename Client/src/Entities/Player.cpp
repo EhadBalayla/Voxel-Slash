@@ -1,8 +1,10 @@
 #include "Player.h"
-#include "../core managers/app.h"
 #include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
+
+#include "../core managers/app.h"
+#include <GLFW/glfw3.h>
 
 #include "../core/Utilities.h"
 

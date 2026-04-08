@@ -9,6 +9,7 @@
 #include "Window.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <GLFW/glfw3.h>
 
 void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, VkSampler smp, int ScrWidth, int ScrHeight) {
     float left = -node->Left * ScrWidth;

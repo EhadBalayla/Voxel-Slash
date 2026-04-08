@@ -5,6 +5,7 @@
 #include "Rendering/Shader.h"
 #include "Texture.h"
 #include "AudioManager.h"
+#include "ClientNetworkManager.h"
 #include "ModInstance.h"
 #include "../Entities/Player.h"
 #include "../World/World.h"
@@ -25,6 +26,7 @@ public:
     FullscreenQuad m_FullscreenQuad;
     Renderer m_Renderer;
     AudioManager m_AudioManager;
+    ClientNetworkManager m_ClientNetworkManager;
     ModInstance* m_TempMod;
     Player* m_Player;
     World* m_World;

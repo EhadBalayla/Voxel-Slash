@@ -12,6 +12,8 @@ target_link_libraries(VoxelSlash_Server PRIVATE
 
 target_include_directories(VoxelSlash_Server PRIVATE
     ${CMAKE_SOURCE_DIR}/ServerCode/src
+    ${CMAKE_SOURCE_DIR}/ServerCode/ThirdParty
+    ${CMAKE_SOURCE_DIR}/Shared/ThirdParty
 )
 
 set_target_properties(VoxelSlash_Server PROPERTIES

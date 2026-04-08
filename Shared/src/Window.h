@@ -1,7 +1,8 @@
 #pragma once
-#include <GLFW/glfw3.h>
 #include "Context.h"
 #include "Swapchain.h"
+
+struct GLFWwindow;
 
 class Window {
 public:

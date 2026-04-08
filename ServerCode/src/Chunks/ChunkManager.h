@@ -2,9 +2,7 @@
 #include "ChunkProvider.h"
 #include "ChunkGenerator.h"
 
-#include "../../Block.h"
-
-#include <queue>
+#include "../Core Stuff/Block.h"
 
 class LODParallelism;
 
@@ -13,18 +11,12 @@ public:
     ChunkManager();
     ~ChunkManager();
 
-    void Update();
-    void Render();
-
     void UpdateChunks();
 
     ChunkProvider& GetChunkProvider();
     ChunkGenerator& GetChunkGenerator();
 
     bool IsUpdatingChunks = false;
-    void PushReadyChunk(Chunk* c);
-
-    LODParallelism** LODParallels;
 
     BlockType GetBlockAt(int x, int y, int z);
 private:
@@ -37,9 +29,4 @@ private:
     std::mutex tempMTX;
     std::thread chunksUpdater;
     std::condition_variable updaterCV;
-
-    
-    std::mutex readyMutex;
-    std::queue<Chunk*> readyTransitionQueue;
-    std::unordered_set<Chunk*> renderReadySet;
 };

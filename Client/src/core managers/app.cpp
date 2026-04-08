@@ -1,5 +1,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <GLFW/glfw3.h>
 
 #include "app.h"
 #include "../core/Utilities.h"
@@ -8,6 +9,8 @@
 #include <filesystem>
 
 #include "Canvas.h"
+
+#undef CreateWindow
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void resize_callback(GLFWwindow* window, int width, int height);
@@ -18,6 +21,8 @@ App::App() {
 }
 
 void App::Init() {
+    m_ClientNetworkManager.InitializeNetwork();
+
     Window::InitGLFW();
     m_Window.CreateWindow("Voxel Slash", Width, Height);
     m_Window.MakeContext();
@@ -77,6 +82,14 @@ void App::Init() {
                 GApp->m_Player->Position = glm::vec3(10.0f, 11.0f, 10.0f);
                 GApp->m_World = new World();
                 GApp->m_World->GetChunkManager().UpdateChunks();
+            };
+        }
+
+        if(N->m_Name == "MP Button") {
+            UIButton* btn = static_cast<UIButton*>(N->m_Element);
+            btn->OnPress = []() {
+                if(!GApp->m_ClientNetworkManager.connected) GApp->m_ClientNetworkManager.Connect();
+                else GApp->m_ClientNetworkManager.Disconnect();
             };
         }
 
@@ -267,6 +280,8 @@ void App::Terminate() {
     m_Window.DestroyContext();
     m_Window.DestroyWindow();
     Window::TerminateGLFW();
+
+    m_ClientNetworkManager.ShutdownNetwork();
 }
 
 void App::RegisterAllBlocks() {

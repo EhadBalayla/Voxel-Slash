@@ -1,10 +1,13 @@
 #include "Entity.h"
-#include "../core managers/app.h"
 #include <algorithm>
 
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "AssetFormats/TransformAsset.h"
+#include "../core managers/app.h"
+
+#undef min
+#undef max
 
 void RenderNode(PrefabNode* node, glm::mat4 parentTransform) {
 	glm::mat4 pos = glm::translate(glm::mat4(1.0f), node->pos);

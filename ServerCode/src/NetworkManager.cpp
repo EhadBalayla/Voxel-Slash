@@ -17,6 +17,8 @@ char recvbuf[DEFAULT_BUFLEN];
 int iResult, iSendResult;
 int recvbuflen = DEFAULT_BUFLEN;
 
+#include "Server.h"
+
 NetworkManager::NetworkManager() {
     WSADATA wsaData;
 
@@ -80,6 +82,7 @@ NetworkManager::NetworkManager() {
 
     connectsThread = std::thread(&NetworkManager::connectsLoop, this);
     recieveThread = std::thread(&NetworkManager::recieveLoop, this);
+    sendThread = std::thread(&NetworkManager::sendLoop, this);
 
     std::cout << "Networking part of the server started successfully" << std::endl;
 }
@@ -90,10 +93,11 @@ NetworkManager::~NetworkManager() {
     
     connectsThread.join();
     recieveThread.join();
+    sendThread.join();
 
     for(auto& n : connectedClients) {
-        shutdown(n, SD_SEND);
-        closesocket(n);
+        shutdown(n.ClientSocket, SD_SEND);
+        closesocket(n.ClientSocket);
     }
     WSACleanup();
 }
@@ -105,8 +109,13 @@ void NetworkManager::connectsLoop() {
         SOCKET ClientSocket = accept(ListenSocket, NULL, NULL);
         if (ClientSocket != INVALID_SOCKET) {
             std::cout << "A client connected" << std::endl;
+
+            ConnectionData connection;
+            connection.ClientSocket = ClientSocket;
+            connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player");
+
             std::lock_guard<std::mutex> lock(clientsMutex);
-            connectedClients.push_back(ClientSocket);
+            connectedClients.push_back(connection);
         }
     }
 }
@@ -119,17 +128,31 @@ void NetworkManager::recieveLoop() {
         }
 
         for(auto it = connectedClients.begin(); it != connectedClients.end(); ) {
-            SOCKET ClientSocket = *it;
+            ConnectionData connection = *it;
 
-            iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+            iResult = recv(connection.ClientSocket, recvbuf, recvbuflen, 0);
             if(iResult > 0) {
                 it++;
             } 
             else {
-                closesocket(ClientSocket);
+                closesocket(connection.ClientSocket);
                 it = connectedClients.erase(it);
                 std::cout << "A certain client has disconnected" << std::endl;
             }
+
+        }
+    }
+}
+void NetworkManager::sendLoop() {
+    while(threadRunning) {
+        std::lock_guard<std::mutex> lock(clientsMutex);
+        if(connectedClients.empty()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            continue;
+        }
+
+        for(auto it = connectedClients.begin(); it != connectedClients.end(); ) {
+            ConnectionData connection = *it;
 
         }
     }
