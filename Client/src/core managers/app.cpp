@@ -175,10 +175,6 @@ void App::Loop() {
                 proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
                 m_Frustum = ExtractFrustum(proj * m_Player->GetViewMatrix());
 
-
-                //m_Player->UpdateChunksAroundPlayer();
-                //m_Player->Update(0.001);
-
                 m_Renderer.SetViewProj(m_Player->GetViewMatrix(), proj);
                      
                 m_Renderer.StartRender();
@@ -262,6 +258,31 @@ void App::Loop() {
                 else if (!m_MPWorld) m_MPWorld = new MPWorld;
                 else {
                     std::cout << "Player pos is: " << m_MPWorld->m_ClientEntityManager.playerPos.x << ", " << m_MPWorld->m_ClientEntityManager.playerPos.y << ", " << m_MPWorld->m_ClientEntityManager.playerPos.z << ", and rotation is " << m_MPWorld->m_ClientEntityManager.playerRot << std::endl; 
+                
+                    m_MPWorld->m_ClientEntityManager.InterpolateCamera(deltaTime);
+
+                    proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
+                    m_Renderer.SetViewProj(m_MPWorld->m_ClientEntityManager.GetViewMatrix(), proj);
+                    
+                    m_Renderer.StartRender();
+
+                    {
+                        glm::mat4 mat = glm::mat4(1.0f);
+                        mat = glm::translate(glm::mat4(1.0f), (glm::vec3)m_MPWorld->m_ClientEntityManager.playerPos + glm::vec3(0.0f, 1.8f / 2.0f, 0.0f));
+                        mat = glm::scale(mat, glm::vec3(0.5f, 1.8f, 0.5f));
+
+                        m_BoxOutlineShader.Bind();
+                        m_Renderer.SetTrans(mat);
+                        VkDescriptorSet sets[] = { m_Renderer.GetChunksSet(GContext->currentFrame) };
+                        vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Renderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
+                        vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 24, 1, 0, 0);
+                    }
+
+                    m_Renderer.EndRender();
+
+                    m_Window.StartFullscreenRender();
+                    m_FullscreenQuad.Draw();
+                    m_Window.EndFullscreenRender();
                 }
             }
         }

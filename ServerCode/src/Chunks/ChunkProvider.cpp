@@ -24,6 +24,7 @@ Chunk* ChunkProvider::ProvideChunk(int ChunkX, int ChunkY, int ChunkZ, int LOD) 
     owningManager->GetChunkGenerator().GenerateChunk(c);
     owningManager->GetChunkGenerator().ReplaceBlocks(c);
     owningManager->GetChunkGenerator().CarveCaves(c);
+    c->IsGenerated = true;
 
     return c;
 }

@@ -9,3 +9,9 @@ Editor/Compiled/VoxelSlash_Editor.exe
 
 Shared/Compiled/Shared.pdb
 Shared/Compiled/Shared.lib
+
+ServerCode/Compiled/ServerCode.pdb
+ServerCode/Compiled/ServerCode.lib
+
+Server/Compiled/VoxelSlash_Server.pdb
+Server/Compiled/VoxelSlash_Server.exe
