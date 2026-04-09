@@ -112,7 +112,7 @@ void NetworkManager::connectsLoop() {
 
             ConnectionData connection;
             connection.ClientSocket = ClientSocket;
-            connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player");
+            connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 11.0f, 10.0f));
 
             std::lock_guard<std::mutex> lock(clientsMutex);
             connectedClients.push_back(connection);
@@ -154,6 +154,19 @@ void NetworkManager::sendLoop() {
         for(auto it = connectedClients.begin(); it != connectedClients.end(); ) {
             ConnectionData connection = *it;
 
+            struct PlayerSend {
+                glm::dvec3 pos;
+                float rot;
+            };
+            Entity playerEntity = GServer->m_EntityManager.GetEntity(connection.EntityID);
+            PlayerSend data = {playerEntity.Position, playerEntity.Rotation};
+
+            int iSendResult = send(connection.ClientSocket, reinterpret_cast<char*>(&data), sizeof(PlayerSend), 0);
+            if(iSendResult == SOCKET_ERROR) {
+                std::cout << "Failed to send player data to one of the clients" << std::endl;
+            } else {
+                std::cout << "Sent the client the player data" << std::endl;
+            }
         }
     }
 }

@@ -11,8 +11,9 @@ public:
 
     void TickEntities();
 
-    uint64_t SpawnEntity(std::string EntityType); //spawns an entity based on type and returns the ID for the spawned entity
+    uint64_t SpawnEntity(std::string EntityType, glm::dvec3 Position = glm::dvec3(0.0), float Rotation = 0.0f); //spawns an entity based on type and returns the ID for the spawned entity
     void DeleteEntity(uint64_t id);
+    Entity GetEntity(uint64_t id); //copies the entity
 private:
     uint64_t NextEntityID = 0; //a counter for entity ids
 

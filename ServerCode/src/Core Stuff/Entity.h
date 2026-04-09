@@ -11,7 +11,8 @@ struct EntityData {
 class EntityManager;
 class Entity {
 public:
-    glm::dvec3 Position = glm::dvec3(0.0f); //remember to later on change it into doubles to fix distance precision loss
+    uint64_t ID = 0;
+    glm::dvec3 Position = glm::dvec3(0.0f);
     float Rotation = 0.0f;
     EntityData Data;
     void* ExtraData = nullptr;
@@ -20,7 +21,7 @@ public:
     glm::vec3 GetRightVector();
     
     void MoveAndCollide(float DeltaTime);
-protected:
+private:
 
     bool IsOnGround = false;
     float acceleration = 0.5f;

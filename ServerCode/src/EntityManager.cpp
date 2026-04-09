@@ -17,12 +17,15 @@ void EntityManager::TickEntities() {
     }*/
 }
 
-uint64_t EntityManager::SpawnEntity(std::string EntityID) {
+uint64_t EntityManager::SpawnEntity(std::string EntityID, glm::dvec3 Position, float Rotation) {
     //assuming the type always exists, cause i am too lazy for the moment to add simple check
     auto& registery = GServer->m_Registery.GetEntityRegistery();
     EntityData data = registery[EntityID];
 
     Entity entity;
+    entity.ID = NextEntityID;
+    entity.Position = Position;
+    entity.Rotation = Rotation;
     entity.Data = data;
 
     entity.ExtraData = data.CreateExtraData();
@@ -49,12 +52,15 @@ void EntityManager::DeleteEntity(uint64_t id) {
 
     free(entities[idx].ExtraData);
 
-    // swap with last element to maintain vector integrity
     if(idx != entities.size() - 1) {
         std::swap(entities[idx], entities.back());
-        //idToIdx[entities[idx].ID] = idx; // update map
+        idToIdx[entities[idx].ID] = idx;
     }
 
     entities.pop_back();
     idToIdx.erase(it);
+}
+Entity EntityManager::GetEntity(uint64_t id) {
+    std::lock_guard<std::mutex> lock(enttArrMTX);
+    return entities[idToIdx[id]];
 }

@@ -16,6 +16,9 @@
 int recvbuflen = DEFAULT_BUFLEN;
 char recvbuf[DEFAULT_BUFLEN];
 
+#undef CreateWindow
+#include "app.h"
+
 void ClientNetworkManager::InitializeNetwork() {
     WSADATA wsaData;
 
@@ -98,9 +101,18 @@ void ClientNetworkManager::sendLoop() {
 }
 void ClientNetworkManager::recieveLoop() {
     while(ThreadsRunning) {
-        int iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        if(iResult > 0) {
+        struct PlayerData {
+            glm::dvec3 pos;
+            float rot;
+        };
+        PlayerData data;
 
+        int iResult = recv(ConnectSocket, reinterpret_cast<char*>(&data), sizeof(PlayerData), 0);
+        if(iResult > 0) {
+            if(GApp->m_MPWorld) {
+                GApp->m_MPWorld->m_ClientEntityManager.playerPos = data.pos;
+                GApp->m_MPWorld->m_ClientEntityManager.playerRot = data.rot;
+            }
         } 
         else if(iResult == 0) {
 

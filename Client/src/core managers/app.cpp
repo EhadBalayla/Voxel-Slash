@@ -88,8 +88,7 @@ void App::Init() {
         if(N->m_Name == "MP Button") {
             UIButton* btn = static_cast<UIButton*>(N->m_Element);
             btn->OnPress = []() {
-                if(!GApp->m_ClientNetworkManager.connected) GApp->m_ClientNetworkManager.Connect();
-                else GApp->m_ClientNetworkManager.Disconnect();
+                GApp->state = GameState::Multiplayer;
             };
         }
 
@@ -257,6 +256,13 @@ void App::Loop() {
                     }
                 }
                 break;
+            }
+            case GameState::Multiplayer: {
+                if(!GApp->m_ClientNetworkManager.connected) GApp->m_ClientNetworkManager.Connect();
+                else if (!m_MPWorld) m_MPWorld = new MPWorld;
+                else {
+                    std::cout << "Player pos is: " << m_MPWorld->m_ClientEntityManager.playerPos.x << ", " << m_MPWorld->m_ClientEntityManager.playerPos.y << ", " << m_MPWorld->m_ClientEntityManager.playerPos.z << ", and rotation is " << m_MPWorld->m_ClientEntityManager.playerRot << std::endl; 
+                }
             }
         }
         m_Window.NextFrame();

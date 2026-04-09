@@ -14,9 +14,13 @@
 
 #include "../core/Frustum.h"
 
+#include "../ClientSideStuff/MPWorld.h"
+
+
 enum class GameState {
     MainMenu,
-    InGame
+    InGame,
+    Multiplayer
 };
 
 class App {
@@ -30,6 +34,8 @@ public:
     ModInstance* m_TempMod;
     Player* m_Player;
     World* m_World;
+
+    MPWorld* m_MPWorld = nullptr; //for the whole multiplayer thingy
 
     //shaders
     Shader m_OpaqueShader;
