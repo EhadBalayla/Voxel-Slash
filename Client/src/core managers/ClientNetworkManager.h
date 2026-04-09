@@ -14,10 +14,11 @@ public:
     bool connected = false;
 private:
     bool ThreadsRunning = true;
-    void sendLoop();
-    void recieveLoop();
-    std::thread recieveThread;
-    std::thread sendThread;
+    
+    void UDPRecieveLoop();
+    std::thread UDPRecieveThread;
 
-    SOCKET ConnectSocket = INVALID_SOCKET;
+    SOCKET TCPClientSocket = INVALID_SOCKET;
+    SOCKET UDPClientSocket = INVALID_SOCKET;
+    sockaddr_in serverAddr;
 };

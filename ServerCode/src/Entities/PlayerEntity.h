@@ -31,7 +31,7 @@ void UpdateChunksAroundPlayer(Entity* player) {
 //actual entity functions
 void PlayerTick(Entity* self) {
     UpdateChunksAroundPlayer(self);
-    self->MoveAndCollide(1.0 / 20.0f);
+    //self->MoveAndCollide(1.0 / 20.0f);
 }
 void* PlayerDataCreation() {
     PlayerData* pData = (PlayerData*)malloc(sizeof(PlayerData)); 

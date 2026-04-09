@@ -1,5 +1,5 @@
 #include "Entity.h"
 
-void Entity::MoveAndCollide(float DeltaTime) {
+/*void Entity::MoveAndCollide(float DeltaTime) {
     
-}
+}*/

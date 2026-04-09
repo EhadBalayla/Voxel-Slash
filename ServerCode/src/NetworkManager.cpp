@@ -39,7 +39,6 @@ NetworkManager::NetworkManager() {
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
 
-    // Resolve the local address and port to be used by the server
     iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
     if (iResult != 0) {
         std::cout << "getaddrinfo failed: " << iResult << std::endl;
@@ -47,53 +46,63 @@ NetworkManager::NetworkManager() {
         exit(EXIT_FAILURE);
     }
 
-
-
-    ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (ListenSocket == INVALID_SOCKET) {
+    //creating the TCP socket
+    TCPSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (TCPSocket == INVALID_SOCKET) {
         std::cout << "Couldn't create the server socket because: " << WSAGetLastError() << std::endl;
         freeaddrinfo(result);
         WSACleanup();
         exit(EXIT_FAILURE);
     }
 
-
-
-    iResult = bind( ListenSocket, result->ai_addr, (int)result->ai_addrlen);
+    iResult = bind( TCPSocket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
         std::cout << "Couldn't bind listen socket to server because: " << WSAGetLastError() << std::endl;
         freeaddrinfo(result);
-        closesocket(ListenSocket);
+        closesocket(TCPSocket);
         WSACleanup();
         exit(EXIT_FAILURE);
     }
-
     freeaddrinfo(result);
 
-    if (listen(ListenSocket, SOMAXCONN ) == SOCKET_ERROR ) {
+    if (listen(TCPSocket, SOMAXCONN ) == SOCKET_ERROR ) {
         std::cout << "Couldn't start listening because: " << WSAGetLastError() << std::endl;
-        closesocket(ListenSocket);
+        closesocket(TCPSocket);
         WSACleanup();
         exit(EXIT_FAILURE);
     }
+
+
+    //creating the UDP socket
+    UDPSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if(UDPSocket == INVALID_SOCKET) {
+        std::cout << "Couldn't create the server socket because: " << WSAGetLastError() << std::endl;
+        WSACleanup();
+        exit(EXIT_FAILURE);
+    }
+
+    sockaddr_in serverAddr;
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+    serverAddr.sin_port = htons(27015);
+    iResult = bind(UDPSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
+    if(iResult )
+
 
 
     std::cout << "Starting threads for listening to connections and sending data between connected clients" << std::endl;
 
     connectsThread = std::thread(&NetworkManager::connectsLoop, this);
-    recieveThread = std::thread(&NetworkManager::recieveLoop, this);
-    sendThread = std::thread(&NetworkManager::sendLoop, this);
 
     std::cout << "Networking part of the server started successfully" << std::endl;
 }
 NetworkManager::~NetworkManager() {
     threadRunning = false;
 
-    closesocket(ListenSocket);
+    closesocket(TCPSocket);
+    closesocket(UDPSocket);
     
     connectsThread.join();
-    recieveThread.join();
-    sendThread.join();
 
     for(auto& n : connectedClients) {
         shutdown(n.ClientSocket, SD_SEND);
@@ -102,71 +111,49 @@ NetworkManager::~NetworkManager() {
     WSACleanup();
 }
 
+void NetworkManager::SendEntitiesData() {
+    std::lock_guard<std::mutex> lock(clientsMutex);
+    if(connectedClients.empty()) return;
+
+    for(auto it = connectedClients.begin(); it != connectedClients.end(); ) {
+        ConnectionData connection = *it;
+
+        struct PlayerSend {
+            glm::dvec3 pos;
+            float rot;
+        };
+        Entity playerEntity = GServer->m_EntityManager.GetEntity(connection.EntityID);
+        PlayerSend data = {playerEntity.Position, playerEntity.Rotation};
+
+        sendto(UDPSocket, reinterpret_cast<char*>(&data), sizeof(PlayerSend), 0, (sockaddr*)&connection.udpAddr, sizeof(sockaddr_in));
+    }
+}
+
+
+
 
 
 void NetworkManager::connectsLoop() {
     while(threadRunning) {
-        SOCKET ClientSocket = accept(ListenSocket, NULL, NULL);
+        SOCKET ClientSocket = accept(TCPSocket, NULL, NULL);
         if (ClientSocket != INVALID_SOCKET) {
+            char handshakeRetBuffer[20]; //just to be safe
+            sockaddr_in addr;
+            size_t len = sizeof(addr);
+            recvfrom(UDPSocket, handshakeRetBuffer, 20, 0, (sockaddr*)&addr, (int*)&len);
+
+            char MSG[] = "Hello Client";
+            sendto(UDPSocket, MSG, strlen(MSG), 0, (sockaddr*)&addr, len);
+
             std::cout << "A client connected" << std::endl;
 
             ConnectionData connection;
             connection.ClientSocket = ClientSocket;
+            connection.udpAddr = addr;
             connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 11.0f, 10.0f));
 
             std::lock_guard<std::mutex> lock(clientsMutex);
             connectedClients.push_back(connection);
-        }
-    }
-}
-void NetworkManager::recieveLoop() {
-    while(threadRunning) {
-        std::lock_guard<std::mutex> lock(clientsMutex);
-        if(connectedClients.empty()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            continue;
-        }
-
-        for(auto it = connectedClients.begin(); it != connectedClients.end(); ) {
-            ConnectionData connection = *it;
-
-            iResult = recv(connection.ClientSocket, recvbuf, recvbuflen, 0);
-            if(iResult > 0) {
-                it++;
-            } 
-            else {
-                closesocket(connection.ClientSocket);
-                it = connectedClients.erase(it);
-                std::cout << "A certain client has disconnected" << std::endl;
-            }
-
-        }
-    }
-}
-void NetworkManager::sendLoop() {
-    while(threadRunning) {
-        std::lock_guard<std::mutex> lock(clientsMutex);
-        if(connectedClients.empty()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            continue;
-        }
-
-        for(auto it = connectedClients.begin(); it != connectedClients.end(); ) {
-            ConnectionData connection = *it;
-
-            struct PlayerSend {
-                glm::dvec3 pos;
-                float rot;
-            };
-            Entity playerEntity = GServer->m_EntityManager.GetEntity(connection.EntityID);
-            PlayerSend data = {playerEntity.Position, playerEntity.Rotation};
-
-            int iSendResult = send(connection.ClientSocket, reinterpret_cast<char*>(&data), sizeof(PlayerSend), 0);
-            if(iSendResult == SOCKET_ERROR) {
-                std::cout << "Failed to send player data to one of the clients" << std::endl;
-            } else {
-                std::cout << "Sent the client the player data" << std::endl;
-            }
         }
     }
 }

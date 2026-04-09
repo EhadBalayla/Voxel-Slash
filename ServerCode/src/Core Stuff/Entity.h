@@ -17,7 +17,7 @@ public:
     EntityData Data;
     void* ExtraData = nullptr;
 
-    glm::vec3 GetForwardVector();
+    /*glm::vec3 GetForwardVector();
     glm::vec3 GetRightVector();
     
     void MoveAndCollide(float DeltaTime);
@@ -28,5 +28,5 @@ private:
 	float maxMovementSpeed = 5.2f;
 	float friction = 0.8f;
 	float gravity = 15.0f;
-    glm::vec3 velocity = glm::vec3(0.0f);
+    glm::vec3 velocity = glm::vec3(0.0f);*/
 };

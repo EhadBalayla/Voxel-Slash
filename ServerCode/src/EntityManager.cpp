@@ -3,18 +3,18 @@
 #include <iostream>
 
 EntityManager::EntityManager() {
-    std::cout << "Started the entity manager" << std::endl;
+    std::cout << "Started the entity manager\n";
 }
 EntityManager::~EntityManager() {
-    std::cout << "Ended the entity manager" << std::endl;
+    std::cout << "Ended the entity manager\n";
 }
 
 void EntityManager::TickEntities() {
-    //std::lock_guard<std::mutex> lock(enttArrMTX);
+    std::lock_guard<std::mutex> lock(enttArrMTX);
 
-    /*for(auto& e : entities) {
+    for(auto& e : entities) {
         e.Data.Tick(&e);
-    }*/
+    }
 }
 
 uint64_t EntityManager::SpawnEntity(std::string EntityID, glm::dvec3 Position, float Rotation) {
@@ -39,7 +39,7 @@ uint64_t EntityManager::SpawnEntity(std::string EntityID, glm::dvec3 Position, f
     NextEntityID++;
 
     idToIdx[currentID] = entities.size() - 1;
-    std::cout << "Spawned entity of type " << EntityID << std::endl;
+    std::cout << "Spawned entity of type " << EntityID << "\n";
     return currentID;
 }
 void EntityManager::DeleteEntity(uint64_t id) {

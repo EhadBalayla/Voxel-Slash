@@ -257,8 +257,6 @@ void App::Loop() {
                 if(!GApp->m_ClientNetworkManager.connected) GApp->m_ClientNetworkManager.Connect();
                 else if (!m_MPWorld) m_MPWorld = new MPWorld;
                 else {
-                    std::cout << "Player pos is: " << m_MPWorld->m_ClientEntityManager.playerPos.x << ", " << m_MPWorld->m_ClientEntityManager.playerPos.y << ", " << m_MPWorld->m_ClientEntityManager.playerPos.z << ", and rotation is " << m_MPWorld->m_ClientEntityManager.playerRot << std::endl; 
-                
                     m_MPWorld->m_ClientEntityManager.InterpolateCamera(deltaTime);
 
                     proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);

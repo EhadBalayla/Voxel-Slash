@@ -5,12 +5,12 @@
 
 TickManager::TickManager() {
     tickThread = std::thread(&TickManager::TickLoop, this);
-    std::cout << "Started off the ticking thread" << std::endl;
+    std::cout << "Started off the ticking thread\n";
 }
 TickManager::~TickManager() {
     ThreadLooping = false;
     tickThread.join();
-    std::cout << "Stopped the ticking thread" << std::endl;
+    std::cout << "Stopped the ticking thread\n";
 }
 
 void TickManager::TickLoop() {
@@ -18,6 +18,8 @@ void TickManager::TickLoop() {
         auto tickStart = std::chrono::steady_clock::now();
         
         GServer->m_EntityManager.TickEntities();
+
+        GServer->m_NetworkManager.SendEntitiesData();
 
         auto tickEnd = std::chrono::steady_clock::now();
         std::chrono::duration<float> elapsed = tickEnd - tickStart;

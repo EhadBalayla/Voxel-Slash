@@ -10,10 +10,10 @@ public:
     Server();
 
     NetworkManager m_NetworkManager;
-    TickManager m_TickManager;
-    ChunkManager m_ChunkManager;
     EntityManager m_EntityManager;
+    ChunkManager m_ChunkManager;
     Registery m_Registery;
+    TickManager m_TickManager;
 };
 
 extern Server* GServer;
