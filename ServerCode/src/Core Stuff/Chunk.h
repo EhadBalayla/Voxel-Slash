@@ -13,7 +13,7 @@ class Chunk {
 public:
     //raw chunk data
     int LOD;
-    int ChunkX, ChunkY, ChunkZ;
+    int64_t ChunkX, ChunkY, ChunkZ;
     BlockType m_Blocks[VOXEL_ARRAY_SIZE] {BlockType::Air};
 
     //flags and side stuff

@@ -12,11 +12,6 @@
 #define PORT "27015"
 #define IP "127.0.0.1"
 
-#define DEFAULT_BUFLEN 512
-
-int recvbuflen = DEFAULT_BUFLEN;
-char recvbuf[DEFAULT_BUFLEN];
-
 #undef CreateWindow
 #include "app.h"
 
@@ -101,6 +96,7 @@ void ClientNetworkManager::Connect() {
 
     ThreadsRunning = true;
     UDPRecieveThread = std::thread(&ClientNetworkManager::UDPRecieveLoop, this);
+    TCPRecieveThread = std::thread(&ClientNetworkManager::TCPRecieveLoop, this);
 
     connected = true;
 }
@@ -126,5 +122,19 @@ void ClientNetworkManager::UDPRecieveLoop() {
 
         GApp->m_MPWorld->m_ClientEntityManager.playerPos = data.pos;
         GApp->m_MPWorld->m_ClientEntityManager.playerRot = data.rot;
+    }
+}
+void ClientNetworkManager::TCPRecieveLoop() {
+    while(ThreadsRunning) {
+        struct ChunkPacket {
+            int LOD;
+            int64_t ChunkX, ChunkY, ChunkZ;
+            BlockType m_Blocks[32*32*32];
+        };
+        ChunkPacket data;
+        size_t len = sizeof(serverAddr);
+        recv(TCPClientSocket, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
+
+        GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(glm::i64vec3(data.ChunkX, data.ChunkY, data.ChunkZ), data.m_Blocks);
     }
 }

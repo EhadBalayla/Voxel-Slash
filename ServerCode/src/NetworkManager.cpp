@@ -11,13 +11,10 @@
 
 #define DEFAULT_PORT "27015"
 
-#define DEFAULT_BUFLEN 512
-
-char recvbuf[DEFAULT_BUFLEN];
 int iResult, iSendResult;
-int recvbuflen = DEFAULT_BUFLEN;
 
 #include "Server.h"
+#include "Core Stuff/Packets.h"
 
 NetworkManager::NetworkManager() {
     WSADATA wsaData;
@@ -118,14 +115,23 @@ void NetworkManager::SendEntitiesData() {
     for(auto it = connectedClients.begin(); it != connectedClients.end(); ) {
         ConnectionData connection = *it;
 
-        struct PlayerSend {
-            glm::dvec3 pos;
-            float rot;
-        };
         Entity playerEntity = GServer->m_EntityManager.GetEntity(connection.EntityID);
-        PlayerSend data = {playerEntity.Position, playerEntity.Rotation};
+        PlayerPacket data = {playerEntity.Position, playerEntity.Rotation};
 
-        sendto(UDPSocket, reinterpret_cast<char*>(&data), sizeof(PlayerSend), 0, (sockaddr*)&connection.udpAddr, sizeof(sockaddr_in));
+        sendto(UDPSocket, reinterpret_cast<char*>(&data), sizeof(PlayerPacket), 0, (sockaddr*)&connection.udpAddr, sizeof(sockaddr_in));
+    }
+}
+void NetworkManager::SendChunksData(SOCKET s) {
+    for(auto& c : GServer->m_ChunkManager.GetChunkProvider().GetAllChunks(0)) {
+        //if(!c.second->HasAnything) continue;
+
+        ChunkPacket data;
+        data.ChunkX = c.first.x;
+        data.ChunkY = c.first.y;
+        data.ChunkZ = c.first.z;
+        memcpy(data.m_Blocks, c.second->m_Blocks, VOXEL_ARRAY_SIZE);
+
+        send(s, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
     }
 }
 
@@ -151,6 +157,8 @@ void NetworkManager::connectsLoop() {
             connection.ClientSocket = ClientSocket;
             connection.udpAddr = addr;
             connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 11.0f, 10.0f));
+
+            SendChunksData(connection.ClientSocket);
 
             std::lock_guard<std::mutex> lock(clientsMutex);
             connectedClients.push_back(connection);

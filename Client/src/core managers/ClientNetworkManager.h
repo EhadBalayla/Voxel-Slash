@@ -16,7 +16,9 @@ private:
     bool ThreadsRunning = true;
     
     void UDPRecieveLoop();
+    void TCPRecieveLoop();
     std::thread UDPRecieveThread;
+    std::thread TCPRecieveThread;
 
     SOCKET TCPClientSocket = INVALID_SOCKET;
     SOCKET UDPClientSocket = INVALID_SOCKET;

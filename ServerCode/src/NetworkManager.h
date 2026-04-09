@@ -16,6 +16,7 @@ public:
     ~NetworkManager();
 
     void SendEntitiesData(); //sends entities data to all connected clients
+    void SendChunksData(SOCKET s); //temporary, simply sends all chunks to a client
 private:
     bool threadRunning = true;
     void connectsLoop();

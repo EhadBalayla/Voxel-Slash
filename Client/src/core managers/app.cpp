@@ -263,7 +263,7 @@ void App::Loop() {
                     m_Renderer.SetViewProj(m_MPWorld->m_ClientEntityManager.GetViewMatrix(), proj);
                     
                     m_Renderer.StartRender();
-
+                    m_MPWorld->m_ClientChunkManager.RenderChunks();
                     {
                         glm::mat4 mat = glm::mat4(1.0f);
                         mat = glm::translate(glm::mat4(1.0f), (glm::vec3)m_MPWorld->m_ClientEntityManager.playerPos + glm::vec3(0.0f, 1.8f / 2.0f, 0.0f));
