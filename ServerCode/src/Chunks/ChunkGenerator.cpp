@@ -71,10 +71,10 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
     int LODSize = GetLODSize(c->LOD);
 
     for(int x = 0; x < Chunk_Length; x++) {
-        int64_t WorldX = x * LODSize + c->ChunkX * Chunk_Length * LODSize;
+        int WorldX = x * LODSize + c->ChunkX * Chunk_Length * LODSize;
 
         for(int z = 0; z < Chunk_Length; z++) {
-            int64_t WorldZ = z * LODSize + c->ChunkZ * Chunk_Length * LODSize;
+            int WorldZ = z * LODSize + c->ChunkZ * Chunk_Length * LODSize;
 
             float Height = 0.0f;
             float continental = continentalNoise.GetNoise((float)WorldX, (float)WorldZ) * -4.0f;
@@ -102,7 +102,7 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
             Height += flat * flatFactor + hilly * hillFactor + mountainous * mountainFactor;
 
             for(int y = 0; y < Chunk_Length; y++) {
-                int64_t WorldY = y * LODSize + c->ChunkY * Chunk_Length * LODSize;
+                int WorldY = y * LODSize + c->ChunkY * Chunk_Length * LODSize;
 
                 int idx = IndexAt(x, y, z);
 

@@ -119,6 +119,8 @@ void NetworkManager::SendEntitiesData() {
         PlayerPacket data = {playerEntity.Position, playerEntity.Rotation};
 
         sendto(UDPSocket, reinterpret_cast<char*>(&data), sizeof(PlayerPacket), 0, (sockaddr*)&connection.udpAddr, sizeof(sockaddr_in));
+
+        it++;
     }
 }
 void NetworkManager::SendChunksData(SOCKET s) {
@@ -126,10 +128,12 @@ void NetworkManager::SendChunksData(SOCKET s) {
         //if(!c.second->HasAnything) continue;
 
         ChunkPacket data;
-        data.ChunkX = c.first.x;
-        data.ChunkY = c.first.y;
-        data.ChunkZ = c.first.z;
+        data.LOD = c.second->LOD;
+        data.ChunkX = c.second->ChunkX;
+        data.ChunkY = c.second->ChunkY;
+        data.ChunkZ = c.second->ChunkZ;
         memcpy(data.m_Blocks, c.second->m_Blocks, VOXEL_ARRAY_SIZE);
+        data.HasAnything = c.second->HasAnything;
 
         send(s, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
     }
@@ -156,7 +160,7 @@ void NetworkManager::connectsLoop() {
             ConnectionData connection;
             connection.ClientSocket = ClientSocket;
             connection.udpAddr = addr;
-            connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 11.0f, 10.0f));
+            connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 100.0f, 10.0f));
 
             SendChunksData(connection.ClientSocket);
 

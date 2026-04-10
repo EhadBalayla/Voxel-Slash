@@ -130,11 +130,13 @@ void ClientNetworkManager::TCPRecieveLoop() {
             int LOD;
             int64_t ChunkX, ChunkY, ChunkZ;
             BlockType m_Blocks[32*32*32];
+            bool HasAnything;
         };
         ChunkPacket data;
         size_t len = sizeof(serverAddr);
         recv(TCPClientSocket, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
 
-        GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(glm::i64vec3(data.ChunkX, data.ChunkY, data.ChunkZ), data.m_Blocks);
+        std::cout << "Got a chunk from server\n";
+        GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(glm::i64vec3(data.ChunkX, data.ChunkY, data.ChunkZ), data.m_Blocks, data.HasAnything);
     }
 }

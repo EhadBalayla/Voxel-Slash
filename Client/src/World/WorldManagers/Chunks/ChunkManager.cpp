@@ -32,16 +32,13 @@ ChunkManager::~ChunkManager() {
 }
 
 void ChunkManager::Render() {
-    Chunk* c = nullptr;
     {
         std::lock_guard<std::mutex> lock(readyMutex);
-        if(!readyTransitionQueue.empty()) {
-            c = readyTransitionQueue.front();
+        while(!readyTransitionQueue.empty()) {
+            renderReadySet.push_back(readyTransitionQueue.front());
             readyTransitionQueue.pop();
         }
     }
-
-    if(c) renderReadySet.insert(c);
 
 
     GApp->m_OpaqueShader.Bind();

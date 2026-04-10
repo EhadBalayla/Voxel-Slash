@@ -24,9 +24,10 @@ public:
     int64_t ChunkX, ChunkY, ChunkZ;
     BlockType m_Blocks[32*32*32] {BlockType::Air};
 
-    bool IsMeshPending = false;
+    bool IsMeshed = false;
     bool IsRenderReady = false;
 
+    bool HasAnything = false;
     bool HasOpaque = false;
 
     //functions
@@ -34,7 +35,7 @@ public:
 
     void GenerateMeshData();
     void UploadMeshData();
-private:
     ChunkMeshData meshData;
+private:
     ChunkMesh mesh; 
 };

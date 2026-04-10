@@ -23,14 +23,14 @@ private:
     std::mutex meshIteratorMTX;
     std::thread meshIterator;
     std::queue<Chunk*> meshIterationTransitionQueue;
-    std::unordered_set<Chunk*> meshPendingSet;
+    std::vector<Chunk*> meshPendingSet;
 
 
     void chunksUploadIteratorLoop();
     std::mutex uploadIteratorMTX;
     std::thread uploadIterator;
     std::queue<Chunk*> uploadIterationTransitionQueue;
-    std::unordered_set<Chunk*> uploadPendingSet;
+    std::vector<Chunk*> uploadPendingSet;
 
 
     void chunksDeletionIteratorLoop();
@@ -40,9 +40,9 @@ private:
     std::unordered_set<Chunk*> deletionPendingSet;
 
     ThreadPool GenPool;
-    ThreadPool MeshPool;
-    ThreadPool UploadPool;
+    //ThreadPool MeshPool;
+    //ThreadPool UploadPool;
 
-    void MeshChunk(Chunk* c);
-    void UploadChunk(Chunk* c);
+    //void MeshChunk(Chunk* c);
+    //void UploadChunk(Chunk* c);
 };

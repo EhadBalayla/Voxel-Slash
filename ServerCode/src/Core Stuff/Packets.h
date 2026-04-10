@@ -18,4 +18,5 @@ struct ChunkPacket {
     int LOD;
     int64_t ChunkX, ChunkY, ChunkZ;
     BlockType m_Blocks[VOXEL_ARRAY_SIZE];
+    bool HasAnything;
 };

@@ -41,5 +41,5 @@ private:
     
     std::mutex readyMutex;
     std::queue<Chunk*> readyTransitionQueue;
-    std::unordered_set<Chunk*> renderReadySet;
+    std::vector<Chunk*> renderReadySet;
 };
