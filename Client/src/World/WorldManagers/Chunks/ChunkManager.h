@@ -6,7 +6,9 @@
 
 #include <queue>
 
-class LODParallelism;
+
+#define GEN_THREADS_COUNT 6
+#define MESH_THREADS_COUNT 4
 
 class ChunkManager {
 public:
@@ -22,21 +24,33 @@ public:
     ChunkGenerator& GetChunkGenerator();
 
     bool IsUpdatingChunks = false;
-    void PushReadyChunk(Chunk* c);
-
-    LODParallelism** LODParallels;
-
     BlockType GetBlockAt(int x, int y, int z);
 private:
+    bool ThreadRunning = true;
     ChunkProvider m_ChunkProvider;
     ChunkGenerator m_ChunkGenerator;
 
-    //extra threads for iterating over chunks at different stages
-    bool ChunkIteratorsRunning = true;
+    void PushGen(Chunk* c);
+    void PushMesh(Chunk* c);
+    void PushReady(Chunk* c);
+
     void chunksUpdaterLoop();
     std::mutex tempMTX;
     std::thread chunksUpdater;
     std::condition_variable updaterCV;
+
+    void GenWorker();
+    std::thread GenThread[GEN_THREADS_COUNT];
+    std::mutex GenMTX;
+    std::queue<Chunk*> GenQueue;
+    std::condition_variable GenCV;
+
+    void MeshWorker();
+    std::thread MeshThread[MESH_THREADS_COUNT];
+    std::queue<Chunk*> MeshQueue;
+    std::mutex MeshMTX;
+    std::condition_variable MeshCV;
+
 
     
     std::mutex readyMutex;

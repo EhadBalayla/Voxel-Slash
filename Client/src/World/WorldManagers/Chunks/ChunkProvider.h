@@ -33,8 +33,9 @@ public:
     ChunkManager* owningManager;
 
     Chunk* ProvideChunk(int ChunkX, int ChunkY, int ChunkZ, int LOD);
+    Chunk* GetChunk(glm::ivec3 coords, int LOD);
     void RemoveChunk(Chunk* c);
-    bool IsNeighborsReady(Chunk* c);
+    bool IsNeighborsReady(glm::ivec3 coords, int LOD);
     void DeleteAllChunks();
     std::unordered_map<glm::ivec3, Chunk*>& GetAllChunks(int LOD);
 private:

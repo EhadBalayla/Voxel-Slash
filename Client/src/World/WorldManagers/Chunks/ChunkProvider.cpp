@@ -21,11 +21,12 @@ Chunk* ChunkProvider::ProvideChunk(int ChunkX, int ChunkY, int ChunkZ, int LOD) 
         std::lock_guard<std::mutex> lock(MTX[LOD]);
         chunks[LOD][glm::ivec3(ChunkX, ChunkY, ChunkZ)] = c;
     }
-
-    c->IsInJob = true;
-    owningManager->LODParallels[c->LOD]->GenerateChunk(c);
-
     return c;
+}
+Chunk* ChunkProvider::GetChunk(glm::ivec3 coords, int LOD) {
+    std::lock_guard<std::mutex> lock(MTX[LOD]);
+    if(chunks[LOD].find(coords) != chunks[LOD].end()) return chunks[LOD][coords];
+    return nullptr;
 }
 void ChunkProvider::RemoveChunk(Chunk* c) {
     auto& map = GetAllChunks(c->LOD);
@@ -36,45 +37,18 @@ void ChunkProvider::RemoveChunk(Chunk* c) {
     c->DeleteMeshObjects();
     delete c;
 }
-bool ChunkProvider::IsNeighborsReady(Chunk* c) {
-    int ChunkX = c->ChunkX;
-    int ChunkY = c->ChunkY;
-    int ChunkZ = c->ChunkZ;
-    int LOD = c->LOD;
+bool ChunkProvider::IsNeighborsReady(glm::ivec3 coords, int LOD) {
+    static glm::ivec3 offsets[6] = {
+        {1, 0, 0}, {-1, 0, 0},
+        {0, 1, 0}, {0, -1, 0},
+        {0, 0, 1}, {0, 0, -1}
+    };
 
-    Chunk* c1 = IsValidChunk(ChunkX - 1, ChunkY, ChunkZ, LOD) ? ProvideChunk(ChunkX - 1, ChunkY, ChunkZ, LOD) : nullptr;
-    Chunk* c2 = IsValidChunk(ChunkX + 1, ChunkY, ChunkZ, LOD) ? ProvideChunk(ChunkX + 1, ChunkY, ChunkZ, LOD) : nullptr;
-    Chunk* c3 = IsValidChunk(ChunkX, ChunkY - 1, ChunkZ, LOD) ? ProvideChunk(ChunkX, ChunkY - 1, ChunkZ, LOD) : nullptr;
-    Chunk* c4 = IsValidChunk(ChunkX, ChunkY + 1, ChunkZ, LOD) ? ProvideChunk(ChunkX, ChunkY + 1, ChunkZ, LOD) : nullptr;
-    Chunk* c5 = IsValidChunk(ChunkX, ChunkY, ChunkZ - 1, LOD) ? ProvideChunk(ChunkX, ChunkY, ChunkZ - 1, LOD) : nullptr;
-    Chunk* c6 = IsValidChunk(ChunkX, ChunkY, ChunkZ + 1, LOD) ? ProvideChunk(ChunkX, ChunkY, ChunkZ + 1, LOD) : nullptr;
-
-    bool b1 = c1 ? c1->IsGenerated : false;
-    bool b2 = c2 ? c2->IsGenerated : false;
-    bool b3 = c3 ? c3->IsGenerated : false;
-    bool b4 = c4 ? c4->IsGenerated : false;
-    bool b5 = c5 ? c5->IsGenerated : false;
-    bool b6 = c6 ? c6->IsGenerated : false;
-
-    if(b1 && b2 && b3 && b4 && b5 && b6) {
-        c1->referenceCount++;
-        c2->referenceCount++;
-        c3->referenceCount++;
-        c4->referenceCount++;
-        c5->referenceCount++;
-        c6->referenceCount++;
-
-        c->neighbors[0] = c1;
-        c->neighbors[1] = c2;
-        c->neighbors[2] = c3;
-        c->neighbors[3] = c4;
-        c->neighbors[4] = c5;
-        c->neighbors[5] = c6;
-
-        return true;
+    for (auto of : offsets) {
+        Chunk* n = GetChunk(coords + of, LOD);
+        if (!n || !n->IsGenerated) return false;
     }
-
-    return false;
+    return true;
 }
 void ChunkProvider ::DeleteAllChunks() {
     for(int i = 0; i < 6; i++) {

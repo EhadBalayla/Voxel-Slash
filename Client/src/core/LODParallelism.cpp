@@ -3,7 +3,7 @@
 #include "../World/Chunk.h"
 #include "../World/WorldManagers/Chunks/ChunkManager.h"
 
-void ChunkGen(void* p1, void* p2) {
+/*void ChunkGen(void* p1, void* p2) {
     Chunk* c = static_cast<Chunk*>(p1);
     ChunkManager* manager = static_cast<ChunkManager*>(p2);
     
@@ -14,7 +14,7 @@ void ChunkGen(void* p1, void* p2) {
     c->IsInJob = false;
     
     c->IsMeshPending = true; (*manager->LODParallels[c->LOD]).PushDirtyChunk(c); //if the chunk has no BLOCK at all, dont push into meshing
-}
+}*/
 /*void ChunkMesh(void* p1, void* p2) {
     Chunk* c = static_cast<Chunk*>(p1);
     ChunkManager* manager = static_cast<ChunkManager*>(p2);
@@ -39,22 +39,22 @@ void ChunkGen(void* p1, void* p2) {
 LODParallelism::LODParallelism(int LOD, ChunkManager* manager) : GenPool(1) {
     this->LOD = LOD;
     owningChunkManager = manager;
-    meshIterator = std::thread(&LODParallelism::chunksMeshIteratorLoop, this);
+    /*meshIterator = std::thread(&LODParallelism::chunksMeshIteratorLoop, this);
     uploadIterator = std::thread(&LODParallelism::chunksUploadIteratorLoop, this);
-    deletionIterator = std::thread(&LODParallelism::chunksDeletionIteratorLoop, this);
+    deletionIterator = std::thread(&LODParallelism::chunksDeletionIteratorLoop, this);*/
 }
 LODParallelism::~LODParallelism() {
     ChunkIteratorsRunning = false;
-    meshIterator.join();
+    /*meshIterator.join();
     uploadIterator.join();
-    deletionIterator.join();
+    deletionIterator.join();*/
 
     /*GenPool.Stop();
     MeshPool.Stop();
     UploadPool.Stop();*/
 }
 
-void LODParallelism::GenerateChunk(Chunk* c) {
+/*void LODParallelism::GenerateChunk(Chunk* c) {
     GenPool.QueueJob({ChunkGen, c, owningChunkManager});
 }
 void LODParallelism::PushDirtyChunk(Chunk* c) {
@@ -168,7 +168,7 @@ void LODParallelism::chunksDeletionIteratorLoop() {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
     }
-}
+}*/
 
 /*void LODParallelism::MeshChunk(Chunk* c) {
     c->IsMeshPending = false;

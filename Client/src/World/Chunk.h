@@ -32,20 +32,15 @@ public:
     int ChunkX, ChunkY, ChunkZ;
 
     //flags and side stuff
+    bool IsGenerating = false;
     bool IsGenerated = false;
-
-    bool IsInJob = false;
-    
-    bool IsMeshPending = false;
-    bool IsUploadPending = false;
+    bool IsMeshing = false;
+    bool IsMeshed = false;
+    bool IsUploading = false;
     bool IsRenderReady = false;
-    bool IsDeletionPending = false;
 
     bool HasAnything = false;
     bool HasOpaque = false;
-
-    std::atomic<int> referenceCount = 0; //how many times is this chunk being referenced, for stuff like being a meshing neighbor or other stuff
-    Chunk* neighbors[6] = {nullptr}; //temporary, only for meshing, not for anything else
 
     //functions
     void Render();
