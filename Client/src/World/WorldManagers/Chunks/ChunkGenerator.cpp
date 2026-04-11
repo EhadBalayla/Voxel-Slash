@@ -109,14 +109,14 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
 
                 float Density = Height - WorldY;
 
-                /*float microAmplitude = 0.0f;
+                float microAmplitude = 0.0f;
                 microAmplitude += flatFactor * 0.5f;
                 microAmplitude += hillFactor * 1.5f;
                 microAmplitude += mountainFactor * 3.5f;
                 
                 float detail = detailNoise.GetNoise((float)WorldX * 1.5f, (float)WorldY * 3.5f, (float)WorldZ * 1.5f) * microAmplitude;
                 
-                Density += detail;*/
+                Density += detail;
 
                 if(Density > 0.0f) {
                     c->m_Blocks[idx] = BlockType::Stone;
@@ -134,7 +134,7 @@ void ChunkGenerator::GenerateChunk(Chunk* c) {
     }
 }
 void ChunkGenerator::ReplaceBlocks(Chunk* c) {
-    /*for(int x = 0; x < Chunk_Length; x++) {
+    for(int x = 0; x < Chunk_Length; x++) {
         for(int z = 0; z < Chunk_Length; z++) {
             int GrassCountXZ = -1; //counting blocks down
             for(int y = Chunk_Length - 1; y >= 0; y--) {
@@ -160,7 +160,7 @@ void ChunkGenerator::ReplaceBlocks(Chunk* c) {
                 }
             }
         }
-    }*/
+    }
 }
 void ChunkGenerator::CarveCaves(Chunk* c) {
 

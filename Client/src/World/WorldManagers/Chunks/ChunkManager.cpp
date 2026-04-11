@@ -30,6 +30,34 @@ ChunkManager::~ChunkManager() {
 
 void ChunkManager::Render() {
     {
+        std::queue<Chunk*> temp;
+        std::lock_guard<std::mutex> lock(deletionMTX);
+        while(!deletionQueue.empty()) {
+            Chunk* c = deletionQueue.front();
+
+            if(IsChunkInRenderDistance(c)) { //chunk gets revived
+                c->MarkedForDeletion = false;
+                if(!c->IsGenerated && !c->IsGenerating) PushGen(c);
+                else if(!c->IsMeshed && !c->IsMeshing && m_ChunkProvider.IsNeighborsReady(glm::ivec3(c->ChunkX, c->ChunkY, c->ChunkZ), c->LOD)) PushMesh(c);
+                else if(!c->IsRenderReady && !c->IsUploading) PushReady(c);
+                
+                deletionQueue.pop();
+                continue;
+            }
+            else if(!c->IsGenerating && !c->IsMeshing && !c->IsUploading) {
+                m_ChunkProvider.RemoveChunk(c);
+
+                deletionQueue.pop();
+                continue;
+            }
+
+            temp.push(c);
+            deletionQueue.pop();
+        }
+        std::swap(temp, deletionQueue);
+    }
+
+    {
         std::lock_guard<std::mutex> lock(readyMutex);
         while(!readyTransitionQueue.empty()) {
             renderReadySet.push_back(readyTransitionQueue.front());
@@ -42,18 +70,18 @@ void ChunkManager::Render() {
     for(auto it = renderReadySet.begin(); it != renderReadySet.end();) {
         Chunk* c = *it;
 
-        if(!IsChunkInRenderDistance(c)) {
+        if(c->MarkedForDeletion || !IsChunkInRenderDistance(c)) {
             it = renderReadySet.erase(it);
+            c->IsUploading = false;
+            c->IsRenderReady = false;
             continue;
         }
         it++;
 
         if(!c->IsRenderReady) {
-            c->IsUploading = true;
             c->UploadMeshData();
             c->IsUploading = false;
             c->IsRenderReady = true;
-            continue;
         }
 
         if(!ChunkInFrustum(GApp->m_Frustum, c->GetMin(), c->GetMax())) continue;
@@ -84,6 +112,7 @@ ChunkGenerator& ChunkManager::GetChunkGenerator() {
 
 void ChunkManager::PushGen(Chunk* c) {
     c->IsGenerating = true;
+    c->IsGenerated = false;
     {
         std::lock_guard<std::mutex> lock(GenMTX);
         GenQueue.push(c);
@@ -92,6 +121,7 @@ void ChunkManager::PushGen(Chunk* c) {
 }
 void ChunkManager::PushMesh(Chunk* c) {
     c->IsMeshing = true;
+    c->IsMeshed = false;
     {
         std::lock_guard<std::mutex> lock(MeshMTX);
         MeshQueue.push(c);
@@ -99,6 +129,8 @@ void ChunkManager::PushMesh(Chunk* c) {
     MeshCV.notify_one();
 }
 void ChunkManager::PushReady(Chunk* c) {
+    c->IsUploading = true;
+    c->IsRenderReady = false;
     std::lock_guard<std::mutex> lock(readyMutex);
     readyTransitionQueue.push(c);
 }
@@ -118,19 +150,35 @@ void ChunkManager::chunksUpdaterLoop() {
             int CenterY = GApp->m_Player->ChunkCoordY / GetLODSize(i);
             int CenterZ = GApp->m_Player->ChunkCoordZ / GetLODSize(i);
 
-            for (int r = 0; r <= GApp->RenderDistance; r++) {
+            std::unordered_set<glm::ivec3> IteratedCoords;
 
+            for (int r = 0; r <= GApp->RenderDistance; r++) {
 	    	    for (int dx = -r; dx <= r; dx++) {
 	    	        for (int dy = -r; dy <= r; dy++) {
                         for(int dz = -r; dz <= r; dz++) {
-
 	    		            if (dx != r && dy != r && dz != r && dx != -r && dy != -r && dz != -r) continue;
+
+                            glm::ivec3 coords = glm::ivec3(CenterX + dx, CenterY + dy, CenterZ + dz);
+
 	    		            Chunk* c = m_ChunkProvider.ProvideChunk(CenterX + dx, CenterY + dy, CenterZ + dz, i);
-                            if(!c->IsGenerating && !c->IsGenerated) PushGen(c);
+                            if(!c->MarkedForDeletion && !c->IsGenerating && !c->IsGenerated) PushGen(c);
+
+                            IteratedCoords.insert(coords);
                         }
 	    	        }
 	    	    }
 	        }
+
+            auto& map = m_ChunkProvider.GetAllChunks(i);
+            for(auto& pair : map) {
+                if(IteratedCoords.find(pair.first) == IteratedCoords.end()) {
+                    //chunk is outside Render Distance, mark for deletion
+                    Chunk* c = pair.second;
+                    c->MarkedForDeletion = true;
+                    std::lock_guard<std::mutex> lock(deletionMTX);
+                    deletionQueue.push(c);
+                }
+            }
         }
 
         IsUpdatingChunks = false;
@@ -152,16 +200,17 @@ void ChunkManager::GenWorker() {
             GenQueue.pop();
         }
 
-        m_ChunkGenerator.GenerateChunk(c);
-        m_ChunkGenerator.ReplaceBlocks(c);
-        m_ChunkGenerator.CarveCaves(c);
-
-        c->IsGenerated = true;
+        if(!c->MarkedForDeletion) {
+            m_ChunkGenerator.GenerateChunk(c);
+            m_ChunkGenerator.ReplaceBlocks(c);
+            m_ChunkGenerator.CarveCaves(c);
+            c->IsGenerated = true;
+        }
         c->IsGenerating = false;
 
         glm::ivec3 coords = glm::ivec3(c->ChunkX, c->ChunkY, c->ChunkZ);
 
-        if(c->HasAnything && m_ChunkProvider.IsNeighborsReady(coords, c->LOD)) {
+        if(!c->MarkedForDeletion && c->HasAnything && m_ChunkProvider.IsNeighborsReady(coords, c->LOD)) {
             PushMesh(c);
         }
 
@@ -178,7 +227,7 @@ void ChunkManager::GenWorker() {
             Chunk* ch = m_ChunkProvider.GetChunk(n, c->LOD);
             if (!ch) continue;
 
-            if (ch->IsGenerated && !ch->IsMeshing && !ch->IsMeshed && ch->HasAnything && m_ChunkProvider.IsNeighborsReady(n, ch->LOD))
+            if (!ch->MarkedForDeletion && ch->IsGenerated && !ch->IsMeshing && !ch->IsMeshed && ch->HasAnything && m_ChunkProvider.IsNeighborsReady(n, ch->LOD))
                 PushMesh(ch);
         }
     }
@@ -199,14 +248,13 @@ void ChunkManager::MeshWorker() {
             MeshQueue.pop();
         }
 
-        c->GenerateMeshData();
-
+        if(!c->MarkedForDeletion) {
+            c->GenerateMeshData();
+            c->IsMeshed = true;
+        }
         c->IsMeshing = false;
-        c->IsMeshed = true;
 
-        if(c->GetMeshData().opaqueFaces.size() == 0) continue;
-
-        PushReady(c);
+        if(!c->MarkedForDeletion && c->GetMeshData().opaqueFaces.size() > 0) PushReady(c);
     }
 }
 

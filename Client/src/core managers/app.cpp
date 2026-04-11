@@ -79,7 +79,7 @@ void App::Init() {
             btn->OnPress = []() {
                 GApp->state = GameState::InGame;
                 GApp->waitingFrames = 0;
-                GApp->m_Player->Position = glm::vec3(10.0f, 100.0f, 10.0f);
+                GApp->m_Player->Position = glm::vec3(10.0f, 15.0f, 10.0f);
                 GApp->m_World = new World();
                 GApp->m_World->GetChunkManager().UpdateChunks();
             };

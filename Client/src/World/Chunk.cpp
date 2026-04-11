@@ -50,7 +50,12 @@ void Chunk::Render() {
 void Chunk::GenerateMeshData() {
     if(!HasAnything) return;
 
-    uint32_t indexOffset = 0;
+    Chunk* NegX = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX - 1, ChunkY, ChunkZ), LOD);
+    Chunk* PosX = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX + 1, ChunkY, ChunkZ), LOD);
+    Chunk* NegY = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX, ChunkY - 1, ChunkZ), LOD);
+    Chunk* PosY = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX, ChunkY + 1, ChunkZ), LOD);
+    Chunk* NegZ = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX, ChunkY, ChunkZ - 1), LOD);
+    Chunk* PosZ = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX, ChunkY, ChunkZ + 1), LOD);
 
     for(int x = 0; x < Chunk_Length; x++) {
         for(int y = 0; y < Chunk_Length; y++) {
@@ -64,27 +69,27 @@ void Chunk::GenerateMeshData() {
                     int nx, ny, nz;
                     nx = x + dx, ny = y + dy, nz = z + dz;
                     if (nx < 0) {
-                        BlockType b = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX - 1, ChunkY, ChunkZ), LOD)->m_Blocks[IndexAt(Chunk_Length - 1, ny, nz)];
+                        BlockType b = NegX->m_Blocks[IndexAt(Chunk_Length - 1, ny, nz)];
                         return b == BlockType::Air;
                     }
                     else if (nx >= 32) {
-                        BlockType b = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX + 1, ChunkY, ChunkZ), LOD)->m_Blocks[IndexAt(0, ny, nz)];
+                        BlockType b = PosX->m_Blocks[IndexAt(0, ny, nz)];
                         return b == BlockType::Air;
                     }
                     else if (ny < 0) {
-                        BlockType b = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX, ChunkY - 1, ChunkZ), LOD)->m_Blocks[IndexAt(nx, Chunk_Length - 1, nz)];
+                        BlockType b = NegY->m_Blocks[IndexAt(nx, Chunk_Length - 1, nz)];
                         return b == BlockType::Air;
                     }
                     else if (ny >= 32) {
-                        BlockType b = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX, ChunkY + 1, ChunkZ), LOD)->m_Blocks[IndexAt(nx, 0, nz)];
+                        BlockType b = PosY->m_Blocks[IndexAt(nx, 0, nz)];
                         return b == BlockType::Air;
                     }
                     else if (nz < 0) {
-                        BlockType b = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX, ChunkY, ChunkZ - 1), LOD)->m_Blocks[IndexAt(nx, ny, Chunk_Length - 1)];
+                        BlockType b = NegZ->m_Blocks[IndexAt(nx, ny, Chunk_Length - 1)];
                         return b == BlockType::Air;
                     }
                     else if (nz >= 32) {
-                        BlockType b = GApp->m_World->GetChunkManager().GetChunkProvider().GetChunk(glm::ivec3(ChunkX, ChunkY, ChunkZ + 1), LOD)->m_Blocks[IndexAt(nx, ny, 0)];
+                        BlockType b = PosZ->m_Blocks[IndexAt(nx, ny, 0)];
                         return b == BlockType::Air;
                     }
 

@@ -15,7 +15,6 @@ public:
     ChunkManager();
     ~ChunkManager();
 
-    void Update();
     void Render();
 
     void UpdateChunks();
@@ -56,4 +55,7 @@ private:
     std::mutex readyMutex;
     std::queue<Chunk*> readyTransitionQueue;
     std::vector<Chunk*> renderReadySet;
+
+    std::mutex deletionMTX;
+    std::queue<Chunk*> deletionQueue;
 };

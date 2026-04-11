@@ -38,6 +38,7 @@ public:
     bool IsMeshed = false;
     bool IsUploading = false;
     bool IsRenderReady = false;
+    bool MarkedForDeletion = false;
 
     bool HasAnything = false;
     bool HasOpaque = false;
