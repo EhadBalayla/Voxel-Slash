@@ -2,7 +2,6 @@
 
 #include "../../../core managers/app.h"
 #include "../../../core/Utilities.h"
-#include "../../../core/LODParallelism.h"
 #include "../../Chunk.h"
 
 #include <algorithm>
@@ -10,7 +9,7 @@
 
 #include <iostream>
 
-ChunkManager::ChunkManager() : m_ChunkProvider(this) {
+ChunkManager::ChunkManager() : m_ChunkProvider(this), m_ChunkGenerator(this) {
     chunksUpdater = std::thread(&ChunkManager::chunksUpdaterLoop, this);
     for(auto& t : GenThread) {
         t = std::thread(&ChunkManager::GenWorker, this);
@@ -22,7 +21,15 @@ ChunkManager::ChunkManager() : m_ChunkProvider(this) {
 ChunkManager::~ChunkManager() {
     ThreadRunning = false;
     updaterCV.notify_all();
+    GenCV.notify_all();
+    MeshCV.notify_all();
     chunksUpdater.join();
+    for(auto& t : GenThread) {
+        t.join();
+    }
+    for(auto& t : MeshThread) {
+        t.join();
+    }
     
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     m_ChunkProvider.DeleteAllChunks();
@@ -184,7 +191,6 @@ void ChunkManager::chunksUpdaterLoop() {
         IsUpdatingChunks = false;
     }
 }
-
 void ChunkManager::GenWorker() {
     while(ThreadRunning) {
         Chunk* c;
@@ -232,7 +238,6 @@ void ChunkManager::GenWorker() {
         }
     }
 }
-
 void ChunkManager::MeshWorker() {
     while(ThreadRunning) {
         Chunk* c;
@@ -269,4 +274,7 @@ BlockType ChunkManager::GetBlockAt(int x, int y, int z) {
     int LocalZ = z - ChunkZ * Chunk_Length;
 
     return m_ChunkProvider.ProvideChunk(ChunkX, ChunkY, ChunkZ, 0)->m_Blocks[IndexAt(LocalX, LocalY, LocalZ)];
+}
+void ChunkManager::SetBlockNoUpdate(int x, int y, int z, int LOD, BlockType type) {
+    
 }

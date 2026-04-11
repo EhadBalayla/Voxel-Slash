@@ -8,7 +8,6 @@
 
 #include <glm/glm.hpp>
 
-#include "../core/ThreadPool.h"
 
 namespace std {
 	template<>

@@ -7,6 +7,11 @@ enum class BlockType : uint8_t {
     Grass = 2,
     Dirt = 3,
     Sand = 4,
+    Wood = 5,
+    Leave = 6,
+    Snow = 7,
+    Ice = 8,
+    Brick = 9,
 
     Water = 69,
 };

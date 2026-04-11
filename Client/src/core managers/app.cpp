@@ -172,7 +172,7 @@ void App::Loop() {
             case GameState::InGame: {
                 if(waitingFrames == 0) {
                 processInput();
-                proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
+                proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 13000.0f);
                 m_Frustum = ExtractFrustum(proj * m_Player->GetViewMatrix());
 
                 m_Renderer.SetViewProj(m_Player->GetViewMatrix(), proj);
@@ -314,6 +314,11 @@ void App::RegisterAllBlocks() {
     BlockRegistery[BlockType::Stone] = {{3, 3, 3, 3, 3, 3}};
     BlockRegistery[BlockType::Grass] = {{0, 2, 1, 1, 1, 1}};
     BlockRegistery[BlockType::Dirt] = {{2, 2, 2, 2, 2, 2}};
+    BlockRegistery[BlockType::Wood] = {{6, 6, 5, 5, 5, 5}};
+    BlockRegistery[BlockType::Leave] = {{7, 7, 7, 7, 7, 7}};
+    BlockRegistery[BlockType::Snow] = {{8, 8, 8, 8, 8, 8}};
+    BlockRegistery[BlockType::Ice] = {{9, 9, 9, 9, 9, 9}};
+    BlockRegistery[BlockType::Brick] = {{10, 10, 10, 10, 10, 10}};
     BlockRegistery[BlockType::Water] = {{255, 255, 255, 255, 255, 255}};
 }
 

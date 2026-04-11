@@ -1,5 +1,7 @@
 #include "ChunkGenerator.h"
 #include "../../Chunk.h"
+#include "ChunkManager.h"
+#include "../../../core/Random.h"
 
 #include <algorithm>
 #include <ctime>
@@ -15,10 +17,15 @@ float lerp(float a, float b, float t) {
     return a + t * (b - a);
 }
 
-ChunkGenerator::ChunkGenerator() : ChunkGenerator(static_cast<int64_t>(std::time(nullptr))) {
+//population helper functions
+void GenerateTree(int ChunkX, int ChunkY, int ChunkZ, int LOD) {
 
 }
-ChunkGenerator::ChunkGenerator(int64_t seed) {
+
+ChunkGenerator::ChunkGenerator(ChunkManager* manager) : ChunkGenerator(static_cast<int64_t>(std::time(nullptr)), manager) {
+
+}
+ChunkGenerator::ChunkGenerator(int64_t seed, ChunkManager* manager) : owningManager(manager), WorldSeed(seed) {
     std::cout << seed << std::endl;
 
     //the noise for where there is a continent and where there is ocean
@@ -164,4 +171,33 @@ void ChunkGenerator::ReplaceBlocks(Chunk* c) {
 }
 void ChunkGenerator::CarveCaves(Chunk* c) {
 
+}
+
+void ChunkGenerator::Populate(Chunk* c) {
+    int LODFactor = GetLODSize(c->LOD);
+
+    //chunk coordinates converted to LOD0
+    int ChunkXLOD0 = c->ChunkX * LODFactor;
+    int ChunkYLOD0 = c->ChunkY * LODFactor;
+    int ChunkZLOD0 = c->ChunkZ * LODFactor;
+
+    for(int occuX = 0; occuX < LODFactor; occuX++) {
+        for(int occuY = 0; occuY < LODFactor; occuY++) {
+            for(int occuZ = 0; occuZ < LODFactor; occuZ++) {
+                int ChunkX = ChunkXLOD0 + occuX;
+                int ChunkY = ChunkYLOD0 + occuY;
+                int ChunkZ = ChunkZLOD0 + occuZ;
+
+                int64_t Seed = (ChunkX * 73856093) ^ (ChunkY * 19349663) ^ (ChunkZ * 83492791) ^ WorldSeed;
+                Random rand(Seed);
+
+                //attempt to generate trees
+                for(int i = 0; i < 5; i++) {
+                    if(rand.nextUInt(1, 10) == 1) {
+                        GenerateTree(ChunkX, ChunkY, ChunkZ, c->LOD);
+                    }
+                }
+            }
+        }
+    }
 }

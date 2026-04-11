@@ -24,6 +24,7 @@ public:
 
     bool IsUpdatingChunks = false;
     BlockType GetBlockAt(int x, int y, int z);
+    void SetBlockNoUpdate(int x, int y, int z, int LOD, BlockType type);
 private:
     bool ThreadRunning = true;
     ChunkProvider m_ChunkProvider;
