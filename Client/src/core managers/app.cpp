@@ -365,6 +365,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 }
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if(GApp->state == GameState::Multiplayer && GApp->m_ClientNetworkManager.connected) {
+        if(key == GLFW_KEY_SPACE) {
+            if(action == GLFW_PRESS) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::JumpPress);
+            }
+            else if(action == GLFW_RELEASE) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::JumpRelease);
+            }
+        }
         if(key == GLFW_KEY_W) {
             if(action == GLFW_PRESS) {
                 GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::ForwardPress);

@@ -147,6 +147,10 @@ void NetworkManager::connectsLoop() {
     while(threadRunning) {
         SOCKET ClientSocket = accept(TCPSocket, NULL, NULL);
         if (ClientSocket != INVALID_SOCKET) {
+            //set socket to non blocking
+            u_long mode = 1;
+            ioctlsocket(ClientSocket, FIONBIO, &mode); 
+
             char handshakeRetBuffer[20]; //just to be safe
             sockaddr_in addr;
             size_t len = sizeof(addr);
@@ -172,24 +176,33 @@ void NetworkManager::connectsLoop() {
 #include "Entities/PlayerEntity.h"
 void NetworkManager::TCPRecieveLoop() {
     while(threadRunning) {
-        if(connectedClients.size() > 0) {
-            InputSendPacket incomingInput;
-            recv(connectedClients[0].ClientSocket, reinterpret_cast<char*>(&incomingInput), sizeof(incomingInput), MSG_WAITALL);
+        {
+            for(auto& client : connectedClients) {
+                InputSendPacket incomingInput;
+                int d = recv(client.ClientSocket, reinterpret_cast<char*>(&incomingInput), sizeof(incomingInput), 0);
+                if(d == SOCKET_ERROR) {
+                    int err = WSAGetLastError();
+                    if (err == WSAEWOULDBLOCK) continue;
+                    continue;
+                }
 
-            std::cout << "Player Moved\n";
-
-            auto& entities = GServer->m_EntityManager.GetAllEntities();
-            PlayerData* data = reinterpret_cast<PlayerData*>(entities[GServer->m_EntityManager.GetIDToIDX()[connectedClients[0].EntityID]].ExtraData);
-            switch(incomingInput) {
-                case InputSendPacket::ForwardPress: data->IsForward = true; break;
-                case InputSendPacket::ForwardRelease: data->IsForward = false; break;
-                case InputSendPacket::BackwardPress: data->IsBackward = true; break;
-                case InputSendPacket::BackwardRelease: data->IsBackward = false; break;
-                case InputSendPacket::LeftPress: data->IsLeft = true; break;
-                case InputSendPacket::LeftRelease: data->IsLeft = false; break;
-                case InputSendPacket::RightPress: data->IsRight = true; break;
-                case InputSendPacket::RightRelease: data->IsRight = false; break;
+                auto& entities = GServer->m_EntityManager.GetAllEntities();
+                PlayerData* data = reinterpret_cast<PlayerData*>(entities[GServer->m_EntityManager.GetIDToIDX()[client.EntityID]].ExtraData);
+                switch(incomingInput) {
+                    case InputSendPacket::ForwardPress: data->IsForward = true; break;
+                    case InputSendPacket::ForwardRelease: data->IsForward = false; break;
+                    case InputSendPacket::BackwardPress: data->IsBackward = true; break;
+                    case InputSendPacket::BackwardRelease: data->IsBackward = false; break;
+                    case InputSendPacket::LeftPress: data->IsLeft = true; break;
+                    case InputSendPacket::LeftRelease: data->IsLeft = false; break;
+                    case InputSendPacket::RightPress: data->IsRight = true; break;
+                    case InputSendPacket::RightRelease: data->IsRight = false; break;
+                    case InputSendPacket::JumpPress: data->IsJump = true; break;
+                    case InputSendPacket::JumpRelease: data->IsJump = false; break;
+                }
             }
         }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }

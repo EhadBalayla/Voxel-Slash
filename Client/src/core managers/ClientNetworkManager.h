@@ -13,7 +13,10 @@ enum InputSendPacket : uint8_t {
     LeftRelease,
 
     RightPress,
-    RightRelease
+    RightRelease,
+
+    JumpPress,
+    JumpRelease,
 };
 
 class ClientNetworkManager {
