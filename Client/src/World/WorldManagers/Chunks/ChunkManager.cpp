@@ -224,7 +224,7 @@ void ChunkManager::GenWorker() {
             {1,0,0}, {-1,0,0},
             {0,1,0}, {0,-1,0},
             {0,0,1}, {0,0,-1}
-        };
+        }; 
 
         for (auto d : dirs)
         {

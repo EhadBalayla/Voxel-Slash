@@ -64,3 +64,9 @@ Entity EntityManager::GetEntity(uint64_t id) {
     std::lock_guard<std::mutex> lock(enttArrMTX);
     return entities[idToIdx[id]];
 }
+std::vector<Entity>& EntityManager::GetAllEntities() {
+    return entities;
+}
+std::unordered_map<uint64_t, size_t>& EntityManager::GetIDToIDX() {
+    return idToIdx;
+}

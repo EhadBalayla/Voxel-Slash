@@ -2,6 +2,20 @@
 #include <thread>
 #include <WinSock2.h>
 
+enum InputSendPacket : uint8_t {
+    ForwardPress,
+    ForwardRelease,
+
+    BackwardPress,
+    BackwardRelease,
+
+    LeftPress,
+    LeftRelease,
+
+    RightPress,
+    RightRelease
+};
+
 class ClientNetworkManager {
 public:
     //for starting and ending WinSock
@@ -10,6 +24,8 @@ public:
 
     void Connect();
     void Disconnect();
+
+    void SendInputMode(InputSendPacket whichOne);
 
     bool connected = false;
 private:

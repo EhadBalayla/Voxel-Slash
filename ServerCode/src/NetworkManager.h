@@ -4,6 +4,20 @@
 #include <mutex>
 #include <WinSock2.h>
 
+enum InputSendPacket : uint8_t {
+    ForwardPress,
+    ForwardRelease,
+
+    BackwardPress,
+    BackwardRelease,
+
+    LeftPress,
+    LeftRelease,
+
+    RightPress,
+    RightRelease
+};
+
 struct ConnectionData {
     SOCKET ClientSocket = INVALID_SOCKET;
     sockaddr_in udpAddr;
@@ -20,10 +34,14 @@ public:
 private:
     bool threadRunning = true;
     void connectsLoop();
+    void TCPRecieveLoop();
     std::thread connectsThread; //a thread for listening to TCP connections
+    std::thread TCPThread;
 
     SOCKET TCPSocket = INVALID_SOCKET;
     SOCKET UDPSocket = INVALID_SOCKET;
     std::vector<ConnectionData> connectedClients;
     std::mutex clientsMutex; //simply a mutex over the connected clients array
+
+    std::mutex pMoveMTX;
 };

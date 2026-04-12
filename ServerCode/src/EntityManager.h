@@ -14,6 +14,8 @@ public:
     uint64_t SpawnEntity(std::string EntityType, glm::dvec3 Position = glm::dvec3(0.0), float Rotation = 0.0f); //spawns an entity based on type and returns the ID for the spawned entity
     void DeleteEntity(uint64_t id);
     Entity GetEntity(uint64_t id); //copies the entity
+    std::vector<Entity>& GetAllEntities();
+    std::unordered_map<uint64_t, size_t>& GetIDToIDX();
 private:
     uint64_t NextEntityID = 0; //a counter for entity ids
 

@@ -90,6 +90,7 @@ NetworkManager::NetworkManager() {
     std::cout << "Starting threads for listening to connections and sending data between connected clients" << std::endl;
 
     connectsThread = std::thread(&NetworkManager::connectsLoop, this);
+    TCPThread = std::thread(&NetworkManager::TCPRecieveLoop, this);
 
     std::cout << "Networking part of the server started successfully" << std::endl;
 }
@@ -125,7 +126,6 @@ void NetworkManager::SendEntitiesData() {
 }
 void NetworkManager::SendChunksData(SOCKET s) {
     for(auto& c : GServer->m_ChunkManager.GetChunkProvider().GetAllChunks(0)) {
-        //if(!c.second->HasAnything) continue;
 
         ChunkPacket data;
         data.LOD = c.second->LOD;
@@ -160,12 +160,36 @@ void NetworkManager::connectsLoop() {
             ConnectionData connection;
             connection.ClientSocket = ClientSocket;
             connection.udpAddr = addr;
-            connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 100.0f, 10.0f));
+            connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 20.0f, 10.0f));
 
             SendChunksData(connection.ClientSocket);
 
             std::lock_guard<std::mutex> lock(clientsMutex);
             connectedClients.push_back(connection);
+        }
+    }
+}
+#include "Entities/PlayerEntity.h"
+void NetworkManager::TCPRecieveLoop() {
+    while(threadRunning) {
+        if(connectedClients.size() > 0) {
+            InputSendPacket incomingInput;
+            recv(connectedClients[0].ClientSocket, reinterpret_cast<char*>(&incomingInput), sizeof(incomingInput), MSG_WAITALL);
+
+            std::cout << "Player Moved\n";
+
+            auto& entities = GServer->m_EntityManager.GetAllEntities();
+            PlayerData* data = reinterpret_cast<PlayerData*>(entities[GServer->m_EntityManager.GetIDToIDX()[connectedClients[0].EntityID]].ExtraData);
+            switch(incomingInput) {
+                case InputSendPacket::ForwardPress: data->IsForward = true; break;
+                case InputSendPacket::ForwardRelease: data->IsForward = false; break;
+                case InputSendPacket::BackwardPress: data->IsBackward = true; break;
+                case InputSendPacket::BackwardRelease: data->IsBackward = false; break;
+                case InputSendPacket::LeftPress: data->IsLeft = true; break;
+                case InputSendPacket::LeftRelease: data->IsLeft = false; break;
+                case InputSendPacket::RightPress: data->IsRight = true; break;
+                case InputSendPacket::RightRelease: data->IsRight = false; break;
+            }
         }
     }
 }

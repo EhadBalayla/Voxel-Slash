@@ -7,7 +7,7 @@
 #include <iostream>
 
 #define SERVER_TEMP_LOD_COUNT 1 //defining a temporary LOD count for the server, until i'll add a setting for otherwise
-#define SERVER_TEMP_RENDER_DISTANCE 8 //defining a temporary render distance for the server, until i'll add a setting for otherwise
+#define SERVER_TEMP_RENDER_DISTANCE 2 //defining a temporary render distance for the server, until i'll add a setting for otherwise
 
 ChunkManager::ChunkManager() : m_ChunkProvider(this) {
     chunksUpdater = std::thread(&ChunkManager::chunksUpdaterLoop, this);

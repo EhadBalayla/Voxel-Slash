@@ -110,6 +110,11 @@ void ClientNetworkManager::Disconnect() {
     connected = false;
 }
 
+void ClientNetworkManager::SendInputMode(InputSendPacket whichOne) {
+    send(TCPClientSocket, reinterpret_cast<char*>(&whichOne), sizeof(InputSendPacket), 0);
+}
+
+
 void ClientNetworkManager::UDPRecieveLoop() {
     while(ThreadsRunning) {
         struct PlayerData {

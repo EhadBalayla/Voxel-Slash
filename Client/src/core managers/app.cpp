@@ -14,6 +14,8 @@
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void resize_callback(GLFWwindow* window, int width, int height);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 App* GApp = nullptr;
 App::App() {
@@ -28,6 +30,8 @@ void App::Init() {
     m_Window.MakeContext();
     glfwSetCursorPosCallback(m_Window.GetGLFWwindow(), mouse_callback);
     glfwSetFramebufferSizeCallback(m_Window.GetGLFWwindow(), resize_callback);
+    glfwSetKeyCallback(m_Window.GetGLFWwindow(), key_callback);
+    glfwSetMouseButtonCallback(m_Window.GetGLFWwindow(), mouse_button_callback);
 
     m_Renderer.SetHandles(
         m_Window.GetContext().GetInstance(),
@@ -353,6 +357,47 @@ void resize_callback(GLFWwindow* window, int width, int height) {
     (void)window;
     GApp->Width = width;
     GApp->Height = height;
+}
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    if(GApp->state == GameState::Multiplayer) {
+        
+    }
+}
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if(GApp->state == GameState::Multiplayer && GApp->m_ClientNetworkManager.connected) {
+        if(key == GLFW_KEY_W) {
+            if(action == GLFW_PRESS) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::ForwardPress);
+            }
+            else if(action == GLFW_RELEASE) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::ForwardRelease);
+            }
+        }
+        if(key == GLFW_KEY_S) {
+            if(action == GLFW_PRESS) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::BackwardPress);
+            }
+            else if(action == GLFW_RELEASE) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::BackwardRelease);
+            }
+        }
+        if(key == GLFW_KEY_A) {
+            if(action == GLFW_PRESS) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::LeftPress);
+            }
+            else if(action == GLFW_RELEASE) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::LeftRelease);
+            }
+        }
+        if(key == GLFW_KEY_D) {
+            if(action == GLFW_PRESS) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::RightPress);
+            }
+            else if(action == GLFW_RELEASE) {
+                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::RightRelease);
+            }
+        }
+    }
 }
 void App::processInput()
 {
