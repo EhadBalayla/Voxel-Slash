@@ -62,8 +62,8 @@ void EditorManager::Init() {
     initInfo.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&initInfo);
 
-    viewportBuffers.resize(GEditor->m_Window.GetContext().MAX_FRAMES_IN_FLIGHT);
-    for(int i = 0; i < GEditor->m_Window.GetContext().MAX_FRAMES_IN_FLIGHT; i++) {
+    viewportBuffers.resize(GContext->MAX_FRAMES_IN_FLIGHT);
+    for(int i = 0; i < GContext->MAX_FRAMES_IN_FLIGHT; i++) {
         viewportBuffers[i] = (ImTextureID)(ImGui_ImplVulkan_AddTexture(GEditor->m_Renderer.GetSampler(), GEditor->m_Renderer.GetColorBufferViews()[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
     }
 }

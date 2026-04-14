@@ -31,7 +31,7 @@ void AddFaceM(glm::ivec3 pos, Face face, uint8_t texOffset, std::vector<uint32_t
 
 void ClientChunk::Render() {
     if(HasOpaque) {
-        Renderer& renderer = GApp->m_Renderer;
+        ChunkRenderer& renderer = GApp->m_ChunkRenderer;
 
         int LODFactor = 1;//GetLODSize(LOD);
         //glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(ChunkX * Chunk_Length * LODFactor, ChunkY * Chunk_Length * LODFactor, ChunkZ * Chunk_Length * LODFactor));
@@ -42,8 +42,8 @@ void ClientChunk::Render() {
 
         VkDescriptorSet sets[] = { renderer.GetChunksSet(GContext->currentFrame), mesh.opaqueMeshBuffer.GetDescriptorSet(GContext->currentFrame) };
         uint32_t setsCount = 2;
-        vkCmdBindDescriptorSets(renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer.GetChunksPipelineLayout(), 0, setsCount, sets, 0, nullptr);
-        vkCmdDraw(renderer.GetFrameCommandBuffer(), mesh.opaqueCount * 6, 1, 0, 0);
+        vkCmdBindDescriptorSets(GRenderer->GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer.GetChunksPipelineLayout(), 0, setsCount, sets, 0, nullptr);
+        vkCmdDraw(GRenderer->GetFrameCommandBuffer(), mesh.opaqueCount * 6, 1, 0, 0);
     }
 }
 

@@ -1,3 +1,4 @@
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <GLFW/glfw3.h>
@@ -13,7 +14,6 @@
 #undef CreateWindow
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
-void resize_callback(GLFWwindow* window, int width, int height);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
@@ -26,28 +26,12 @@ void App::Init() {
     m_ClientNetworkManager.InitializeNetwork();
 
     Window::InitGLFW();
-    m_Window.CreateWindow("Voxel Slash", Width, Height);
+    m_Window.CreateWindow("Voxel Slash", Width, Height, true);
     m_Window.MakeContext();
     glfwSetCursorPosCallback(m_Window.GetGLFWwindow(), mouse_callback);
-    glfwSetFramebufferSizeCallback(m_Window.GetGLFWwindow(), resize_callback);
     glfwSetKeyCallback(m_Window.GetGLFWwindow(), key_callback);
     glfwSetMouseButtonCallback(m_Window.GetGLFWwindow(), mouse_button_callback);
 
-    m_Renderer.SetHandles(
-        m_Window.GetContext().GetInstance(),
-        m_Window.GetContext().GetPhysicalDevice(),
-        m_Window.GetContext().GetDevice(),
-        m_Window.GetContext().GetGraphicsQueue(),
-        m_Window.GetContext().GetPresentQueue(),
-        m_Window.GetContext().GetSurface(),
-        m_Window.GetContext().GetGraphicsFamily(),
-        m_Window.GetContext().GetPresentFamily(),
-        m_Window.GetContext().GetCommandPool(),
-        m_Window.GetContext().GetCommandBuffers(),
-        m_Window.GetContext().GetAllocator(),
-        m_Window.GetContext().MAX_FRAMES_IN_FLIGHT,
-        &m_Window.GetContext().currentFrame
-    );
     m_Renderer.Init();
 
     m_FullscreenQuad.CreateFullscreenQuad();
@@ -60,7 +44,7 @@ void App::Init() {
     m_TerrainAtlas.LoadFromFile("assets/Textures/TerrainAtlas.png");
     
     //load the descriptor sets
-    m_Renderer.StartDescriptors();
+    m_ChunkRenderer.StartDescriptors();
 
     //load shaders
     m_OpaqueShader.LoadShader("assets/Shaders/Opaque_vert.spv", "assets/Shaders/Opaque_frag.spv", PipelineType::Chunk);
@@ -141,8 +125,8 @@ void App::Init() {
 }
 void App::Loop() {
     while(!m_Window.ShouldClose()) {
-        m_Window.StartFrame();
         m_Window.PollEvents();
+        m_Window.StartFrame();
 
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastTime;
@@ -163,10 +147,10 @@ void App::Loop() {
                         txt->text = std::to_string(RenderDistance);
                     }
                 }
-                titleScr->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetSampler(), Width, Height);
+                titleScr->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
                 m_Renderer.EndRender();
 
-                m_FullscreenQuad.SetTexture();
+                m_FullscreenQuad.SetTexture();  
 
                 m_Window.StartFullscreenRender();
                 m_FullscreenQuad.Draw();
@@ -176,10 +160,10 @@ void App::Loop() {
             case GameState::InGame: {
                 if(waitingFrames == 0) {
                 processInput();
-                proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 13000.0f);
-                m_Frustum = ExtractFrustum(proj * m_Player->GetViewMatrix());
+                proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 13000.0f, 0.1f);
+                m_Frustum = ExtractFrustum(glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 13000.0f) * m_Player->GetViewMatrix());
 
-                m_Renderer.SetViewProj(m_Player->GetViewMatrix(), proj);
+                m_ChunkRenderer.SetViewProj(m_Player->GetViewMatrix(), proj);
                      
                 m_Renderer.StartRender();
                 m_World->RenderWorld();
@@ -190,9 +174,9 @@ void App::Loop() {
                     mat = glm::scale(mat, glm::vec3(0.5f, m_Player->aabb.max.y, 0.5f));
 
                     m_BoxOutlineShader.Bind();
-                    m_Renderer.SetTrans(mat);
-                    VkDescriptorSet sets[] = { m_Renderer.GetChunksSet(GContext->currentFrame) };
-                    vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Renderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
+                    m_ChunkRenderer.SetTrans(mat);
+                    VkDescriptorSet sets[] = { m_ChunkRenderer.GetChunksSet(GContext->currentFrame) };
+                    vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_ChunkRenderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
                     vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 24, 1, 0, 0);
 
                     m_SkeletalMeshShader.Bind();
@@ -200,12 +184,12 @@ void App::Loop() {
                 }
 
                 if(showChunkBorders) {
-                    m_Renderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Player->ChunkCoordX * 32, m_Player->ChunkCoordY * 32,m_Player->ChunkCoordZ * 32)));
+                    m_ChunkRenderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Player->ChunkCoordX * 32, m_Player->ChunkCoordY * 32,m_Player->ChunkCoordZ * 32)));
                 
                     m_BorderShader.Bind();
-                    VkDescriptorSet sets[] = { m_Renderer.GetChunksSet(GContext->currentFrame) };
-                    vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Renderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
-                    vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 36, 1, 0, 0);
+                    VkDescriptorSet sets[] = { m_ChunkRenderer.GetChunksSet(GContext->currentFrame) };
+                    vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_ChunkRenderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
+                    vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 36, 1, 0, 0);
                 }
 
                 Canvas* debugMenuHUD = m_TempMod->GetAllCanvases()["DebugMenuHUD"];
@@ -239,7 +223,7 @@ void App::Loop() {
                     }
                 }
                 debugMenuHUD->Tick();
-                debugMenuHUD->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetSampler(), Width, Height);
+                debugMenuHUD->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
                 m_Renderer.EndRender();
 
                 m_FullscreenQuad.SetTexture();
@@ -264,7 +248,7 @@ void App::Loop() {
                     m_MPWorld->m_ClientEntityManager.InterpolateCamera(deltaTime);
 
                     proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
-                    m_Renderer.SetViewProj(m_MPWorld->m_ClientEntityManager.GetViewMatrix(), proj);
+                    m_ChunkRenderer.SetViewProj(m_MPWorld->m_ClientEntityManager.GetViewMatrix(), proj);
                     
                     m_Renderer.StartRender();
                     m_MPWorld->m_ClientChunkManager.RenderChunks();
@@ -274,10 +258,10 @@ void App::Loop() {
                         mat = glm::scale(mat, glm::vec3(0.5f, 1.8f, 0.5f));
 
                         m_BoxOutlineShader.Bind();
-                        m_Renderer.SetTrans(mat);
-                        VkDescriptorSet sets[] = { m_Renderer.GetChunksSet(GContext->currentFrame) };
-                        vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Renderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
-                        vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 24, 1, 0, 0);
+                        m_ChunkRenderer.SetTrans(mat);
+                        VkDescriptorSet sets[] = { m_ChunkRenderer.GetChunksSet(GContext->currentFrame) };
+                        vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_ChunkRenderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
+                        vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 24, 1, 0, 0);
                     }
 
                     m_Renderer.EndRender();
@@ -297,7 +281,7 @@ void App::Terminate() {
     m_BorderShader.UnloadShader();
     m_OpaqueShader.UnloadShader();
 
-    m_Renderer.EndDescriptors();
+    m_ChunkRenderer.EndDescriptors();
 
     m_TerrainAtlas.Delete();
 
@@ -352,11 +336,6 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastY = ypos;
 
     GApp->m_Player->ProcessMouseInput(xoffset, yoffset);
-}
-void resize_callback(GLFWwindow* window, int width, int height) {
-    (void)window;
-    GApp->Width = width;
-    GApp->Height = height;
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if(GApp->state == GameState::Multiplayer) {

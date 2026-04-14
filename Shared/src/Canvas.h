@@ -25,7 +25,7 @@ public:
 
     virtual ~UIElement() = default;
 
-    virtual void Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) = 0;
+    virtual void Render(VkCommandBuffer cmd, glm::mat4 mtx) = 0;
     virtual void Tick() {}
     virtual UIType GetType() const = 0;
 
@@ -37,7 +37,7 @@ class UIImage : public UIElement {
 public:
     UIImage();
 
-    void Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) override;
+    void Render(VkCommandBuffer cmd, glm::mat4 mtx) override;
     UIType GetType() const override;
 
     void Save(std::ofstream& file) override;
@@ -54,7 +54,7 @@ class UIButton : public UIElement {
 public:
     UIButton();
 
-    void Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) override;
+    void Render(VkCommandBuffer cmd, glm::mat4 mtx) override;
     void Tick() override;
     UIType GetType() const override;
 
@@ -78,7 +78,7 @@ class UIText : public UIElement {
 public:
     UIText();
 
-    void Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx);
+    void Render(VkCommandBuffer cmd, glm::mat4 mtx);
     UIType GetType() const override;
 
     void Save(std::ofstream& file) override;
@@ -120,7 +120,7 @@ public:
     std::vector<UINode*> nodes; //top level nodes
     
     void Tick();
-    void Render(VkCommandBuffer cmd, VkSampler smp, int ScrWidth, int ScrHeight);
+    void Render(VkCommandBuffer cmd, int ScrWidth, int ScrHeight);
 private:
     std::unordered_map<std::string, UINode*> NameNodeMap;
 };

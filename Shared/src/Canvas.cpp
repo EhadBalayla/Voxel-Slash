@@ -7,11 +7,12 @@
 #include "AssetFormats/FontAsset.h"
 #include "Context.h"
 #include "Window.h"
+#include "Renderer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 
-void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, VkSampler smp, int ScrWidth, int ScrHeight) {
+void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, int ScrWidth, int ScrHeight) {
     float left = -node->Left * ScrWidth;
     float right = node->Right * ScrWidth;
     float bottom = node->Bottom * ScrHeight;
@@ -28,11 +29,11 @@ void RenderCanvasNode(UINode* node, glm::mat4 parentTrans, VkCommandBuffer cmd, 
     glm::mat4 ProjTrans = proj * overallTrans;
 
     if(node->m_Element) {
-        node->m_Element->Render(cmd, smp, ProjTrans);
+        node->m_Element->Render(cmd, ProjTrans);
     }
 
     for(auto& n : node->m_Children) {
-        RenderCanvasNode(n, overallTrans, cmd, smp, ScrWidth, ScrHeight);
+        RenderCanvasNode(n, overallTrans, cmd, ScrWidth, ScrHeight);
     }
 }
 
@@ -156,9 +157,9 @@ void Canvas::Tick() {
 }
 
 
-void Canvas::Render(VkCommandBuffer cmd, VkSampler smp, int ScrWidth, int ScrHeight) {
+void Canvas::Render(VkCommandBuffer cmd, int ScrWidth, int ScrHeight) {
     for(auto& n : nodes) {
-        RenderCanvasNode(n, glm::mat4(1.0f), cmd, smp, ScrWidth, ScrHeight);
+        RenderCanvasNode(n, glm::mat4(1.0f), cmd, ScrWidth, ScrHeight);
     }
 }
 
@@ -189,13 +190,13 @@ UIImage::UIImage() {
         throw std::runtime_error("failed to allocate descriptor setsof a UIImage element");
     }
 }
-void UIImage::Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) {
+void UIImage::Render(VkCommandBuffer cmd, glm::mat4 mtx) {
     if(m_Asset) {
         if (texturesPerSet[GContext->currentFrame] != &m_Asset->GetTexture()) {
             VkDescriptorImageInfo imgInfo{};
             imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imgInfo.imageView = m_Asset->GetTexture().GetImageView();
-            imgInfo.sampler = smp;
+            imgInfo.sampler = GRenderer->GetSampler();
 
             VkWriteDescriptorSet write{};
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -267,13 +268,13 @@ UIButton::UIButton() {
         throw std::runtime_error("failed to allocate descriptor setsof a UIImage element");
     }
 }
-void UIButton::Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) {
+void UIButton::Render(VkCommandBuffer cmd, glm::mat4 mtx) {
     if(m_Asset) {
         if (texturesPerSet[GContext->currentFrame] != &m_Asset->GetTexture()) {
             VkDescriptorImageInfo imgInfo{};
             imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imgInfo.imageView = m_Asset->GetTexture().GetImageView();
-            imgInfo.sampler = smp;
+            imgInfo.sampler = GRenderer->GetSampler();
 
             VkWriteDescriptorSet write{};
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -293,7 +294,7 @@ void UIButton::Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) {
             VkDescriptorImageInfo imgInfo{};
             imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imgInfo.imageView = GContext->GetDummyTexture().GetImageView();
-            imgInfo.sampler = smp;
+            imgInfo.sampler = GRenderer->GetSampler();
 
             VkWriteDescriptorSet write{};
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -316,9 +317,8 @@ void UIButton::Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) {
 }
 void UIButton::Tick() {
     double xpos, ypos;
-    int Width, Height;
+    int Width = GWindow->GetWindowWidth(), Height = GWindow->GetWindowHeight();
     glfwGetCursorPos(GWindow->GetGLFWwindow(), &xpos, &ypos);
-    glfwGetWindowSize(GWindow->GetGLFWwindow(), &Width, &Height);
     
     float CenterX = m_Node->Position.x + (m_Node->Left * Width);
     float CenterY = m_Node->Position.y + (m_Node->Top * Height);
@@ -397,14 +397,14 @@ UIText::UIText() {
         throw std::runtime_error("failed to allocate descriptor setsof a UIImage element");
     }
 }
-void UIText::Render(VkCommandBuffer cmd, VkSampler smp, glm::mat4 mtx) {
+void UIText::Render(VkCommandBuffer cmd, glm::mat4 mtx) {
     if(!m_Asset) return;
 
     if(texturesPerSet[GContext->currentFrame] != &m_Asset->GetFontAtlas()) {
         VkDescriptorImageInfo imgInfo{};
         imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imgInfo.imageView = m_Asset->GetFontAtlas().GetImageView();
-        imgInfo.sampler = smp;
+        imgInfo.sampler = GRenderer->GetSampler();
 
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

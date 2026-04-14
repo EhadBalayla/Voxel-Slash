@@ -5,14 +5,6 @@
 
 #include "vk_mem_alloc.h"
 
-#include <mutex>
-
-struct BufferAllocation {
-	VkBuffer buffer;
-	VmaAllocation allocation;
-	bool tbuffer;
-};
-
 class Renderer {
 public:
     void Init();
@@ -20,6 +12,8 @@ public:
 
 	void StartRender();
 	void EndRender();
+
+	void RecreateOffscreenBuffer();
 
     //vulkan renderer getters
 	VkInstance GetInstance();
@@ -42,17 +36,8 @@ public:
 	VkImageView GetColorBufferView();
 	VkPipelineLayout Get3DPipelineLayout();
 
-	std::mutex& GetFrameDeletionMTX();
-
-    //public helpers
-    void SetHandles(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkSurfaceKHR surface, uint32_t graphicsFamilyIndex, uint32_t presentFamilyIndex, VkCommandPool commandPool, VkCommandBuffer* commandBuffers, VmaAllocator allocator, int MAX_FRAMES_IN_FLIGHT, int* currentFrame);
-	void QueueBufferDeletion(BufferAllocation buffer);
-	void FlushBufferDeletionQueue();
-
-
     int* CurrentFrame = nullptr;
 private:
-    //Vulkan setup handles (already done externally, will just be passing references)
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
@@ -69,7 +54,6 @@ private:
     //initiating rendering
 	VkRenderPass offscreenRenderPass;
 	std::vector<VkFramebuffer> offscreenFramebuffer;
-	VkDescriptorPool descriptorPool;
 	VkSampler sampler; //this sampler is for nearest filtering
 
 	//color buffer
@@ -84,16 +68,13 @@ private:
 
 	VkPipelineLayout Pipe3DLayout;
 
-	//deletion stuff
-	std::mutex deletionQueueMTX[3];
-	std::vector<BufferAllocation> bufferDeletionQueue[3]; //3 because the max frames in flight is hardcoded to 3
-
     //creation functions
 	void createOffscreenPass();
 	void createOffscreenFramebuffer();
 	void createColorBuffer();
 	void createDepthBuffer();
-    void createDescriptorPool();
     void createTextureSampler();
 	void create3DLayout();
 };
+
+extern Renderer* GRenderer;

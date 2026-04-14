@@ -6,7 +6,7 @@
 #include <cstring>
 
 void ChunkBuffer::Update(void* facesData, size_t facesSize) {
-    Renderer& renderer = GApp->m_Renderer;
+    ChunkRenderer& renderer = GApp->m_ChunkRenderer;
 
     //allocating the regular mesh buffer
     VkBufferCreateInfo bufferInfo{};
@@ -17,16 +17,16 @@ void ChunkBuffer::Update(void* facesData, size_t facesSize) {
     VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-    if(vmaCreateBuffer(renderer.GetAllocator(), &bufferInfo, &allocInfo, &buffer, &allocation, nullptr) != VK_SUCCESS) {
+    if(vmaCreateBuffer(GRenderer->GetAllocator(), &bufferInfo, &allocInfo, &buffer, &allocation, nullptr) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate mesh buffer of a chunk");
     }
 
 
     //copying the data to the GPU
     void* bData;
-    vmaMapMemory(renderer.GetAllocator(), allocation, &bData);
+    vmaMapMemory(GRenderer->GetAllocator(), allocation, &bData);
     memcpy(bData, facesData, facesSize);
-    vmaUnmapMemory(renderer.GetAllocator(), allocation);
+    vmaUnmapMemory(GRenderer->GetAllocator(), allocation);
 
     //making the descriptor pool
     VkDescriptorPoolSize poolSize{};
@@ -39,7 +39,7 @@ void ChunkBuffer::Update(void* facesData, size_t facesSize) {
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = &poolSize;
     
-    if (vkCreateDescriptorPool(renderer.GetDevice(), &poolInfo, nullptr, &pool) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(GRenderer->GetDevice(), &poolInfo, nullptr, &pool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool for storage buffer descriptor");
     }
 
@@ -51,7 +51,7 @@ void ChunkBuffer::Update(void* facesData, size_t facesSize) {
     setsAllocInfo.descriptorPool = pool;
     setsAllocInfo.descriptorSetCount = GContext->MAX_FRAMES_IN_FLIGHT;
     setsAllocInfo.pSetLayouts = setLayouts.data();
-    if (vkAllocateDescriptorSets(renderer.GetDevice(), &setsAllocInfo, sets.data()) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(GRenderer->GetDevice(), &setsAllocInfo, sets.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets for mesh buffer");
     }
 
@@ -71,14 +71,12 @@ void ChunkBuffer::Update(void* facesData, size_t facesSize) {
     for (int i = 0; i < GContext->MAX_FRAMES_IN_FLIGHT; i++) {
         write.dstSet = sets[i];
 
-        vkUpdateDescriptorSets(renderer.GetDevice(), 1, &write, 0, nullptr);
+        vkUpdateDescriptorSets(GRenderer->GetDevice(), 1, &write, 0, nullptr);
     }
 }
 void ChunkBuffer::Delete() {
-    Renderer& renderer = GApp->m_Renderer;
-
-    vkDestroyDescriptorPool(renderer.GetDevice(), pool, nullptr);
-    vmaDestroyBuffer(renderer.GetAllocator(), buffer, allocation);
+    vkDestroyDescriptorPool(GContext->GetDevice(), pool, nullptr);
+    vmaDestroyBuffer(GContext->GetAllocator(), buffer, allocation);
 }
 
 VkBuffer ChunkBuffer::GetBuffer() const {

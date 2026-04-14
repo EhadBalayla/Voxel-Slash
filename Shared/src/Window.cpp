@@ -2,12 +2,14 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+void resize_callback(GLFWwindow* window, int width, int height);
+
+
 Window* GWindow = nullptr;
 
 void Window::InitGLFW() {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 }
 
 void Window::TerminateGLFW() {
@@ -18,10 +20,17 @@ void Window::TerminateGLFW() {
 
 
 
-void Window::CreateWindow(const char* name, int Width, int Height) {
+void Window::CreateWindow(const char* name, int Width, int Height, bool Resizing) {
 	//same with context, to save on a constructor, 
 	//and this function is guaranteed to be called before anyone accesses the pointer anyways
 	GWindow = this;
+
+	if(!Resizing) {
+		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	}
+
+	this->Width = Width;
+	this->Height = Height;
 
     m_GLFWwindow = glfwCreateWindow(Width, Height, name, NULL, NULL);
 
@@ -29,6 +38,8 @@ void Window::CreateWindow(const char* name, int Width, int Height) {
         glfwTerminate();
         exit(0);
     }
+
+	glfwSetFramebufferSizeCallback(m_GLFWwindow, resize_callback);
 }
 void Window::MakeContext() {
     //start the GPU initialization
@@ -139,6 +150,19 @@ bool Window::ShouldClose() {
     return glfwWindowShouldClose(m_GLFWwindow);
 }
 
+const int Window::GetWindowWidth() const {
+	return Width;
+}
+const int Window::GetWindowHeight() const {
+	return Height;
+}
+void Window::SetWindowWidth(int Width) {
+	this->Width = Width;
+}
+void Window::SetWindowHeight(int Height) {
+	this->Height = Height;
+}
+
 
 
 
@@ -151,4 +175,16 @@ Context& Window::GetContext() {
 }
 Swapchain& Window::GetSwapchain() {
     return m_Swapchain;
+}
+
+
+#include "Renderer.h"
+void resize_callback(GLFWwindow* window, int width, int height) {
+	GWindow->SetWindowWidth(width);
+	GWindow->SetWindowHeight(height);
+
+	vkDeviceWaitIdle(GWindow->GetContext().GetDevice());
+
+	GWindow->GetSwapchain().RecreateSwapchain();
+	GRenderer->RecreateOffscreenBuffer();
 }

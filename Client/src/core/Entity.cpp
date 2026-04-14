@@ -26,7 +26,7 @@ void RenderNode(PrefabNode* node, glm::mat4 parentTransform) {
 	overall = parentTransform * overall;
 
 	if(node->m_Asset) {
-        node->m_Asset->Render(GApp->m_Renderer.GetFrameCommandBuffer(), GApp->m_Renderer.GetChunksPipelineLayout(), overall);
+        node->m_Asset->Render(GApp->m_Renderer.GetFrameCommandBuffer(), GApp->m_ChunkRenderer.GetChunksPipelineLayout(), overall);
     }
 
 	for(auto c : node->m_Children) {

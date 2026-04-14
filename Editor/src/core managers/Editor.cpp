@@ -16,24 +16,9 @@ Editor::Editor() {
 
 void Editor::Init() {
     Window::InitGLFW();
-    m_Window.CreateWindow("Voxel Slash Editor", Width, Height);
+    m_Window.CreateWindow("Voxel Slash Editor", Width, Height, false);
     m_Window.MakeContext();
 
-    m_Renderer.SetHandles(
-        m_Window.GetContext().GetInstance(),
-        m_Window.GetContext().GetPhysicalDevice(),
-        m_Window.GetContext().GetDevice(),
-        m_Window.GetContext().GetGraphicsQueue(),
-        m_Window.GetContext().GetPresentQueue(),
-        m_Window.GetContext().GetSurface(),
-        m_Window.GetContext().GetGraphicsFamily(),
-        m_Window.GetContext().GetPresentFamily(),
-        m_Window.GetContext().GetCommandPool(),
-        m_Window.GetContext().GetCommandBuffers(),
-        m_Window.GetContext().GetAllocator(),
-        m_Window.GetContext().MAX_FRAMES_IN_FLIGHT,
-        &m_Window.GetContext().currentFrame
-    );
     m_Renderer.Init();
 
     m_3DShader.LoadShader("Shaders/MeshShader_vert.spv", "Shaders/MeshShader_frag.spv", PipelineType::D3);
@@ -49,8 +34,8 @@ void Editor::Init() {
 }
 void Editor::Loop() {
     while(!m_Window.ShouldClose()) {
-        m_Window.StartFrame();
         m_Window.PollEvents();
+        m_Window.StartFrame();
 
         DeltaTime = glfwGetTime() - LastTime;
         LastTime = glfwGetTime();
@@ -63,7 +48,7 @@ void Editor::Loop() {
 
         if(m_Editor.GetCanvas()) {
             m_2DShader.Bind();
-            m_Editor.GetCanvas()->Render(m_Renderer.GetFrameCommandBuffer(), m_Renderer.GetSampler(), Width, Height);
+            m_Editor.GetCanvas()->Render(m_Renderer.GetFrameCommandBuffer(), Width, Height);
         }
         m_Renderer.EndRender();
 

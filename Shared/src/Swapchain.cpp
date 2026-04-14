@@ -28,6 +28,18 @@ void Swapchain::Delete() {
 	vkDestroySwapchainKHR(context->GetDevice(), swapchain, nullptr);
 }
 
+void Swapchain::RecreateSwapchain() {
+	for (auto Framebuffer : swapChainFramebuffers)
+		vkDestroyFramebuffer(context->GetDevice(), Framebuffer, nullptr);
+	for (auto ImageView : swapChainImageViews)
+		vkDestroyImageView(context->GetDevice(), ImageView, nullptr);
+	vkDestroySwapchainKHR(context->GetDevice(), swapchain, nullptr);
+
+	createSwapChain();
+	createImageViews();
+	createFramebuffers();
+}
+
 
 
 void Swapchain::createSwapChain() {

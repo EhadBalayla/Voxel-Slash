@@ -1,7 +1,8 @@
 #pragma once
 #include "Window.h"
+#include "Renderer.h"
 #include "Rendering/FullscreenQuad.h"
-#include "Rendering/Renderer.h"
+#include "Rendering/ChunkRenderer.h"
 #include "Rendering/Shader.h"
 #include "Texture.h"
 #include "AudioManager.h"
@@ -27,8 +28,9 @@ class App {
 public:
     //core managers
     Window m_Window;
-    FullscreenQuad m_FullscreenQuad;
     Renderer m_Renderer;
+    FullscreenQuad m_FullscreenQuad;
+    ChunkRenderer m_ChunkRenderer;
     AudioManager m_AudioManager;
     ClientNetworkManager m_ClientNetworkManager;
     ModInstance* m_TempMod;

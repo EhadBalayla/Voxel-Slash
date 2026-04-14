@@ -9,7 +9,7 @@ public:
 	void Create();
 	void Delete();
 
-	void RecreateSwapchain() {};
+	void RecreateSwapchain();
 
 	uint32_t imageIndex; //will be used for the index of the swapchain image for synchronization
 

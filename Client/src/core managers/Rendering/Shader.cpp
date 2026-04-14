@@ -130,10 +130,10 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	rasterizerInfo.lineWidth = 5.0f;
 	rasterizerInfo.cullMode = type == PipelineType::Chunk ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
 	rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-	rasterizerInfo.depthBiasEnable = VK_FALSE;
-	rasterizerInfo.depthBiasConstantFactor = 0.0f;
+	rasterizerInfo.depthBiasEnable = VK_TRUE;
+	rasterizerInfo.depthBiasConstantFactor = 4.0f;
 	rasterizerInfo.depthBiasClamp = 0.0f;
-	rasterizerInfo.depthBiasSlopeFactor = 0.0f;
+	rasterizerInfo.depthBiasSlopeFactor = 1.5f;
 
 	//creating the multisampler
 	VkPipelineMultisampleStateCreateInfo multisamplingInfo{};
@@ -169,7 +169,7 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	if (type == PipelineType::Chunk || type == PipelineType::BoxOutline || type == PipelineType::SkeletalMesh) { //where we enable depth testing
 		depthStencilState.depthTestEnable = VK_TRUE;
 		depthStencilState.depthWriteEnable = VK_TRUE;
-		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencilState.depthCompareOp = VK_COMPARE_OP_GREATER;
 		depthStencilState.depthBoundsTestEnable = VK_FALSE;
 		depthStencilState.minDepthBounds = 0.0f;
 		depthStencilState.maxDepthBounds = 1.0f;
@@ -178,7 +178,7 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	else { //where we dont want depth testing
 		depthStencilState.depthTestEnable = VK_FALSE;
 		depthStencilState.depthWriteEnable = VK_FALSE;
-		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencilState.depthCompareOp = VK_COMPARE_OP_GREATER;
 		depthStencilState.depthBoundsTestEnable = VK_FALSE;
 		depthStencilState.minDepthBounds = 0.0f;
 		depthStencilState.maxDepthBounds = 1.0f;
@@ -198,25 +198,25 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pColorBlendState = &colorBlendState;
 	pipelineInfo.pDepthStencilState = &depthStencilState;
-	pipelineInfo.layout = type == PipelineType::UIShader ? GContext->GetSingleTexPPLayout() : GApp->m_Renderer.GetChunksPipelineLayout();
+	pipelineInfo.layout = type == PipelineType::UIShader ? GContext->GetSingleTexPPLayout() : GApp->m_ChunkRenderer.GetChunksPipelineLayout();
 	pipelineInfo.renderPass = GApp->m_Renderer.GetOffscreenRenderPass();
 	pipelineInfo.subpass = 0;
 
-	if (vkCreateGraphicsPipelines(GApp->m_Renderer.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(GContext->GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline");
 	}
 
 
-	vkDestroyShaderModule(GApp->m_Renderer.GetDevice(), fragmentModule, nullptr);
-	vkDestroyShaderModule(GApp->m_Renderer.GetDevice(), vertexModule, nullptr);
+	vkDestroyShaderModule(GContext->GetDevice(), fragmentModule, nullptr);
+	vkDestroyShaderModule(GContext->GetDevice(), vertexModule, nullptr);
 }
 void Shader::UnloadShader() {
-	vkDestroyPipeline(GApp->m_Renderer.GetDevice(), graphicsPipeline, nullptr);
+	vkDestroyPipeline(GContext->GetDevice(), graphicsPipeline, nullptr);
 }
 
 
 void Shader::Bind() {
-	vkCmdBindPipeline(GApp->m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+	vkCmdBindPipeline(GRenderer->GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 }
 
 VkPipeline* Shader::GetPipeline() {

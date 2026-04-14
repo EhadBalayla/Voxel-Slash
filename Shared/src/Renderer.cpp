@@ -3,15 +3,32 @@
 #include <stdexcept>
 #include <cstring>
 
-#include "../Editor.h"
+#include "Window.h"
+
+Renderer* GRenderer = nullptr;
 
 void Renderer::Init() {
+	GRenderer = this;
+	
+	this->instance = GContext->GetInstance();
+	this->physicalDevice = GContext->GetPhysicalDevice();
+	this->device = GContext->GetDevice();
+	this->graphicsQueue = GContext->GetGraphicsQueue();
+	this->presentQueue = GContext->GetPresentQueue();
+	this->surface = GContext->GetSurface();
+	this->graphicsFamilyIndex = GContext->GetGraphicsFamily();
+	this->presentFamilyIndex = GContext->GetPresentFamily();
+	this->commandPool = GContext->GetCommandPool();
+	this->commandBuffers = GContext->GetCommandBuffers();
+	this->allocator = GContext->GetAllocator();
+	this->MAX_FRAMES_IN_FLIGHT = GContext->MAX_FRAMES_IN_FLIGHT;
+	this->CurrentFrame = &GContext->currentFrame;
+
 	createOffscreenPass();
 	createColorBuffer();
 	createDepthBuffer();
 	createOffscreenFramebuffer();
 
-    createDescriptorPool();
 	createTextureSampler();
 
 	create3DLayout();
@@ -20,8 +37,6 @@ void Renderer::Terminate() {
 	vkDestroyPipelineLayout(device, Pipe3DLayout, nullptr);
 
 	vkDestroySampler(device, sampler, nullptr);
-
-	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		vkDestroyFramebuffer(device, offscreenFramebuffer[i], nullptr);
@@ -44,7 +59,7 @@ void Renderer::StartRender() {
 	beginInfo.renderPass = offscreenRenderPass;
 	beginInfo.framebuffer = offscreenFramebuffer[*CurrentFrame];
 	beginInfo.renderArea.offset = { 0, 0 };
-	beginInfo.renderArea.extent = { static_cast<uint32_t>(GEditor->Width), static_cast<uint32_t>(GEditor->Height) };
+	beginInfo.renderArea.extent = { static_cast<uint32_t>(GWindow->GetWindowWidth()), static_cast<uint32_t>(GWindow->GetWindowHeight()) };
 	beginInfo.clearValueCount = clearValueCount;
 	beginInfo.pClearValues = clearValues;
 
@@ -53,19 +68,35 @@ void Renderer::StartRender() {
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(GEditor->Width);
-	viewport.height = static_cast<float>(GEditor->Height);
+	viewport.width = static_cast<float>(GWindow->GetWindowWidth());
+	viewport.height = static_cast<float>(GWindow->GetWindowHeight());
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 	vkCmdSetViewport(commandBuffers[*CurrentFrame], 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
-	scissor.extent = { (uint32_t)GEditor->Width, (uint32_t)GEditor->Height };
+	scissor.extent = { (uint32_t)GWindow->GetWindowWidth(), (uint32_t)GWindow->GetWindowHeight() };
 	vkCmdSetScissor(commandBuffers[*CurrentFrame], 0, 1, &scissor);
 }
 void Renderer::EndRender() {
 	vkCmdEndRenderPass(commandBuffers[*CurrentFrame]);
+}
+
+void Renderer::RecreateOffscreenBuffer() {
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		vkDestroyFramebuffer(device, offscreenFramebuffer[i], nullptr);
+
+		vkDestroyImageView(device, colorBufferView[i], nullptr);
+		vkDestroyImageView(device, depthBufferView[i], nullptr);
+
+		vmaDestroyImage(allocator, colorBuffer[i], colorBufferAlloc[i]);
+		vmaDestroyImage(allocator, depthBuffer[i], depthBufferAlloc[i]);
+	}
+
+	createColorBuffer();
+	createDepthBuffer();
+	createOffscreenFramebuffer();
 }
 
 VkInstance Renderer::GetInstance() {
@@ -109,9 +140,6 @@ VkRenderPass Renderer::GetOffscreenRenderPass() {
 VmaAllocator Renderer::GetAllocator() {
 	return allocator;
 }
-std::mutex& Renderer::GetFrameDeletionMTX() {
-	return deletionQueueMTX[*CurrentFrame];
-}
 VkImage* Renderer::GetColorBuffers() {
 	return colorBuffer.data();
 }
@@ -128,36 +156,6 @@ VkPipelineLayout Renderer::Get3DPipelineLayout() {
 	return Pipe3DLayout;
 }
 
-void Renderer::SetHandles(
-	VkInstance instance, 
-	VkPhysicalDevice physicalDevice, 
-	VkDevice device, 
-	VkQueue graphicsQueue, 
-	VkQueue presentQueue, 
-	VkSurfaceKHR surface, 
-	uint32_t graphicsFamilyIndex, 
-	uint32_t presentFamilyIndex, 
-	VkCommandPool commandPool, 
-	VkCommandBuffer* commandBuffers, 
-	VmaAllocator allocator,
-	int MAX_FRAMES_IN_FLIGHT, 
-	int* currentFrame) {
-
-	this->instance = instance;
-	this->physicalDevice = physicalDevice;
-	this->device = device;
-	this->graphicsQueue = graphicsQueue;
-	this->presentQueue = presentQueue;
-	this->surface = surface;
-	this->graphicsFamilyIndex = graphicsFamilyIndex;
-	this->presentFamilyIndex = presentFamilyIndex;
-	this->commandPool = commandPool;
-	this->commandBuffers = commandBuffers;
-	this->allocator = allocator;
-    this->MAX_FRAMES_IN_FLIGHT = MAX_FRAMES_IN_FLIGHT;
-	this->CurrentFrame = currentFrame;
-}
-
 void Renderer::createColorBuffer() {
 	colorBuffer.resize(MAX_FRAMES_IN_FLIGHT);
 	colorBufferView.resize(MAX_FRAMES_IN_FLIGHT);
@@ -170,8 +168,8 @@ void Renderer::createColorBuffer() {
 	imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	imageInfo.arrayLayers = 1;
 	imageInfo.mipLevels = 1;
-	imageInfo.extent.width = GEditor->Width;
-	imageInfo.extent.height = GEditor->Height;
+	imageInfo.extent.width = GWindow->GetWindowWidth();
+	imageInfo.extent.height = GWindow->GetWindowHeight();
 	imageInfo.extent.depth = 1;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -215,8 +213,8 @@ void Renderer::createDepthBuffer() {
 	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	imageInfo.arrayLayers = 1;
 	imageInfo.mipLevels = 1;
-	imageInfo.extent.width = GEditor->Width;
-	imageInfo.extent.height = GEditor->Height;
+	imageInfo.extent.width = GWindow->GetWindowWidth();
+	imageInfo.extent.height = GWindow->GetWindowHeight();
 	imageInfo.extent.depth = 1;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -313,8 +311,8 @@ void Renderer::createOffscreenFramebuffer() {
 	VkFramebufferCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	createInfo.renderPass = offscreenRenderPass;
-	createInfo.width = GEditor->Width;
-	createInfo.height = GEditor->Height;
+	createInfo.width = GWindow->GetWindowWidth();
+	createInfo.height = GWindow->GetWindowHeight();
 	createInfo.layers = 1;
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -326,33 +324,6 @@ void Renderer::createOffscreenFramebuffer() {
 		if (vkCreateFramebuffer(device, &createInfo, nullptr, &offscreenFramebuffer[i]) != VK_SUCCESS) {
 			throw std::runtime_error("couldn't create framebuffer");
 		}
-	}
-}
-
-void Renderer::createDescriptorPool() {
-	VkDescriptorPoolSize poolSize{};
-	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount = 1 * MAX_FRAMES_IN_FLIGHT;
-
-	VkDescriptorPoolSize poolSize2{};
-	poolSize2.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize2.descriptorCount = 1 * MAX_FRAMES_IN_FLIGHT;
-
-	VkDescriptorPoolSize poolSize3{};
-	poolSize3.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	poolSize3.descriptorCount = 1 * MAX_FRAMES_IN_FLIGHT;
-
-	uint32_t count = 3;
-	VkDescriptorPoolSize poolSizes[] = { poolSize, poolSize2, poolSize3 };
-
-	VkDescriptorPoolCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	createInfo.poolSizeCount = count;
-	createInfo.pPoolSizes = poolSizes;
-	createInfo.maxSets = 2 * MAX_FRAMES_IN_FLIGHT;
-
-	if (vkCreateDescriptorPool(device, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-		throw std::runtime_error("couldn't create descriptor pool");
 	}
 }
 void Renderer::createTextureSampler() {

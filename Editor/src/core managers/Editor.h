@@ -1,7 +1,7 @@
 #pragma once
 #include "Window.h"
+#include "Renderer.h"
 #include "EditorManager.h"
-#include "Rendering/Renderer.h"
 #include "Rendering/Shader.h"
 #include "Camera.h"
 #include "ModInstance.h"
