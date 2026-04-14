@@ -56,15 +56,31 @@ private:
 	std::vector<VkFramebuffer> offscreenFramebuffer;
 	VkSampler sampler; //this sampler is for nearest filtering
 
+	//gbuffer
 	//color buffer
 	std::vector<VkImage> colorBuffer;
 	std::vector<VkImageView> colorBufferView;
 	std::vector<VmaAllocation> colorBufferAlloc;
 
+	//metalness roughness specular buffer
+	std::vector<VkImage> mrsBuffer;
+	std::vector<VkImageView> mrsBufferView;
+	std::vector<VmaAllocation> mrsBufferAlloc;
+
+	//normal buffer
+	std::vector<VkImage> normalBuffer;
+	std::vector<VkImageView> normalBufferView;
+	std::vector<VmaAllocation> normalBufferAlloc;
+
+	std::vector<VkImage> positionBuffer;
+	std::vector<VkImageView> positionBufferView;
+	std::vector<VmaAllocation> positionBufferAlloc;
+
 	//depth buffer
 	std::vector<VkImage> depthBuffer;
 	std::vector<VkImageView> depthBufferView;
 	std::vector<VmaAllocation> depthBufferAlloc;
+	//end of gbuffer
 
 	VkPipelineLayout Pipe3DLayout;
 

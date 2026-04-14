@@ -52,7 +52,7 @@ void Renderer::Terminate() {
 
 void Renderer::StartRender() {
 	uint32_t clearValueCount = 2;
-	VkClearValue clearValues[] = { {0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 0.0f} };
+	VkClearValue clearValues[] = { {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 0.0f} };
 
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

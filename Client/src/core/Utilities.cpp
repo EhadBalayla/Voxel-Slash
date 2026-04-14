@@ -46,7 +46,7 @@ bool ShouldLODRender(Chunk* c) {
     int y = std::abs(c->ChunkY - LOD_Y);
 	int z = std::abs(c->ChunkZ - LOD_Z);
 
-	if (x * 2 > GApp->RenderDistance - 1|| y * 2 > GApp->RenderDistance - 1 || z * 2 > GApp->RenderDistance - 1	) return true;
+	if (x * 2 > GApp->RenderDistance - 1 || y * 2 > GApp->RenderDistance - 1 || z * 2 > GApp->RenderDistance - 1) return true;
 	return false;
 }
 glm::vec3 SmoothInterp(const glm::vec3& current, const glm::vec3& target, float deltaTime, float speed) {
