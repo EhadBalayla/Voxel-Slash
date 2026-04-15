@@ -26,6 +26,9 @@ void Renderer::Init() {
 
 	createOffscreenPass();
 	createColorBuffer();
+	createMRSBuffer();
+	createNormalBuffer();
+	createPositionBuffer();
 	createDepthBuffer();
 	createOffscreenFramebuffer();
 
@@ -50,9 +53,9 @@ void Renderer::Terminate() {
 	vkDestroyRenderPass(device, offscreenRenderPass, nullptr);
 }
 
-void Renderer::StartRender() {
-	uint32_t clearValueCount = 2;
-	VkClearValue clearValues[] = { {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 0.0f} };
+void Renderer::StartGPass() {
+	uint32_t clearValueCount = 5;
+	VkClearValue clearValues[] = { {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}};
 
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -79,7 +82,7 @@ void Renderer::StartRender() {
 	scissor.extent = { (uint32_t)GWindow->GetWindowWidth(), (uint32_t)GWindow->GetWindowHeight() };
 	vkCmdSetScissor(commandBuffers[*CurrentFrame], 0, 1, &scissor);
 }
-void Renderer::EndRender() {
+void Renderer::EndGPass() {
 	vkCmdEndRenderPass(commandBuffers[*CurrentFrame]);
 }
 
@@ -88,13 +91,22 @@ void Renderer::RecreateOffscreenBuffer() {
 		vkDestroyFramebuffer(device, offscreenFramebuffer[i], nullptr);
 
 		vkDestroyImageView(device, colorBufferView[i], nullptr);
+		vkDestroyImageView(device, mrsBufferView[i], nullptr);
+		vkDestroyImageView(device, normalBufferView[i], nullptr);
+		vkDestroyImageView(device, positionBufferView[i], nullptr);
 		vkDestroyImageView(device, depthBufferView[i], nullptr);
 
 		vmaDestroyImage(allocator, colorBuffer[i], colorBufferAlloc[i]);
+		vmaDestroyImage(allocator, mrsBuffer[i], mrsBufferAlloc[i]);
+		vmaDestroyImage(allocator, normalBuffer[i], normalBufferAlloc[i]);
+		vmaDestroyImage(allocator, positionBuffer[i], positionBufferAlloc[i]);
 		vmaDestroyImage(allocator, depthBuffer[i], depthBufferAlloc[i]);
 	}
 
 	createColorBuffer();
+	createMRSBuffer();
+	createNormalBuffer();
+	createPositionBuffer();
 	createDepthBuffer();
 	createOffscreenFramebuffer();
 }
@@ -246,6 +258,141 @@ void Renderer::createDepthBuffer() {
 		}
 	}
 }
+void Renderer::createMRSBuffer() {
+	mrsBuffer.resize(MAX_FRAMES_IN_FLIGHT);
+	mrsBufferView.resize(MAX_FRAMES_IN_FLIGHT);
+	mrsBufferAlloc.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkImageCreateInfo imageInfo{};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	imageInfo.arrayLayers = 1;
+	imageInfo.mipLevels = 1;
+	imageInfo.extent.width = GWindow->GetWindowWidth();
+	imageInfo.extent.height = GWindow->GetWindowHeight();
+	imageInfo.extent.depth = 1;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+
+	VmaAllocationCreateInfo allocInfo{};
+	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	VkImageViewCreateInfo imageViewInfo{};
+	imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	imageViewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+	imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageViewInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewInfo.subresourceRange.layerCount = 1;
+	imageViewInfo.subresourceRange.baseMipLevel = 0;
+	imageViewInfo.subresourceRange.levelCount = 1;
+
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		if (vmaCreateImage(allocator, &imageInfo, &allocInfo, &mrsBuffer[i], &mrsBufferAlloc[i], nullptr) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create color buffer image");
+		}
+
+		imageViewInfo.image = mrsBuffer[i];
+
+		if (vkCreateImageView(device, &imageViewInfo, nullptr, &mrsBufferView[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create color buffer view");
+		}
+	}
+}
+void Renderer::createNormalBuffer() {
+	normalBuffer.resize(MAX_FRAMES_IN_FLIGHT);
+	normalBufferView.resize(MAX_FRAMES_IN_FLIGHT);
+	normalBufferAlloc.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkImageCreateInfo imageInfo{};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	imageInfo.arrayLayers = 1;
+	imageInfo.mipLevels = 1;
+	imageInfo.extent.width = GWindow->GetWindowWidth();
+	imageInfo.extent.height = GWindow->GetWindowHeight();
+	imageInfo.extent.depth = 1;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+
+	VmaAllocationCreateInfo allocInfo{};
+	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	VkImageViewCreateInfo imageViewInfo{};
+	imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	imageViewInfo.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageViewInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewInfo.subresourceRange.layerCount = 1;
+	imageViewInfo.subresourceRange.baseMipLevel = 0;
+	imageViewInfo.subresourceRange.levelCount = 1;
+
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		if (vmaCreateImage(allocator, &imageInfo, &allocInfo, &normalBuffer[i], &normalBufferAlloc[i] , nullptr) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create color buffer image");
+		}
+
+		imageViewInfo.image = normalBuffer[i];
+
+		if (vkCreateImageView(device, &imageViewInfo, nullptr, &normalBufferView[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create color buffer view");
+		}
+	}
+}
+void Renderer::createPositionBuffer() {
+	positionBuffer.resize(MAX_FRAMES_IN_FLIGHT);
+	positionBufferView.resize(MAX_FRAMES_IN_FLIGHT);
+	positionBufferAlloc.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkImageCreateInfo imageInfo{};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	imageInfo.arrayLayers = 1;
+	imageInfo.mipLevels = 1;
+	imageInfo.extent.width = GWindow->GetWindowWidth();
+	imageInfo.extent.height = GWindow->GetWindowHeight();
+	imageInfo.extent.depth = 1;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+
+	VmaAllocationCreateInfo allocInfo{};
+	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	VkImageViewCreateInfo imageViewInfo{};
+	imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	imageViewInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageViewInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewInfo.subresourceRange.layerCount = 1;
+	imageViewInfo.subresourceRange.baseMipLevel = 0;
+	imageViewInfo.subresourceRange.levelCount = 1;
+
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		if (vmaCreateImage(allocator, &imageInfo, &allocInfo, &positionBuffer[i], &positionBufferAlloc[i], nullptr) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create color buffer image");
+		}
+
+		imageViewInfo.image = positionBuffer[i];
+
+		if (vkCreateImageView(device, &imageViewInfo, nullptr, &positionBufferView[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create color buffer view");
+		}
+	}
+}
 void Renderer::createOffscreenPass() {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = VK_FORMAT_R8G8B8A8_SRGB;
@@ -257,6 +404,36 @@ void Renderer::createOffscreenPass() {
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+	VkAttachmentDescription mrsAttachment{};
+	mrsAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+	mrsAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	mrsAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	mrsAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	mrsAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	mrsAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	mrsAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	mrsAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentDescription normalAttachment{};
+	normalAttachment.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	normalAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	normalAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	normalAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	normalAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	normalAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	normalAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	normalAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentDescription positionAttachment{};
+	positionAttachment.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	positionAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	positionAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	positionAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	positionAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	positionAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	positionAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	positionAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = VK_FORMAT_D32_SFLOAT;
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -267,21 +444,36 @@ void Renderer::createOffscreenPass() {
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	uint32_t attachmentsCount = 2;
-	VkAttachmentDescription attachments[] = { colorAttachment, depthAttachment };
+	uint32_t attachmentsCount = 5;
+	VkAttachmentDescription attachments[] = { colorAttachment, mrsAttachment, normalAttachment, positionAttachment, depthAttachment };
 
 	VkAttachmentReference colorRef{};
 	colorRef.attachment = 0;
 	colorRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+	VkAttachmentReference mrsRef{};
+	mrsRef.attachment = 1;
+	mrsRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference normalRef{};
+	normalRef.attachment = 2;
+	normalRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference posRef{};
+	posRef.attachment = 3;
+	posRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
 	VkAttachmentReference depthRef{};
-	depthRef.attachment = 1;
+	depthRef.attachment = 4;
 	depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	uint32_t colorAttachCount = 4;
+	VkAttachmentReference colorAttachRefs[] = { colorRef, mrsRef, normalRef, posRef };
 
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorRef;
+	subpass.colorAttachmentCount = colorAttachCount;
+	subpass.pColorAttachments = colorAttachRefs;
 	subpass.pDepthStencilAttachment = &depthRef;
 
 	VkSubpassDependency dependency{};
@@ -316,9 +508,10 @@ void Renderer::createOffscreenFramebuffer() {
 	createInfo.layers = 1;
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-		VkImageView attachments[] = { colorBufferView[i], depthBufferView[i] };
+		uint32_t attachmentCount = 5;
+		VkImageView attachments[] = { colorBufferView[i], mrsBufferView[i], normalBufferView[i], positionBufferView[i], depthBufferView[i] };
 
-		createInfo.attachmentCount = 2;
+		createInfo.attachmentCount = attachmentCount;
 		createInfo.pAttachments = attachments;
 
 		if (vkCreateFramebuffer(device, &createInfo, nullptr, &offscreenFramebuffer[i]) != VK_SUCCESS) {

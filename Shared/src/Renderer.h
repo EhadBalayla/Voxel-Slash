@@ -10,8 +10,8 @@ public:
     void Init();
     void Terminate();
 
-	void StartRender();
-	void EndRender();
+	void StartGPass();
+	void EndGPass();
 
 	void RecreateOffscreenBuffer();
 
@@ -72,6 +72,7 @@ private:
 	std::vector<VkImageView> normalBufferView;
 	std::vector<VmaAllocation> normalBufferAlloc;
 
+	//position buffer
 	std::vector<VkImage> positionBuffer;
 	std::vector<VkImageView> positionBufferView;
 	std::vector<VmaAllocation> positionBufferAlloc;
@@ -88,6 +89,9 @@ private:
 	void createOffscreenPass();
 	void createOffscreenFramebuffer();
 	void createColorBuffer();
+	void createMRSBuffer();
+	void createNormalBuffer();
+	void createPositionBuffer();
 	void createDepthBuffer();
     void createTextureSampler();
 	void create3DLayout();

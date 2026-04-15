@@ -134,7 +134,7 @@ void App::Loop() {
 
         switch(state) {
             case GameState::MainMenu: {
-                m_Renderer.StartRender();
+                m_Renderer.StartGPass();
                 Canvas* titleScr = m_TempMod->GetAllCanvases()["TitleScreenHUD"];
                 titleScr->Tick();
                 for(auto& N : titleScr->nodes) {
@@ -148,7 +148,7 @@ void App::Loop() {
                     }
                 }
                 titleScr->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
-                m_Renderer.EndRender();
+                m_Renderer.EndGPass();
 
                 m_FullscreenQuad.SetTexture();  
 
@@ -165,7 +165,7 @@ void App::Loop() {
 
                 m_ChunkRenderer.SetViewProj(m_Player->GetViewMatrix(), proj);
                      
-                m_Renderer.StartRender();
+                m_Renderer.StartGPass();
                 m_World->RenderWorld();
                 
                 {
@@ -224,7 +224,7 @@ void App::Loop() {
                 }
                 debugMenuHUD->Tick();
                 debugMenuHUD->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
-                m_Renderer.EndRender();
+                m_Renderer.EndGPass();
 
                 m_FullscreenQuad.SetTexture();
 
@@ -250,7 +250,7 @@ void App::Loop() {
                     proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
                     m_ChunkRenderer.SetViewProj(m_MPWorld->m_ClientEntityManager.GetViewMatrix(), proj);
                     
-                    m_Renderer.StartRender();
+                    m_Renderer.StartGPass();
                     m_MPWorld->m_ClientChunkManager.RenderChunks();
                     {
                         glm::mat4 mat = glm::mat4(1.0f);
@@ -264,7 +264,7 @@ void App::Loop() {
                         vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 24, 1, 0, 0);
                     }
 
-                    m_Renderer.EndRender();
+                    m_Renderer.EndGPass();
 
                     m_Window.StartFullscreenRender();
                     m_FullscreenQuad.Draw();

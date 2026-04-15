@@ -177,6 +177,7 @@ void Context::createLogicalDevice() {
 	deviceFeatures.multiDrawIndirect = VK_TRUE;
 	deviceFeatures.fillModeNonSolid = VK_TRUE;
 	deviceFeatures.wideLines = VK_TRUE;
+	deviceFeatures.independentBlend = VK_TRUE;
 
 
 	VkDeviceCreateInfo createInfo{};

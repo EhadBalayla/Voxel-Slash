@@ -42,7 +42,7 @@ void Editor::Loop() {
 
         view = m_Camera.GetViewMatrix();
 
-        m_Renderer.StartRender();
+        m_Renderer.StartGPass();
         m_3DShader.Bind();
         RenderPrefabs(&m_Editor.GetPrefab().m_RootNode, glm::mat4(1.0f));
 
@@ -50,7 +50,7 @@ void Editor::Loop() {
             m_2DShader.Bind();
             m_Editor.GetCanvas()->Render(m_Renderer.GetFrameCommandBuffer(), Width, Height);
         }
-        m_Renderer.EndRender();
+        m_Renderer.EndGPass();
 
         m_Editor.Render();
         m_Window.StartFullscreenRender();

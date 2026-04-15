@@ -155,12 +155,16 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
-	VkPipelineColorBlendAttachmentState attachments[] = { colorBlendAttachment };
+	VkPipelineColorBlendAttachmentState colorBlendAttachment2{};
+	colorBlendAttachment2.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachment2.blendEnable = VK_FALSE;
+
+	VkPipelineColorBlendAttachmentState attachments[] = { colorBlendAttachment, colorBlendAttachment2, colorBlendAttachment2, colorBlendAttachment2 };
 
 	VkPipelineColorBlendStateCreateInfo colorBlendState{};
 	colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	colorBlendState.logicOpEnable = VK_FALSE;
-	colorBlendState.attachmentCount = 1;
+	colorBlendState.attachmentCount = 4;
 	colorBlendState.pAttachments = attachments;
 
 	//creating the depth testing

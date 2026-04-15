@@ -2,7 +2,10 @@
 
 //outputs to fragment shader
 layout (location = 0) out vec2 TexCoords;
-layout (location = 1) out float Lighting;
+layout (location = 1) out float FaceAmbience;
+layout (location = 2) out vec3 MRS;
+layout (location = 3) out vec3 Normal;
+layout (location = 4) out vec3 Pos;
 
 //remember to remove at some point too
 layout (set = 0, binding = 0) uniform MatricesBuffer {
@@ -47,6 +50,15 @@ const uint faceUVIndicies[6][6] = uint[6][6] (
 	uint[6] (2, 3, 0, 0, 1, 2)
 );
 
+const vec3 faceNormals[6] = vec3[](
+    vec3(0,1,0),
+    vec3(0,-1,0),
+    vec3(-1,0,0),
+    vec3(1,0,0),
+    vec3(0,0,-1),
+    vec3(0,0,1)
+);
+
 const uint FACE_TOP    = 0u;
 const uint FACE_BOTTOM = 1u;
 const uint FACE_LEFT   = 2u;
@@ -68,13 +80,15 @@ void main() {
 	uint Face = Mesh.faces[faceIdx];
 
 	//decoding face
-	uvec3 Pos = DecodePos(Face);
+	uvec3 FacePos = DecodePos(Face);
 	uint AtlasIDX = DecodeAtlasIdx(Face);
 	uint faceType = DecodeFaceType(Face);
 
-	//extracting vertex
-	uvec3 vertex = verticies[faceVertIndicies[faceType][idxFace]] + Pos;
-	gl_Position = MatBO.proj * MatBO.view * meshTrans.model * vec4(vertex, 1.0);
+	//extracting vertex and pos for gbuffer
+	uvec3 vertex = verticies[faceVertIndicies[faceType][idxFace]] + FacePos;
+	vec4 worldPos = meshTrans.model * vec4(vertex, 1.0);
+	gl_Position = MatBO.proj * MatBO.view * worldPos;
+	Pos = worldPos.xyz;
 
 	//extracting UV
 	uint texIdxX = AtlasIDX % 16u;
@@ -84,15 +98,21 @@ void main() {
 	TexCoords = startUVs + offsetUVs;
 
 	//extracting face shading
-	if(faceType == FACE_TOP) { // Top
-        Lighting = 1.0;
-    } else if(faceType == FACE_BOTTOM) { // Bottom
-        Lighting = 0.2;
-    } else if(faceType == FACE_LEFT || faceType == FACE_RIGHT) { // Left/Right
-        Lighting = 0.4;
-    } else { // Front/Back
-        Lighting = 0.6;
+	if(faceType == FACE_TOP) {
+        FaceAmbience = 1.0;
+    } else if(faceType == FACE_BOTTOM) {
+        FaceAmbience = 0.2;
+    } else if(faceType == FACE_LEFT || faceType == FACE_RIGHT) {
+        FaceAmbience = 0.4;
+    } else {
+        FaceAmbience = 0.6;
     }
+
+	//extracting MRS for gbuffer
+	MRS = vec3(0.0);
+
+	//extracting normal for gbuffer
+	Normal = faceNormals[faceType];
 }
 
 uvec3 DecodePos(uint Face) {
