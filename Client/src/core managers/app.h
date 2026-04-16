@@ -50,6 +50,7 @@ public:
 
     //textures
     Texture m_TerrainAtlas;
+    Texture m_TerrainMRSAtlas;
 
     //registeries
     std::unordered_map<BlockType, BlockData> BlockRegistery;

@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-void Texture::Create(void* pixelData, int Width, int Height) {
+void Texture::Create(void* pixelData, int Width, int Height, bool UNorm) {
     VkDeviceSize size = Width * Height * 4;
 
     //the staging buffer
@@ -31,7 +31,7 @@ void Texture::Create(void* pixelData, int Width, int Height) {
     //creating the image itself
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    imageInfo.format = UNorm ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_SRGB;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     imageInfo.arrayLayers = 1;
@@ -152,7 +152,7 @@ void Texture::Create(void* pixelData, int Width, int Height) {
     imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     imageViewInfo.image = image;
-    imageViewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    imageViewInfo.format = UNorm ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_SRGB;
     imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
     imageViewInfo.subresourceRange.layerCount = 1;
@@ -175,11 +175,11 @@ VkImageView Texture::GetImageView() const {
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-void Texture::LoadFromFile(const char* path) {
+void Texture::LoadFromFile(const char* path, bool UNorm) {
     int Width, Height, Channels;
     unsigned char* pixelData = stbi_load(path, &Width, &Height, &Channels, 4);
 
-    Create(pixelData, Width, Height);
+    Create(pixelData, Width, Height, UNorm);
 
     stbi_image_free(pixelData);
 }

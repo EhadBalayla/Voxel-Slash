@@ -12,13 +12,15 @@ layout (location = 3) in vec3 Normal;
 layout (location = 4) in vec3 Pos;
 
 layout (set = 0, binding = 1) uniform sampler2D textureAtlas;
+layout (set = 0, binding = 2) uniform sampler2D MRSTextureAtlas;
 
 void main() {
     vec4 texColor = texture(textureAtlas, TexCoords);
+    vec3 texMRS = texture(MRSTextureAtlas, TexCoords).rgb;
     if(texColor.a < 0.1) discard;
 
     FragColor = vec4(texColor.rgb * FaceAmbience, texColor.a);
-    FragMRS = MRS;
+    FragMRS = texMRS;
     FragNormal = Normal * 0.5 + 0.5;
     FragPos = Pos;
 }

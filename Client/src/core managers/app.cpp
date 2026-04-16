@@ -42,6 +42,7 @@ void App::Init() {
     
     //load textures
     m_TerrainAtlas.LoadFromFile("assets/Textures/TerrainAtlas.png");
+    m_TerrainMRSAtlas.LoadFromFile("assets/Textures/TerrainMRSAtlas.png", true);
     
     //load the descriptor sets
     m_ChunkRenderer.StartDescriptors();

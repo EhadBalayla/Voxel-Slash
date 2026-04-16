@@ -24,7 +24,7 @@ void ChunkRenderer::createDescriptorPool() {
 	
 	VkDescriptorPoolSize poolSize2{};
 	poolSize2.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize2.descriptorCount = 1 * GContext->MAX_FRAMES_IN_FLIGHT;
+	poolSize2.descriptorCount = 2 * GContext->MAX_FRAMES_IN_FLIGHT;
 	
 	VkDescriptorPoolSize poolSize3{};
 	poolSize3.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -87,8 +87,15 @@ void ChunkRenderer::CreateChunkSets() {
     TextureAtlasBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     TextureAtlasBinding.pImmutableSamplers = nullptr;
 
-    uint32_t bindingCount = 2;
-    VkDescriptorSetLayoutBinding bindings[] = {MatricesBinding, TextureAtlasBinding};
+	VkDescriptorSetLayoutBinding TextureMRSAtlasBinding{};
+    TextureMRSAtlasBinding.binding = 2;
+    TextureMRSAtlasBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    TextureMRSAtlasBinding.descriptorCount = 1;
+    TextureMRSAtlasBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    TextureMRSAtlasBinding.pImmutableSamplers = nullptr;
+
+    uint32_t bindingCount = 3;
+    VkDescriptorSetLayoutBinding bindings[] = {MatricesBinding, TextureAtlasBinding, TextureMRSAtlasBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -164,6 +171,11 @@ void ChunkRenderer::CreateChunkSets() {
         AtlasInfo.imageView = GApp->m_TerrainAtlas.GetImageView();
         AtlasInfo.sampler = GRenderer->GetSampler();
 
+		VkDescriptorImageInfo MRSAtlasInfo{};
+        MRSAtlasInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        MRSAtlasInfo.imageView = GApp->m_TerrainMRSAtlas.GetImageView();
+        MRSAtlasInfo.sampler = GRenderer->GetSampler();
+
 
 
         VkWriteDescriptorSet MatricesWrite{};
@@ -183,9 +195,18 @@ void ChunkRenderer::CreateChunkSets() {
         AtlasWrite.dstArrayElement = 0;
         AtlasWrite.descriptorCount = 1;
         AtlasWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+		VkWriteDescriptorSet MRSAtlasWrite{};
+        MRSAtlasWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        MRSAtlasWrite.dstSet = ChunkSets[i];
+        MRSAtlasWrite.dstBinding = 2;
+        MRSAtlasWrite.pImageInfo = &MRSAtlasInfo;
+        MRSAtlasWrite.dstArrayElement = 0;
+        MRSAtlasWrite.descriptorCount = 1;
+        MRSAtlasWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
  
-        uint32_t writeCount = 2;
-        VkWriteDescriptorSet descriptorWrites[] = {MatricesWrite, AtlasWrite};
+        uint32_t writeCount = 3;
+        VkWriteDescriptorSet descriptorWrites[] = {MatricesWrite, AtlasWrite, MRSAtlasWrite};
         vkUpdateDescriptorSets(GRenderer->GetDevice(), writeCount, descriptorWrites, 0, nullptr);
 	}
 }

@@ -4,8 +4,8 @@
 
 class Texture {
 public:
-    void LoadFromFile(const char* path);
-    void Create(void* pixelData, int Width, int Height);
+    void LoadFromFile(const char* path, bool UNorm = false);
+    void Create(void* pixelData, int Width, int Height, bool UNorm = false);
     void Delete();
 
     VkImageView GetImageView() const;
