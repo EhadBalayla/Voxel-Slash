@@ -19,6 +19,6 @@ void main() {
 
     FragColor = vec4(texColor.rgb * FaceAmbience, texColor.a);
     FragMRS = MRS;
-    FragNormal = Normal;
+    FragNormal = Normal * 0.5 + 0.5;
     FragPos = Pos;
 }

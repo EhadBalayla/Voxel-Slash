@@ -152,7 +152,7 @@ void App::Loop() {
                 titleScr->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
                 m_Renderer.EndGPass();
 
-                m_Renderer.PerformLightPass();
+                m_Renderer.PerformLightPass(glm::vec3(0.0f));
 
                 m_FullscreenQuad.SetTexture();  
 
@@ -230,7 +230,7 @@ void App::Loop() {
                 debugMenuHUD->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
                 m_Renderer.EndGPass();
 
-                m_Renderer.PerformLightPass();
+                m_Renderer.PerformLightPass(m_Player->GetCameraPosition());
 
                 m_FullscreenQuad.SetTexture();
 
@@ -272,7 +272,7 @@ void App::Loop() {
 
                     m_Renderer.EndGPass();
 
-                    m_Renderer.PerformLightPass();
+                    m_Renderer.PerformLightPass(glm::vec3(0.0f));
 
                     m_Window.StartFullscreenRender();
                     m_FullscreenQuad.Draw();

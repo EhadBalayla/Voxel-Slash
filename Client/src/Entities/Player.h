@@ -16,6 +16,7 @@ public:
     glm::vec3 GetCameraRightVector();
 
     glm::mat4 GetViewMatrix();
+    glm::vec3 GetCameraPosition();
     void UpdateChunksAroundPlayer();
 
     int ChunkCoordX = 0;

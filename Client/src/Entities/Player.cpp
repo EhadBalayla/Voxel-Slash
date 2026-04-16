@@ -102,6 +102,15 @@ glm::mat4 Player::GetViewMatrix() {
 
     return glm::lookAt(cameraPos, pivot, up);
 }
+glm::vec3 Player::GetCameraPosition() {
+    glm::vec3 pivot = CameraPivotPosition + glm::vec3(0.0f, CameraHeight, 0.0f);
+    glm::quat rotation = glm::quat(glm::vec3(glm::radians(CamRotationPitch), glm::radians(CamRotationYaw), 0.0f));
+
+    glm::vec3 offset(0.0f, 0.0f, CameraDistance);
+    glm::vec3 rotatedOffset = rotation * offset;
+
+    return pivot - rotatedOffset;
+}
 void Player::UpdateChunksAroundPlayer() {
     if(GApp->LoadChunks)
     if(!GApp->m_World->GetChunkManager().IsUpdatingChunks) {

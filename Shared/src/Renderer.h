@@ -13,7 +13,7 @@ public:
 	void StartGPass();
 	void EndGPass();
 
-	void PerformLightPass();
+	void PerformLightPass(glm::vec3 viewPos);
 
 	void RecreateOffscreenBuffer();
 
@@ -96,6 +96,11 @@ private:
 	VkPipelineLayout GBufferPPLayout;
 	VkDescriptorSetLayout GBufferSetLayout;
 	std::vector<VkDescriptorSet> GBufferSets;
+
+	//uniform buffer for misc values
+	std::vector<VkBuffer> lightMiscsBuffer;
+	std::vector<VmaAllocation> lightMiscsBufferAlloc;
+	std::vector<void*> lightMiscsBufferMapped;
 	//end of gbuffer
 
 

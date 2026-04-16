@@ -174,7 +174,9 @@ void Renderer::EndGPass() {
 		imageBarrierCount, imageBarriers);
 }
 
-void Renderer::PerformLightPass() {
+void Renderer::PerformLightPass(glm::vec3 viewPos) {
+	memcpy(lightMiscsBufferMapped[*CurrentFrame], &viewPos, sizeof(glm::vec3));
+
 	uint32_t clearValueCount = 1;
 	VkClearValue clearValues[] = { {0.0f, 0.0f, 0.0f, 1.0f} };
 
@@ -378,10 +380,17 @@ void Renderer::createDescriptorPool() {
 	poolSize1.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSize1.descriptorCount = 4 * MAX_FRAMES_IN_FLIGHT;
 
+	VkDescriptorPoolSize poolSize2{};
+	poolSize2.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize2.descriptorCount = 1 * MAX_FRAMES_IN_FLIGHT;
+
+	uint32_t poolSizesCount = 2;
+	VkDescriptorPoolSize poolSizes[] = {poolSize1, poolSize2};
+
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = 1;
-	poolInfo.pPoolSizes = &poolSize1;
+	poolInfo.poolSizeCount = poolSizesCount;
+	poolInfo.pPoolSizes = poolSizes;
 	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
 	
 	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
@@ -395,7 +404,7 @@ void Renderer::createLightBuffer() {
 
 	VkImageCreateInfo imageInfo{};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+	imageInfo.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	imageInfo.arrayLayers = 1;
@@ -414,7 +423,7 @@ void Renderer::createLightBuffer() {
 	VkImageViewCreateInfo imageViewInfo{};
 	imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	imageViewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+	imageViewInfo.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 	imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	imageViewInfo.subresourceRange.baseArrayLayer = 0;
 	imageViewInfo.subresourceRange.layerCount = 1;
@@ -659,6 +668,26 @@ void Renderer::createPositionBuffer() {
 	}
 }
 void Renderer::createGBufferDescriptors() {
+	VkBufferCreateInfo miscLightingInfo{};
+	miscLightingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	miscLightingInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	miscLightingInfo.size = sizeof(glm::vec3);
+	
+	VmaAllocationCreateInfo miscLightingAllocInfo{};
+	miscLightingAllocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+	lightMiscsBuffer.resize(MAX_FRAMES_IN_FLIGHT);
+	lightMiscsBufferAlloc.resize(MAX_FRAMES_IN_FLIGHT);
+	lightMiscsBufferMapped.resize(MAX_FRAMES_IN_FLIGHT);
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		if (vmaCreateBuffer(allocator, &miscLightingInfo, &miscLightingAllocInfo, &lightMiscsBuffer[i], &lightMiscsBufferAlloc[i], nullptr) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create the buffer for misc lights");
+		}
+
+		vmaMapMemory(allocator, lightMiscsBufferAlloc[i], &lightMiscsBufferMapped[i]);
+	}
+
+
 	VkDescriptorSetLayoutBinding colorBinding{};
 	colorBinding.descriptorCount = 1;
 	colorBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -687,8 +716,15 @@ void Renderer::createGBufferDescriptors() {
 	posBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	posBinding.pImmutableSamplers = nullptr;
 
-	uint32_t bindingCount = 4;
-	VkDescriptorSetLayoutBinding bindings[] = { colorBinding, MRSBinding, normalBinding, posBinding };
+	VkDescriptorSetLayoutBinding MiscValuesBinding{};
+	MiscValuesBinding.descriptorCount = 1;
+	MiscValuesBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	MiscValuesBinding.binding = 4;
+	MiscValuesBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	MiscValuesBinding.pImmutableSamplers = nullptr;
+
+	uint32_t bindingCount = 5;
+	VkDescriptorSetLayoutBinding bindings[] = { colorBinding, MRSBinding, normalBinding, posBinding, MiscValuesBinding };
 
 	VkDescriptorSetLayoutCreateInfo setLayoutInfo{};
 	setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -745,6 +781,11 @@ void Renderer::createGBufferDescriptors() {
 		posInfo.imageView = positionBufferView[i];
 		posInfo.sampler = sampler;
 
+		VkDescriptorBufferInfo miscLightBufferInfo{};
+		miscLightBufferInfo.buffer = lightMiscsBuffer[i];
+		miscLightBufferInfo.offset = 0;
+		miscLightBufferInfo.range = sizeof(glm::vec3);
+
 
 		VkWriteDescriptorSet colorWrite{};
 		colorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -782,8 +823,17 @@ void Renderer::createGBufferDescriptors() {
 		posWrite.pImageInfo = &posInfo;
 		posWrite.dstArrayElement = 0;
 
-		uint32_t writeCount = 4;
-		VkWriteDescriptorSet setWrites[] = { colorWrite, mrsWrite, normalWrite, posWrite };
+		VkWriteDescriptorSet miscLightWrite{};
+		miscLightWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		miscLightWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		miscLightWrite.descriptorCount = 1;
+		miscLightWrite.dstBinding = 4;
+		miscLightWrite.dstSet = GBufferSets[i];
+		miscLightWrite.pBufferInfo = &miscLightBufferInfo;
+		miscLightWrite.dstArrayElement = 0;
+
+		uint32_t writeCount = 5;
+		VkWriteDescriptorSet setWrites[] = { colorWrite, mrsWrite, normalWrite, posWrite, miscLightWrite };
 		
 		vkUpdateDescriptorSets(device, writeCount, setWrites, 0, nullptr);
 	}
@@ -894,7 +944,7 @@ void Renderer::createOffscreenPass() {
 }
 void Renderer::createLightingPass() {
 	VkAttachmentDescription lightAttachment{};
-	lightAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+	lightAttachment.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 	lightAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	lightAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	lightAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;

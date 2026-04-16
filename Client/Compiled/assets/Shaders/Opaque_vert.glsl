@@ -109,7 +109,7 @@ void main() {
     }
 
 	//extracting MRS for gbuffer
-	MRS = vec3(0.0);
+	MRS = vec3(1.0, 0.1, 0.0);
 
 	//extracting normal for gbuffer
 	Normal = faceNormals[faceType];
