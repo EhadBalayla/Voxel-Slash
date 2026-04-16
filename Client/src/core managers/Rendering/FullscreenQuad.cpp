@@ -30,7 +30,7 @@ void FullscreenQuad::SetTexture() {
 	imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	imageBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageBarrier.image = GApp->m_Renderer.GetColorBuffer();
+	imageBarrier.image = GApp->m_Renderer.GetLightBuffer();
 	imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -55,7 +55,7 @@ void FullscreenQuad::SetTexture() {
 
 	VkDescriptorImageInfo texInfo{};
 	texInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	texInfo.imageView = GApp->m_Renderer.GetColorBufferView();
+	texInfo.imageView = GApp->m_Renderer.GetLightBufferView();
 	texInfo.sampler = GApp->m_Renderer.GetSampler();
 
 	VkWriteDescriptorSet texWrite{};

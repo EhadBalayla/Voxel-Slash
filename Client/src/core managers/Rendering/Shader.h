@@ -10,6 +10,7 @@ enum class PipelineType {
     SkeletalMesh,
     StaticMesh,
     UIShader,
+    LightingPass,
 };
 
 class Shader

@@ -13,6 +13,8 @@ public:
 	void StartGPass();
 	void EndGPass();
 
+	void PerformLightPass();
+
 	void RecreateOffscreenBuffer();
 
     //vulkan renderer getters
@@ -29,13 +31,18 @@ public:
 
 	VkSampler GetSampler();
 	VkRenderPass GetOffscreenRenderPass();
+	VkRenderPass GetLightingRenderPass();
 	VmaAllocator GetAllocator();
 	VkImage* GetColorBuffers();
 	VkImage GetColorBuffer();
 	VkImageView* GetColorBufferViews();
 	VkImageView GetColorBufferView();
+	VkImage GetLightBuffer();
+	VkImageView GetLightBufferView();
+	VkPipelineLayout GetGBufferPPLayout();
 	VkPipelineLayout Get3DPipelineLayout();
 
+	VkPipeline* LightShader; //temporary, later will rework into the
     int* CurrentFrame = nullptr;
 private:
 	VkInstance instance;
@@ -52,8 +59,11 @@ private:
     int MAX_FRAMES_IN_FLIGHT;
 
     //initiating rendering
+	VkDescriptorPool descriptorPool; //for all of the basic rendering stuff
 	VkRenderPass offscreenRenderPass;
+	VkRenderPass lightingRenderPass;
 	std::vector<VkFramebuffer> offscreenFramebuffer;
+	std::vector<VkFramebuffer> lightingFramebuffer;
 	VkSampler sampler; //this sampler is for nearest filtering
 
 	//gbuffer
@@ -81,18 +91,36 @@ private:
 	std::vector<VkImage> depthBuffer;
 	std::vector<VkImageView> depthBufferView;
 	std::vector<VmaAllocation> depthBufferAlloc;
+
+	//descriptor sets
+	VkPipelineLayout GBufferPPLayout;
+	VkDescriptorSetLayout GBufferSetLayout;
+	std::vector<VkDescriptorSet> GBufferSets;
 	//end of gbuffer
+
+
+	//lighting buffer
+	std::vector<VkImage> lightBuffer;
+	std::vector<VkImageView> lightBufferView;
+	std::vector<VmaAllocation> lightBufferAlloc;
+	//end of lighting buffer
+
 
 	VkPipelineLayout Pipe3DLayout;
 
     //creation functions
+	void createDescriptorPool();
 	void createOffscreenPass();
+	void createLightingPass();
 	void createOffscreenFramebuffer();
+	void createLightingFramebuffer();
 	void createColorBuffer();
 	void createMRSBuffer();
 	void createNormalBuffer();
 	void createPositionBuffer();
 	void createDepthBuffer();
+	void createGBufferDescriptors();
+	void createLightBuffer();
     void createTextureSampler();
 	void create3DLayout();
 };

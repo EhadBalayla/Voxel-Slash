@@ -53,6 +53,8 @@ void App::Init() {
     m_SkeletalMeshShader.LoadShader("assets/Shaders/SkeletalMeshShader_vert.spv", "assets/Shaders/SkeletalMeshShader_frag.spv", PipelineType::SkeletalMesh);
     m_UIShader.LoadShader("assets/Shaders/UIShader_vert.spv", "assets/Shaders/UIShader_frag.spv", PipelineType::UIShader);
     m_TextShader.LoadShader("assets/Shaders/TextShader_vert.spv", "assets/Shaders/TextShader_frag.spv", PipelineType::UIShader);
+    m_LightingPass.LoadShader("assets/Shaders/LightingPass_vert.spv", "assets/Shaders/LightingPass_frag.spv", PipelineType::LightingPass);
+    m_Renderer.LightShader = m_LightingPass.GetPipeline();
 
     RegisterAllBlocks();
 
@@ -150,6 +152,8 @@ void App::Loop() {
                 titleScr->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
                 m_Renderer.EndGPass();
 
+                m_Renderer.PerformLightPass();
+
                 m_FullscreenQuad.SetTexture();  
 
                 m_Window.StartFullscreenRender();
@@ -226,6 +230,8 @@ void App::Loop() {
                 debugMenuHUD->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
                 m_Renderer.EndGPass();
 
+                m_Renderer.PerformLightPass();
+
                 m_FullscreenQuad.SetTexture();
 
                 m_Window.StartFullscreenRender();
@@ -265,6 +271,8 @@ void App::Loop() {
                     }
 
                     m_Renderer.EndGPass();
+
+                    m_Renderer.PerformLightPass();
 
                     m_Window.StartFullscreenRender();
                     m_FullscreenQuad.Draw();

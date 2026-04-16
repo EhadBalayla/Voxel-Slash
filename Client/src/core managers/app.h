@@ -46,6 +46,7 @@ public:
     Shader m_SkeletalMeshShader;
     Shader m_UIShader;
     Shader m_TextShader;
+    Shader m_LightingPass;
 
     //textures
     Texture m_TerrainAtlas;

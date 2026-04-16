@@ -118,7 +118,7 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	//creating the input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
 	inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssemblyInfo.topology = (type == PipelineType::Chunk || type == PipelineType::SkeletalMesh || type == PipelineType::UIShader) ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	inputAssemblyInfo.topology = (type == PipelineType::Chunk || type == PipelineType::SkeletalMesh || type == PipelineType::UIShader || type == PipelineType::LightingPass) ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 	inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
 	//creating the rasterizer
@@ -126,7 +126,7 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizerInfo.depthClampEnable = VK_FALSE;
 	rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
-	rasterizerInfo.polygonMode = (type == PipelineType::Chunk || type == PipelineType::SkeletalMesh || type == PipelineType::UIShader) ? VK_POLYGON_MODE_FILL : VK_POLYGON_MODE_LINE;
+	rasterizerInfo.polygonMode = (type == PipelineType::Chunk || type == PipelineType::SkeletalMesh || type == PipelineType::UIShader || type == PipelineType::LightingPass) ? VK_POLYGON_MODE_FILL : VK_POLYGON_MODE_LINE;
 	rasterizerInfo.lineWidth = 5.0f;
 	rasterizerInfo.cullMode = type == PipelineType::Chunk ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
 	rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
@@ -167,6 +167,12 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	colorBlendState.attachmentCount = 4;
 	colorBlendState.pAttachments = attachments;
 
+	VkPipelineColorBlendStateCreateInfo lightingColorBlendState{};
+	lightingColorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	lightingColorBlendState.logicOpEnable = VK_FALSE;
+	lightingColorBlendState.attachmentCount = 1;
+	lightingColorBlendState.pAttachments = &colorBlendAttachment2;
+
 	//creating the depth testing
 	VkPipelineDepthStencilStateCreateInfo depthStencilState{};
 	depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -200,10 +206,10 @@ void Shader::LoadShader(const char* vertexPath, const char* fragmentPath, Pipeli
 	pipelineInfo.pRasterizationState = &rasterizerInfo;
 	pipelineInfo.pDynamicState = &dynamicStateCreateInfo;
 	pipelineInfo.pViewportState = &viewportState;
-	pipelineInfo.pColorBlendState = &colorBlendState;
+	pipelineInfo.pColorBlendState = type == PipelineType::LightingPass ? &lightingColorBlendState : &colorBlendState;
 	pipelineInfo.pDepthStencilState = &depthStencilState;
-	pipelineInfo.layout = type == PipelineType::UIShader ? GContext->GetSingleTexPPLayout() : GApp->m_ChunkRenderer.GetChunksPipelineLayout();
-	pipelineInfo.renderPass = GApp->m_Renderer.GetOffscreenRenderPass();
+	pipelineInfo.layout = type == PipelineType::UIShader ? GContext->GetSingleTexPPLayout() : type == PipelineType::LightingPass ? GApp->m_Renderer.GetGBufferPPLayout() : GApp->m_ChunkRenderer.GetChunksPipelineLayout();
+	pipelineInfo.renderPass = type == PipelineType::LightingPass ? GApp->m_Renderer.GetLightingRenderPass() : GApp->m_Renderer.GetOffscreenRenderPass();
 	pipelineInfo.subpass = 0;
 
 	if (vkCreateGraphicsPipelines(GContext->GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
