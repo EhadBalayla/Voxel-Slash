@@ -1,5 +1,6 @@
 #pragma once
 #include <thread>
+#include <mutex>
 #include <WinSock2.h>
 
 enum InputSendPacket : uint8_t {
@@ -19,6 +20,12 @@ enum InputSendPacket : uint8_t {
     JumpRelease,
 };
 
+enum class ConnectionState {
+    Disconnected,
+    Connecting,
+    Connected,
+};
+
 class ClientNetworkManager {
 public:
     //for starting and ending WinSock
@@ -30,14 +37,17 @@ public:
 
     void SendInputMode(InputSendPacket whichOne);
 
-    bool connected = false;
+    ConnectionState connectState = ConnectionState::Disconnected;
 private:
     bool ThreadsRunning = true;
     
-    void UDPRecieveLoop();
-    void TCPRecieveLoop();
-    std::thread UDPRecieveThread;
-    std::thread TCPRecieveThread;
+    void RecieveLoop();
+    std::thread ClientNetworkThread;
+    std::condition_variable disconnectSleepCV;
+    std::mutex disconnectSleepMTX;
+
+    void UDPRecieve();
+    void TCPRecieve();
 
     SOCKET TCPClientSocket = INVALID_SOCKET;
     SOCKET UDPClientSocket = INVALID_SOCKET;

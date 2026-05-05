@@ -249,12 +249,12 @@ void App::Loop() {
                 break;
             }
             case GameState::Multiplayer: {
-                if(!GApp->m_ClientNetworkManager.connected) GApp->m_ClientNetworkManager.Connect();
+                if(GApp->m_ClientNetworkManager.connectState != ConnectionState::Connected) GApp->m_ClientNetworkManager.Connect();
                 else if (!m_MPWorld) m_MPWorld = new MPWorld;
                 else {
                     m_MPWorld->m_ClientEntityManager.InterpolateCamera(deltaTime);
 
-                    proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 50000.0f);
+                    proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 13000.0f);
                     m_ChunkRenderer.SetViewProj(m_MPWorld->m_ClientEntityManager.GetViewMatrix(), proj);
                     
                     m_Renderer.StartGPass();
@@ -273,7 +273,9 @@ void App::Loop() {
 
                     m_Renderer.EndGPass();
 
-                    m_Renderer.PerformLightPass(glm::vec3(0.0f));
+                    m_Renderer.PerformLightPass(m_MPWorld->m_ClientEntityManager.GetCameraPosition());
+
+                    m_FullscreenQuad.SetTexture();
 
                     m_Window.StartFullscreenRender();
                     m_FullscreenQuad.Draw();
@@ -352,7 +354,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }
 }
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if(GApp->state == GameState::Multiplayer && GApp->m_ClientNetworkManager.connected) {
+    if(GApp->state == GameState::Multiplayer && GApp->m_ClientNetworkManager.connectState == ConnectionState::Connected) {
         if(key == GLFW_KEY_SPACE) {
             if(action == GLFW_PRESS) {
                 GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::JumpPress);

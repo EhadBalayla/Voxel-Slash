@@ -24,123 +24,137 @@ void ClientNetworkManager::InitializeNetwork() {
         printf("WSAStartup failed: %d\n", iResult);
         exit(EXIT_FAILURE);
     }
-}
-void ClientNetworkManager::ShutdownNetwork() {
-    WSACleanup();
-}
 
-void ClientNetworkManager::Connect() {
-    addrinfo *result = nullptr;
-    addrinfo *ptr = nullptr;
-    addrinfo hints;
-
-    ZeroMemory( &hints, sizeof(hints) );
-    hints.ai_family   = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-
-    int iResult = getaddrinfo(IP, PORT, &hints, &result);
-    if (iResult != 0) {
-        std::cout << "failed to connect to server" << std::endl;
-        return;
-    }
-
-
-    //attempt TCP connection first
-    for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) {
-        TCPClientSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-        if (TCPClientSocket == INVALID_SOCKET) {
-            printf("socket failed with error: %ld\n", WSAGetLastError());
-            return;
-        }
-
-        iResult = connect( TCPClientSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
-        if (iResult == SOCKET_ERROR) {
-            closesocket(TCPClientSocket);
-            TCPClientSocket = INVALID_SOCKET;
-            continue;
-        }
-        break;
-    }
-    freeaddrinfo(result);
+    //create TCP socket
+    TCPClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (TCPClientSocket == INVALID_SOCKET) {
-        printf("Unable to connect to server!\n");
+        printf("socket failed with error: %ld\n", WSAGetLastError());
         return;
     }
+    unsigned long mode = 1;
+    ioctlsocket(TCPClientSocket, FIONBIO, &mode);
 
-
-
-    //attempt UDP connection
+    //create UDP socket
     UDPClientSocket = socket(AF_INET, SOCK_DGRAM, 0);
     if(UDPClientSocket == INVALID_SOCKET) {
         printf("failed to create the UDP socket\n");
         return;
     }
+    ioctlsocket(UDPClientSocket, FIONBIO, &mode);
 
+    ThreadsRunning = true;
+    ClientNetworkThread = std::thread(&ClientNetworkManager::RecieveLoop, this);
+}
+void ClientNetworkManager::ShutdownNetwork() {
+    ThreadsRunning = false;
+    disconnectSleepCV.notify_one();
+    ClientNetworkThread.join();
+
+    closesocket(TCPClientSocket);
+    closesocket(UDPClientSocket);
+    WSACleanup();
+}
+
+void ClientNetworkManager::Connect() {
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(27015);
     inet_pton(AF_INET, IP, &serverAddr.sin_addr); // Destination IP
 
-    char MSG[] = "Hello Server";
-    sendto(UDPClientSocket, MSG, strlen(MSG), 0, (sockaddr*)&serverAddr, sizeof(sockaddr_in));
-
-    char handshakeRetBuffer[20]; //20 just to be safe
-    size_t addrLen = sizeof(serverAddr);
-    int n = recvfrom(UDPClientSocket, handshakeRetBuffer, 20, 0, (sockaddr*)&serverAddr, (int*)&addrLen);
-    if(n <= 0) {
-        printf("failed to get the handshake return from the server... L... \n");
-        return;
-    }
-
-
-
-    ThreadsRunning = true;
-    UDPRecieveThread = std::thread(&ClientNetworkManager::UDPRecieveLoop, this);
-    TCPRecieveThread = std::thread(&ClientNetworkManager::TCPRecieveLoop, this);
-
-    connected = true;
+    connectState = ConnectionState::Connecting;
+    disconnectSleepCV.notify_one();
 }
 void ClientNetworkManager::Disconnect() {
-    ThreadsRunning = false;
-
-    int iResult = shutdown(TCPClientSocket, SD_SEND);
     
-    closesocket(TCPClientSocket);
-
-    connected = false;
 }
 
 void ClientNetworkManager::SendInputMode(InputSendPacket whichOne) {
     send(TCPClientSocket, reinterpret_cast<char*>(&whichOne), sizeof(InputSendPacket), 0);
 }
 
+void ClientNetworkManager::RecieveLoop() {
+    bool TCPSent = false;
+    bool TCPRecieved = false;
+    bool UDPSent = false;
+    bool UDPRecieved = false;
 
-void ClientNetworkManager::UDPRecieveLoop() {
+
     while(ThreadsRunning) {
-        struct PlayerData {
-            glm::dvec3 pos;
-            float rot;
-        };
-        PlayerData data;
-        size_t len = sizeof(serverAddr);
-        recvfrom(UDPClientSocket, reinterpret_cast<char*>(&data), sizeof(PlayerData), 0, (sockaddr*)&serverAddr, (int*)&len);
+        std::unique_lock<std::mutex> lock(disconnectSleepMTX);
+        disconnectSleepCV.wait(lock, [&]{return connectState != ConnectionState::Disconnected || !ThreadsRunning; });
+        if (!ThreadsRunning) break;
 
+        switch(connectState) {
+            case ConnectionState::Connecting: {
+                if(!TCPSent) {
+                    size_t addrLen = sizeof(serverAddr);
+                    connect(TCPClientSocket, (sockaddr*)&serverAddr, addrLen);
+                    TCPSent = true;
+                } 
+                else if(!TCPRecieved) {
+                    int error = 0;
+                    int len = sizeof(error);
+
+                    getsockopt(TCPClientSocket, SOL_SOCKET, SO_ERROR, (char*)&error, &len);
+                    if(error == 0) {
+                        TCPRecieved = true;
+                    }
+                }
+                else if(!UDPSent) {
+                    char MSG[] = "Hello Server";
+                    sendto(UDPClientSocket, MSG, strlen(MSG), 0, (sockaddr*)&serverAddr, sizeof(sockaddr_in));
+                    UDPSent = true;
+                }
+                else if(!UDPRecieved) {
+                    char handshakeRetBuffer[20];
+                    size_t addrLen = sizeof(serverAddr);
+                    int n = recvfrom(UDPClientSocket, handshakeRetBuffer, 20, 0, (sockaddr*)&serverAddr, (int*)&addrLen);
+                    if(n > 0) { 
+                        UDPRecieved = true;
+                    }   
+                }
+
+                if(TCPRecieved && UDPRecieved) connectState = ConnectionState::Connected;
+                break;
+            }
+            case ConnectionState::Connected: {
+                TCPRecieve();
+                UDPRecieve();
+                break;
+            }
+        }
+
+        lock.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(33));
+    }
+}
+
+
+void ClientNetworkManager::UDPRecieve() {
+    struct PlayerData {
+        glm::dvec3 pos;
+        float rot;
+    };
+    PlayerData data;
+    size_t len = sizeof(serverAddr);
+    int iResult = recvfrom(UDPClientSocket, reinterpret_cast<char*>(&data), sizeof(PlayerData), 0, (sockaddr*)&serverAddr, (int*)&len);
+
+    if(iResult > 0) {
         GApp->m_MPWorld->m_ClientEntityManager.playerPos = data.pos;
         GApp->m_MPWorld->m_ClientEntityManager.playerRot = data.rot;
     }
 }
-void ClientNetworkManager::TCPRecieveLoop() {
-    while(ThreadsRunning) {
-        struct ChunkPacket {
-            int LOD;
-            int64_t ChunkX, ChunkY, ChunkZ;
-            BlockType m_Blocks[32*32*32];
-            bool HasAnything;
-        };
-        ChunkPacket data;
-        size_t len = sizeof(serverAddr);
-        recv(TCPClientSocket, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
+void ClientNetworkManager::TCPRecieve() {
+    struct ChunkPacket {
+        int LOD;
+        int64_t ChunkX, ChunkY, ChunkZ;
+        BlockType m_Blocks[32*32*32];
+        bool HasAnything;
+    };
+    ChunkPacket data;
+    size_t len = sizeof(serverAddr);
+    int iResult = recv(TCPClientSocket, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
 
+    if(iResult > 0) {
         std::cout << "Got a chunk from server\n";
         GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(glm::i64vec3(data.ChunkX, data.ChunkY, data.ChunkZ), data.m_Blocks, data.HasAnything);
     }

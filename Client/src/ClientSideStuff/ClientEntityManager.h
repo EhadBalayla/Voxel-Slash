@@ -15,5 +15,6 @@ public:
     float CamRotationPitch = 0.0f;
 
     glm::mat4 GetViewMatrix();
+    glm::vec3 GetCameraPosition();
     void InterpolateCamera(float DeltaTime);
 };
