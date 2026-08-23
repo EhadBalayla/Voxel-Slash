@@ -109,10 +109,30 @@ void MoveAndCollide(Entity* self, float DeltaTime) {
 	self->Position = newPos;
 }
 
+void UpdateChunksAroundPlayer(Entity* player) {
+    if(!GServer->m_ChunkManager.IsUpdatingChunks) {
+        int64_t CurrentCoordX = static_cast<int64_t>(std::floor(player->Position.x / Chunk_Length));
+        int64_t CurrentCoordY = static_cast<int64_t>(std::floor(player->Position.y / Chunk_Length));
+        int64_t CurrentCoordZ = static_cast<int64_t>(std::floor(player->Position.z / Chunk_Length));
+
+        PlayerData* Data = reinterpret_cast<PlayerData*>(player->ExtraData);
+
+        if(CurrentCoordX != Data->ChunkCoordX || CurrentCoordY != Data->ChunkCoordY || CurrentCoordZ != Data->ChunkCoordZ) {
+            Data->ChunkCoordX = CurrentCoordX;
+            Data->ChunkCoordY = CurrentCoordY;
+            Data->ChunkCoordZ = CurrentCoordZ;
+
+            GServer->m_ChunkManager.UpdateChunks(CurrentCoordX, CurrentCoordY, CurrentCoordZ);
+        }
+    }
+}
+
+
+
 void PlayerTick(Entity* self) {
     PlayerData* pData = reinterpret_cast<PlayerData*>(self->ExtraData);
 
-    //UpdateChunksAroundPlayer(self);
+    UpdateChunksAroundPlayer(self);
 	if (pData->IsJump) {
         if(pData->IsOnGround) pData->velocity.y = 10.0f;
     }
@@ -144,10 +164,11 @@ void* PlayerDataCreation() {
 	pData->friction = 0.8f;
 	pData->gravity = 15.0f;
 
-    pData->IsForward = true;
+    pData->IsForward = false;
     pData->IsBackward = false;
     pData->IsLeft = false;
     pData->IsRight = false;
+	pData->IsJump = false;
 
     return pData;
 }

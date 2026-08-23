@@ -17,4 +17,7 @@ public:
     glm::mat4 GetViewMatrix();
     glm::vec3 GetCameraPosition();
     void InterpolateCamera(float DeltaTime);
+
+    void ProcessMouseInput(float xoffset, float yoffset);
+    float MouseSensitivity = 0.5f;
 };

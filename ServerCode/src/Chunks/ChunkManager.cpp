@@ -6,38 +6,39 @@
 #include <cmath>
 #include <iostream>
 
+#include "../Server.h"
+
 #define SERVER_TEMP_LOD_COUNT 1 //defining a temporary LOD count for the server, until i'll add a setting for otherwise
 #define SERVER_TEMP_RENDER_DISTANCE 2 //defining a temporary render distance for the server, until i'll add a setting for otherwise
 
 ChunkManager::ChunkManager() : m_ChunkProvider(this) {
     chunksUpdater = std::thread(&ChunkManager::chunksUpdaterLoop, this);
-    /*LODParallels = new LODParallelism*[GApp->MaxLODLevel];
-    for(int i = 0; i < GApp->MaxLODLevel; i++) {
-        LODParallels[i] = new LODParallelism(i, this);
-    }*/
+    for(auto& t : GenThread) {
+        t = std::thread(&ChunkManager::GenWorker, this);
+    }
 
     std::cout << "Started the chunk manager" << std::endl;
 }
 ChunkManager::~ChunkManager() {
-    ChunkIteratorsRunning = false;
+    ThreadRunning = false;
     updaterCV.notify_all();
-
-    chunksUpdater.join();
-    /*for(int i = 0; i < GApp->MaxLODLevel; i++) {
-        delete LODParallels[i];
+    GenCV.notify_all();
+    for(auto& t : GenThread) {
+        t.join();
     }
-    delete[] LODParallels;
-    
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    m_ChunkProvider.DeleteAllChunks();*/
+    chunksUpdater.join();
+
 
     std::cout << "Ended the chunk manager" << std::endl;
 }
 
 
 
-void ChunkManager::UpdateChunks() {
+void ChunkManager::UpdateChunks(int64_t ChunkX, int64_t ChunkY, int64_t ChunkZ) {
     IsUpdatingChunks = true;
+    CurrentChunkX = ChunkX;
+    CurrentChunkY = ChunkY;
+    CurrentChunkZ = ChunkZ;
     updaterCV.notify_one();
 }
 
@@ -51,20 +52,39 @@ ChunkGenerator& ChunkManager::GetChunkGenerator() {
 }
 
 
+void ChunkManager::PushGen(Chunk* c) {
+    c->IsGenerating = true;
+    c->IsGenerated = false;
+    {
+        std::lock_guard<std::mutex> lock(GenMTX);
+        GenQueue.push(c);
+    }
+    GenCV.notify_one();
+}
+
+
 
 void ChunkManager::chunksUpdaterLoop() {
-    while(ChunkIteratorsRunning) {
+    while(ThreadRunning) {
+        int64_t LocalCenterX = 0;
+        int64_t LocalCenterY = 0;
+        int64_t LocalCenterZ = 0;
+
         {
             std::unique_lock<std::mutex> lock(tempMTX);
-            updaterCV.wait(lock, [this] {return IsUpdatingChunks || !ChunkIteratorsRunning; });
+            updaterCV.wait(lock, [this] {return IsUpdatingChunks || !ThreadRunning; });
 
-            if(!ChunkIteratorsRunning) break;
+            if(!ThreadRunning) break;
+
+            LocalCenterX = CurrentChunkX;
+            LocalCenterY = CurrentChunkY;
+            LocalCenterZ = CurrentChunkZ;
         }
         for(int i = 0; i < SERVER_TEMP_LOD_COUNT; i++) {
 
-            int CenterX = 0; //GApp->m_Player->ChunkCoordX / GetLODSize(i);
-            int CenterY = 0; //GApp->m_Player->ChunkCoordY / GetLODSize(i);
-            int CenterZ = 0; //GApp->m_Player->ChunkCoordZ / GetLODSize(i);
+            int CenterX = LocalCenterX / GetLODSize(i);
+            int CenterY = LocalCenterY / GetLODSize(i);
+            int CenterZ = LocalCenterZ / GetLODSize(i);
 
             for (int r = 0; r <= SERVER_TEMP_RENDER_DISTANCE; r++) {
 
@@ -73,7 +93,8 @@ void ChunkManager::chunksUpdaterLoop() {
                         for(int dz = -r; dz <= r; dz++) {
 
 	    		            if (dx != r && dy != r && dz != r && dx != -r && dy != -r && dz != -r) continue;
-	    		            m_ChunkProvider.ProvideChunk(CenterX + dx, CenterY + dy, CenterZ + dz, i);
+	    		            Chunk* c = m_ChunkProvider.ProvideChunk(CenterX + dx, CenterY + dy, CenterZ + dz, i);
+                            if(!c->IsGenerating && !c->IsGenerated) PushGen(c);
                         }
 	    	        }
 	    	    }
@@ -83,12 +104,39 @@ void ChunkManager::chunksUpdaterLoop() {
         IsUpdatingChunks = false;
     }
 }
+void ChunkManager::GenWorker() {
+    while(ThreadRunning) {
+        Chunk* c;
+
+        {
+            std::unique_lock<std::mutex> lock(GenMTX);
+
+            GenCV.wait(lock, [this] { return !GenQueue.empty() || !ThreadRunning; });
+
+            if (!ThreadRunning) return;
+
+            c = GenQueue.front();
+            GenQueue.pop();
+        }
+
+        //if(!c->MarkedForDeletion) {
+            m_ChunkGenerator.GenerateChunk(c);
+            m_ChunkGenerator.ReplaceBlocks(c);
+            m_ChunkGenerator.CarveCaves(c);
+            c->IsGenerated = true;
+        //}
+        c->IsGenerating = false;
 
 
-BlockType ChunkManager::GetBlockAt(int x, int y, int z) {
-    int ChunkX = (int)std::floor((double)x / Chunk_Length);
-    int ChunkY = (int)std::floor((double)y / Chunk_Length);
-    int ChunkZ = (int)std::floor((double)z / Chunk_Length);
+        GServer->m_NetworkManager.SendAllClientsASingleChunk(c);
+    }
+}
+
+
+BlockType ChunkManager::GetBlockAt(int64_t x, int64_t y, int64_t z) {
+    int64_t ChunkX = (int64_t)std::floor((double)x / Chunk_Length);
+    int64_t ChunkY = (int64_t)std::floor((double)y / Chunk_Length);
+    int64_t ChunkZ = (int64_t)std::floor((double)z / Chunk_Length);
 
     int LocalX = x - ChunkX * Chunk_Length;
     int LocalY = y - ChunkY * Chunk_Length;

@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
+#include <vulkan/vulkan.h>
 
 class ModInstance;
 class TransformAsset;
@@ -20,6 +21,7 @@ struct PrefabNode {
     //the asset that is loaded within the prefab
     TransformAsset* m_Asset = nullptr;
 };
+
 void AddNewPrefabNode(PrefabNode* parentNode, std::string newName);
 void RemovePrefabNode(PrefabNode* NodeToRemove);
 
@@ -27,6 +29,8 @@ class Prefab {
 public:
     void Save(const char* path);
     void Load(const char* path, ModInstance* mod);
+
+    void Render(VkCommandBuffer cmd, VkPipelineLayout ppLayout, glm::mat4 Start);
 
     PrefabNode m_RootNode;
 };

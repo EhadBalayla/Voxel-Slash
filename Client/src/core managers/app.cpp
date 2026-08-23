@@ -285,6 +285,13 @@ void App::Loop() {
                         VkDescriptorSet sets[] = { m_ChunkRenderer.GetChunksSet(GContext->currentFrame) };
                         vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_ChunkRenderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
                         vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 24, 1, 0, 0);
+
+                        glm::mat4 start = glm::mat4(1.0f);
+	                    start = glm::translate(start, (glm::vec3)m_MPWorld->m_ClientEntityManager.playerPos);
+	                    start = glm::rotate(start, glm::radians(m_MPWorld->m_ClientEntityManager.playerRot), glm::vec3(0.0f, 1.0f, 0.0f));
+                        m_SkeletalMeshShader.Bind();
+                        Prefab* pfb = m_TempMod->GetAllPrefabs()["Player_Prefab"];
+                        pfb->Render(GRenderer->GetFrameCommandBuffer(), m_ChunkRenderer.GetChunksPipelineLayout(), start);
                     }
 
                     m_Renderer.EndGPass();
@@ -362,7 +369,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    GApp->m_Player->ProcessMouseInput(xoffset, yoffset);
+    if(GApp->state == GameState::InGame) GApp->m_Player->ProcessMouseInput(xoffset, yoffset);
+    else if(GApp->state == GameState::Multiplayer) GApp->m_MPWorld->m_ClientEntityManager.ProcessMouseInput(xoffset, yoffset);
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if(GApp->state == GameState::Multiplayer) {

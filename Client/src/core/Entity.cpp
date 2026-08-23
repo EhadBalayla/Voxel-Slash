@@ -9,36 +9,11 @@
 #undef min
 #undef max
 
-void RenderNode(PrefabNode* node, glm::mat4 parentTransform) {
-	glm::mat4 pos = glm::translate(glm::mat4(1.0f), node->pos);
-
-	float yaw   = glm::radians(node->rot.y);
-    float pitch = glm::radians(node->rot.x);
-    float roll  = glm::radians(node->rot.z);
-    glm::mat4 rotX = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 rotY = glm::rotate(glm::mat4(1.0f), yaw,   glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 rotZ = glm::rotate(glm::mat4(1.0f), roll,  glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 rot = rotY * rotX * rotZ;
-
-	glm::mat4 scale = glm::scale(glm::mat4(1.0f), node->scale);
-
-	glm::mat4 overall = pos * rot * scale;
-	overall = parentTransform * overall;
-
-	if(node->m_Asset) {
-        node->m_Asset->Render(GApp->m_Renderer.GetFrameCommandBuffer(), GApp->m_ChunkRenderer.GetChunksPipelineLayout(), overall);
-    }
-
-	for(auto c : node->m_Children) {
-		RenderNode(c, overall);
-	}
-}
-
 void Entity::RenderPrefab() {
 	glm::mat4 start = glm::mat4(1.0f);
 	start = glm::translate(start, Position);
 	start = glm::rotate(start, glm::radians(Rotation), glm::vec3(0.0f, 1.0f, 0.0f));
-	RenderNode(&prefab.m_RootNode, start);
+	prefab.Render(GRenderer->GetFrameCommandBuffer(), GApp->m_ChunkRenderer.GetChunksPipelineLayout(), start);
 }
 void Entity::RenderCollision() {
 

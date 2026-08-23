@@ -31,3 +31,16 @@ glm::vec3 ClientEntityManager::GetCameraPosition() {
 void ClientEntityManager::InterpolateCamera(float DeltaTime) {
     CameraPivotPosition = SmoothInterp(CameraPivotPosition, playerPos, DeltaTime, 10.0f);
 }
+
+void ClientEntityManager::ProcessMouseInput(float xoffset, float yoffset) {
+    xoffset *= -MouseSensitivity;
+    yoffset *= -MouseSensitivity;
+
+    CamRotationYaw   += xoffset;
+    CamRotationPitch += yoffset;
+
+    if (CamRotationPitch > 89.0f)
+        CamRotationPitch = 89.0f;
+    if (CamRotationPitch < -89.0f)
+        CamRotationPitch = -89.0f;
+}

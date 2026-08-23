@@ -157,8 +157,20 @@ void NetworkManager::SendChunksData(SOCKET s) {
         memcpy(data.m_Blocks, c.second->m_Blocks, VOXEL_ARRAY_SIZE);
         data.HasAnything = c.second->HasAnything;
 
-        //send(s, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
         SendSingleChunk(s, data);
+    }
+}
+void NetworkManager::SendAllClientsASingleChunk(Chunk* c) {
+    ChunkPacket data;
+    data.LOD = c->LOD;
+    data.ChunkX = c->ChunkX;
+    data.ChunkY = c->ChunkY;
+    data.ChunkZ = c->ChunkZ;
+    memcpy(data.m_Blocks, c->m_Blocks, VOXEL_ARRAY_SIZE);
+    data.HasAnything = c->HasAnything;
+
+    for(auto& client : connectedClients) {
+        SendSingleChunk(client.ClientSocket, data);
     }
 }
 

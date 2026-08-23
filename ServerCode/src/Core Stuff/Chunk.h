@@ -17,6 +17,8 @@ public:
     BlockType m_Blocks[VOXEL_ARRAY_SIZE] {BlockType::Air};
 
     //flags and side stuff
+    bool IsGenerating = false;
     bool IsGenerated = false;
+    
     bool HasAnything = false;
 };

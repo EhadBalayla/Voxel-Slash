@@ -5,6 +5,33 @@
 #include "AssetFormats/TransformAsset.h"
 #include "ModInstance.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
+void RenderNode(PrefabNode* node, glm::mat4 parentTransform, VkCommandBuffer cmd, VkPipelineLayout ppLayout) {
+	glm::mat4 pos = glm::translate(glm::mat4(1.0f), node->pos);
+
+	float yaw   = glm::radians(node->rot.y);
+    float pitch = glm::radians(node->rot.x);
+    float roll  = glm::radians(node->rot.z);
+    glm::mat4 rotX = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 rotY = glm::rotate(glm::mat4(1.0f), yaw,   glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 rotZ = glm::rotate(glm::mat4(1.0f), roll,  glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 rot = rotY * rotX * rotZ;
+
+	glm::mat4 scale = glm::scale(glm::mat4(1.0f), node->scale);
+
+	glm::mat4 overall = pos * rot * scale;
+	overall = parentTransform * overall;
+
+	if(node->m_Asset) {
+        node->m_Asset->Render(cmd, ppLayout, overall);
+    }
+
+	for(auto c : node->m_Children) {
+		RenderNode(c, overall, cmd, ppLayout);
+	}
+}
+
 void AddNewPrefabNode(PrefabNode* parentNode, std::string newName) {
     PrefabNode* newNode = new PrefabNode;
     newNode->m_Name = newName;
@@ -99,4 +126,8 @@ void Prefab::Load(const char* path, ModInstance* mod) {
     LoadPrefabNode(&m_RootNode, file, mod);
 
     file.close();
+}
+
+void Prefab::Render(VkCommandBuffer cmd, VkPipelineLayout ppLayout, glm::mat4 Start) {
+    RenderNode(&m_RootNode, Start, cmd, ppLayout);
 }

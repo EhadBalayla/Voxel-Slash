@@ -20,12 +20,6 @@ Chunk* ChunkProvider::ProvideChunk(int64_t ChunkX, int64_t ChunkY, int64_t Chunk
         std::lock_guard<std::mutex> lock(MTX[LOD]);
         chunks[LOD][glm::i64vec3(ChunkX, ChunkY, ChunkZ)] = c;
     }
-
-    owningManager->GetChunkGenerator().GenerateChunk(c);
-    owningManager->GetChunkGenerator().ReplaceBlocks(c);
-    owningManager->GetChunkGenerator().CarveCaves(c);
-    c->IsGenerated = true;
-
     return c;
 }
 void ChunkProvider::RemoveChunk(Chunk* c) {
