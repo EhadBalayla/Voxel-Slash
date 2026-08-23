@@ -2,6 +2,7 @@
 #include <thread>
 #include <mutex>
 #include <WinSock2.h>
+#include <vector>
 
 enum InputSendPacket : uint8_t {
     ForwardPress,
@@ -48,6 +49,7 @@ private:
 
     void UDPRecieve();
     void TCPRecieve();
+    std::vector<char> m_IncomingStream;
 
     SOCKET TCPClientSocket = INVALID_SOCKET;
     SOCKET UDPClientSocket = INVALID_SOCKET;

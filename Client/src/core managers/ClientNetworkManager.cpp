@@ -130,17 +130,17 @@ void ClientNetworkManager::RecieveLoop() {
 
 
 void ClientNetworkManager::UDPRecieve() {
+    static char UDPReceiveBuffer[1400];
+    size_t len = sizeof(serverAddr);
+    int iResult = recvfrom(UDPClientSocket, UDPReceiveBuffer, 1400, 0, (sockaddr*)&serverAddr, (int*)&len);
+
     struct PlayerData {
         glm::dvec3 pos;
         float rot;
     };
-    PlayerData data;
-    size_t len = sizeof(serverAddr);
-    int iResult = recvfrom(UDPClientSocket, reinterpret_cast<char*>(&data), sizeof(PlayerData), 0, (sockaddr*)&serverAddr, (int*)&len);
-
     if(iResult > 0) {
-        GApp->m_MPWorld->m_ClientEntityManager.playerPos = data.pos;
-        GApp->m_MPWorld->m_ClientEntityManager.playerRot = data.rot;
+        GApp->m_MPWorld->m_ClientEntityManager.playerPos = reinterpret_cast<PlayerData*>(UDPReceiveBuffer)->pos;
+        GApp->m_MPWorld->m_ClientEntityManager.playerRot = reinterpret_cast<PlayerData*>(UDPReceiveBuffer)->rot;
     }
 }
 void ClientNetworkManager::TCPRecieve() {
@@ -150,12 +150,31 @@ void ClientNetworkManager::TCPRecieve() {
         BlockType m_Blocks[32*32*32];
         bool HasAnything;
     };
-    ChunkPacket data;
+    const size_t PACKET_SIZE = sizeof(ChunkPacket);
+
+    static char TCPRecieveBuffer[65536];
     size_t len = sizeof(serverAddr);
-    int iResult = recv(TCPClientSocket, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
+    int iResult = recv(TCPClientSocket, TCPRecieveBuffer, sizeof(TCPRecieveBuffer), 0);
 
     if(iResult > 0) {
-        std::cout << "Got a chunk from server\n";
-        GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(glm::i64vec3(data.ChunkX, data.ChunkY, data.ChunkZ), data.m_Blocks, data.HasAnything);
+        m_IncomingStream.insert(m_IncomingStream.end(), TCPRecieveBuffer, TCPRecieveBuffer + iResult);
+    }
+
+    while (m_IncomingStream.size() >= PACKET_SIZE) {
+        
+        ChunkPacket data;
+        
+        std::memcpy(&data, m_IncomingStream.data(), PACKET_SIZE);
+
+        std::cout << "Got a 100% complete chunk from server at: " 
+                  << data.ChunkX << ", " << data.ChunkY << ", " << data.ChunkZ << "\n";
+
+        GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(
+            glm::i64vec3(data.ChunkX, data.ChunkY, data.ChunkZ), 
+            data.m_Blocks, 
+            data.HasAnything
+        );
+
+        m_IncomingStream.erase(m_IncomingStream.begin(), m_IncomingStream.begin() + PACKET_SIZE);
     }
 }

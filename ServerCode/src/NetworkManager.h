@@ -37,9 +37,9 @@ public:
 private:
     bool threadRunning = true;
     void connectsLoop();
-    void TCPRecieveLoop();
+    void RecieveLoop();
     std::thread connectsThread; //a thread for listening to TCP connections
-    std::thread TCPThread;
+    std::thread RecieveThread;
 
     SOCKET TCPSocket = INVALID_SOCKET;
     SOCKET UDPSocket = INVALID_SOCKET;
@@ -47,4 +47,7 @@ private:
     std::mutex clientsMutex; //simply a mutex over the connected clients array
 
     std::mutex pMoveMTX;
+
+    void TCPRecieve(ConnectionData& client);
+    void UDPRecieve();
 };

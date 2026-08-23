@@ -17,6 +17,22 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
+//helper for reverse Z buffer
+glm::mat4 infinitePerspectiveReversedZ(float fovRad, float aspect, float zNear) {
+    float h = 1.0f / glm::tan(fovRad * 0.5f);
+    float w = h / aspect;
+
+    glm::mat4 result(0.0f);
+    
+    result[0][0] = w;
+    result[1][1] = h;
+    result[2][2] = 0.0f;
+    result[2][3] = -1.0f;
+    result[3][2] = zNear;
+    
+    return result;
+}
+
 App* GApp = nullptr;
 App::App() {
     GApp = this;
@@ -165,8 +181,8 @@ void App::Loop() {
             case GameState::InGame: {
                 if(waitingFrames == 0) {
                 processInput();
-                proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 13000.0f, 0.1f);
-                m_Frustum = ExtractFrustum(glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 13000.0f) * m_Player->GetViewMatrix());
+                proj = infinitePerspectiveReversedZ(glm::radians(FOV), Width / static_cast<float>(Height), 0.1);
+                m_Frustum = ExtractFrustum(proj * m_Player->GetViewMatrix());
 
                 m_ChunkRenderer.SetViewProj(m_Player->GetViewMatrix(), proj);
                      
@@ -254,7 +270,7 @@ void App::Loop() {
                 else {
                     m_MPWorld->m_ClientEntityManager.InterpolateCamera(deltaTime);
 
-                    proj = glm::perspective(glm::radians(FOV), Width / static_cast<float>(Height), 0.1f, 13000.0f);
+                    proj = infinitePerspectiveReversedZ(glm::radians(FOV), Width / static_cast<float>(Height), 0.1);
                     m_ChunkRenderer.SetViewProj(m_MPWorld->m_ClientEntityManager.GetViewMatrix(), proj);
                     
                     m_Renderer.StartGPass();

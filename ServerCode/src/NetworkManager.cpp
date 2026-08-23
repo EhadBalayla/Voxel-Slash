@@ -90,7 +90,7 @@ NetworkManager::NetworkManager() {
     std::cout << "Starting threads for listening to connections and sending data between connected clients" << std::endl;
 
     connectsThread = std::thread(&NetworkManager::connectsLoop, this);
-    TCPThread = std::thread(&NetworkManager::TCPRecieveLoop, this);
+    RecieveThread = std::thread(&NetworkManager::RecieveLoop, this);
 
     std::cout << "Networking part of the server started successfully" << std::endl;
 }
@@ -124,6 +124,28 @@ void NetworkManager::SendEntitiesData() {
         it++;
     }
 }
+bool SendSingleChunk(SOCKET clientSocket, ChunkPacket& packet) {
+    char* dataPtr = reinterpret_cast<char*>(&packet);
+    int bytesLeft = sizeof(ChunkPacket);
+    int bytesSentSoFar = 0;
+
+    while (bytesLeft > 0) {
+        int result = send(clientSocket, dataPtr + bytesSentSoFar, bytesLeft, 0);
+
+        if (result == SOCKET_ERROR) {
+            int error = WSAGetLastError();
+            if (error == WSAEWOULDBLOCK) {
+                Sleep(1); 
+                continue;
+            }
+            return false; 
+        }
+
+        bytesSentSoFar += result;
+        bytesLeft -= result;
+    }
+    return true;
+}
 void NetworkManager::SendChunksData(SOCKET s) {
     for(auto& c : GServer->m_ChunkManager.GetChunkProvider().GetAllChunks(0)) {
 
@@ -135,7 +157,8 @@ void NetworkManager::SendChunksData(SOCKET s) {
         memcpy(data.m_Blocks, c.second->m_Blocks, VOXEL_ARRAY_SIZE);
         data.HasAnything = c.second->HasAnything;
 
-        send(s, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
+        //send(s, reinterpret_cast<char*>(&data), sizeof(ChunkPacket), 0);
+        SendSingleChunk(s, data);
     }
 }
 
@@ -174,35 +197,44 @@ void NetworkManager::connectsLoop() {
     }
 }
 #include "Entities/PlayerEntity.h"
-void NetworkManager::TCPRecieveLoop() {
+void NetworkManager::RecieveLoop() {
     while(threadRunning) {
         {
             for(auto& client : connectedClients) {
-                InputSendPacket incomingInput;
-                int d = recv(client.ClientSocket, reinterpret_cast<char*>(&incomingInput), sizeof(incomingInput), 0);
-                if(d == SOCKET_ERROR) {
-                    int err = WSAGetLastError();
-                    if (err == WSAEWOULDBLOCK) continue;
-                    continue;
-                }
-
-                auto& entities = GServer->m_EntityManager.GetAllEntities();
-                PlayerData* data = reinterpret_cast<PlayerData*>(entities[GServer->m_EntityManager.GetIDToIDX()[client.EntityID]].ExtraData);
-                switch(incomingInput) {
-                    case InputSendPacket::ForwardPress: data->IsForward = true; break;
-                    case InputSendPacket::ForwardRelease: data->IsForward = false; break;
-                    case InputSendPacket::BackwardPress: data->IsBackward = true; break;
-                    case InputSendPacket::BackwardRelease: data->IsBackward = false; break;
-                    case InputSendPacket::LeftPress: data->IsLeft = true; break;
-                    case InputSendPacket::LeftRelease: data->IsLeft = false; break;
-                    case InputSendPacket::RightPress: data->IsRight = true; break;
-                    case InputSendPacket::RightRelease: data->IsRight = false; break;
-                    case InputSendPacket::JumpPress: data->IsJump = true; break;
-                    case InputSendPacket::JumpRelease: data->IsJump = false; break;
-                }
+                TCPRecieve(client);
             }
+            UDPRecieve();
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+}
+
+
+void NetworkManager::TCPRecieve(ConnectionData& client) {
+    InputSendPacket incomingInput;
+    int d = recv(client.ClientSocket, reinterpret_cast<char*>(&incomingInput), sizeof(incomingInput), 0);
+    if(d == SOCKET_ERROR) {
+        int err = WSAGetLastError();
+        if (err == WSAEWOULDBLOCK) return;
+        return;
+    }
+
+    auto& entities = GServer->m_EntityManager.GetAllEntities();
+    PlayerData* data = reinterpret_cast<PlayerData*>(entities[GServer->m_EntityManager.GetIDToIDX()[client.EntityID]].ExtraData);
+    switch(incomingInput) {
+        case InputSendPacket::ForwardPress: data->IsForward = true; break;
+        case InputSendPacket::ForwardRelease: data->IsForward = false; break;
+        case InputSendPacket::BackwardPress: data->IsBackward = true; break;
+        case InputSendPacket::BackwardRelease: data->IsBackward = false; break;
+        case InputSendPacket::LeftPress: data->IsLeft = true; break;
+        case InputSendPacket::LeftRelease: data->IsLeft = false; break;
+        case InputSendPacket::RightPress: data->IsRight = true; break;
+        case InputSendPacket::RightRelease: data->IsRight = false; break;
+        case InputSendPacket::JumpPress: data->IsJump = true; break;
+        case InputSendPacket::JumpRelease: data->IsJump = false; break;
+    }
+}
+void NetworkManager::UDPRecieve() {
+
 }
