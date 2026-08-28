@@ -136,8 +136,15 @@ void NetworkManager::SendEntitiesData() {
         it++;
     }
 }
+#include <zlib.h>
 bool SendSingleChunk(SOCKET clientSocket, ChunkPacketPayload& packet) {
-    SendTCPPacket(clientSocket, TCPPacketType::ChunkPacket, &packet, sizeof(ChunkPacketPayload));
+    uLong compressedSize = compressBound(sizeof(packet));
+    unsigned char* compressedChunk = (unsigned char*)malloc(compressedSize);
+    compress(compressedChunk, &compressedSize, (Bytef*)&packet, sizeof(packet));
+
+    SendTCPPacket(clientSocket, TCPPacketType::ChunkPacket, compressedChunk, compressedSize);
+
+    free(compressedChunk);
     return true;
 }
 bool SendEntityAdd(SOCKET clientSocket, uint64_t ID) {

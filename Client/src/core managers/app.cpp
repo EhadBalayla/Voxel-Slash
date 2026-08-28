@@ -12,6 +12,8 @@
 #include "Canvas.h"
 #include "Prefab.h"
 
+#include "Server.h"
+
 #undef CreateWindow
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
@@ -84,7 +86,9 @@ void App::Init() {
         if(N->m_Name == "SP Button") {
             UIButton* btn = static_cast<UIButton*>(N->m_Element);
             btn->OnPress = []() {
-                
+                GApp->m_LocalServer = new Server;
+                GApp->m_LocalServer->m_ChunkManager.UpdateChunks(0, 0, 0);
+                GApp->state = GameState::Multiplayer;
             };
         }
 
@@ -174,92 +178,6 @@ void App::Loop() {
                 m_Window.EndFullscreenRender();
                 break;
             }
-            case GameState::InGame: {
-                /*if(waitingFrames == 0) {
-                processInput();
-                proj = infinitePerspectiveReversedZ(glm::radians(FOV), Width / static_cast<float>(Height), 0.1);
-                m_Frustum = ExtractFrustum(proj * m_Player->GetViewMatrix());
-
-                m_ChunkRenderer.SetViewProj(m_Player->GetViewMatrix(), proj);
-                     
-                m_Renderer.StartGPass();
-                m_World->RenderWorld();
-                
-                {
-                    glm::mat4 mat = glm::mat4(1.0f);
-                    mat = glm::translate(glm::mat4(1.0f), m_Player->Position + glm::vec3(0.0f, m_Player->aabb.max.y / 2.0f, 0.0f));
-                    mat = glm::scale(mat, glm::vec3(0.5f, m_Player->aabb.max.y, 0.5f));
-
-                    m_BoxOutlineShader.Bind();
-                    m_ChunkRenderer.SetTrans(mat);
-                    VkDescriptorSet sets[] = { m_ChunkRenderer.GetChunksSet(GContext->currentFrame) };
-                    vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_ChunkRenderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
-                    vkCmdDraw(m_Window.GetContext().GetCommandBuffers()[m_Window.GetContext().currentFrame], 24, 1, 0, 0);
-
-                    m_SkeletalMeshShader.Bind();
-                    m_Player->RenderPrefab();
-                }
-
-                if(showChunkBorders) {
-                    m_ChunkRenderer.SetTrans(glm::translate(glm::mat4(1.0f), glm::vec3(m_Player->ChunkCoordX * 32, m_Player->ChunkCoordY * 32,m_Player->ChunkCoordZ * 32)));
-                
-                    m_BorderShader.Bind();
-                    VkDescriptorSet sets[] = { m_ChunkRenderer.GetChunksSet(GContext->currentFrame) };
-                    vkCmdBindDescriptorSets(m_Renderer.GetFrameCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_ChunkRenderer.GetChunksPipelineLayout(), 0, 1, sets, 0, nullptr);
-                    vkCmdDraw(m_Renderer.GetFrameCommandBuffer(), 36, 1, 0, 0);
-                }
-
-                Canvas* debugMenuHUD = m_TempMod->GetAllCanvases()["DebugMenuHUD"];
-                for(int i = 0; i < debugMenuHUD->nodes.size(); i++) {
-                    UIText* txt = static_cast<UIText*>(debugMenuHUD->nodes[i]->m_Element);
-                    switch(i) {
-                        case 0:
-                            txt->text = "X: " + std::to_string(m_Player->Position.x) + ", Y: " + std::to_string(m_Player->Position.y) + ", Z: " + std::to_string(m_Player->Position.z);
-                        break;
-                        case 1:
-                            txt->text = "Chunks Cound LOD0: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(0).size());
-                        break;
-                        case 2:
-                            txt->text = "Chunks Cound LOD1: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(1).size());
-                        break;
-                        case 3:
-                            txt->text = "Chunks Cound LOD2: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(2).size());
-                        break;
-                        case 4:
-                            txt->text = "Chunks Cound LOD3: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(3).size());
-                        break;
-                        case 5:
-                            txt->text = "Chunks Cound LOD4: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(4).size());
-                        break;
-                        case 6:
-                            txt->text = "Chunks Cound LOD5: " + std::to_string(m_World->GetChunkManager().GetChunkProvider().GetAllChunks(5).size());
-                        break;
-                        case 7:
-                            txt->text = "FPS: " + std::to_string(1.0f / GApp->deltaTime);
-                        break;
-                    }
-                }
-                debugMenuHUD->Tick();
-                debugMenuHUD->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
-                m_Renderer.EndGPass();
-
-                m_Renderer.PerformLightPass(m_Player->GetCameraPosition());
-
-                m_FullscreenQuad.SetTexture();
-
-                m_Window.StartFullscreenRender();
-                m_FullscreenQuad.Draw();
-                m_Window.EndFullscreenRender();
-                } else {
-                    waitingFrames++;
-                    if(waitingFrames == 4) { 
-                        state = GameState::MainMenu;
-
-                        delete GApp->m_World;
-                    }
-                }
-                break;*/
-            }
             case GameState::Multiplayer: {
                 if(GApp->m_ClientNetworkManager.connectState != ConnectionState::Connected) GApp->m_ClientNetworkManager.Connect();
                 else if (!m_MPWorld) m_MPWorld = new MPWorld;
@@ -301,6 +219,7 @@ void App::Loop() {
                     m_FullscreenQuad.Draw();
                     m_Window.EndFullscreenRender();
                 }
+                break;
             }
         }
         m_Window.NextFrame();
@@ -366,7 +285,6 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    //if(GApp->state == GameState::InGame) GApp->m_Player->ProcessMouseInput(xoffset, yoffset);
     if(GApp->state == GameState::Multiplayer) GApp->m_MPWorld->m_ClientEntityManager.ProcessMouseInput(xoffset, yoffset);
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {

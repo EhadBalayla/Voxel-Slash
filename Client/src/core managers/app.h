@@ -15,10 +15,10 @@
 
 #include "../ClientSideStuff/MPWorld.h"
 
+class Server;
 
 enum class GameState {
     MainMenu,
-    InGame,
     Multiplayer
 };
 
@@ -34,6 +34,7 @@ public:
     ModInstance* m_TempMod;
 
     MPWorld* m_MPWorld = nullptr; //for the whole multiplayer thingy
+    Server* m_LocalServer = nullptr; //for singleplayer
 
     //shaders
     Shader m_OpaqueShader;
@@ -72,6 +73,7 @@ public:
 
     GameState state = GameState::MainMenu;
     int waitingFrames = 0;
+    float WaitTime = 0.0f;
 private:
     void RegisterAllBlocks();
 

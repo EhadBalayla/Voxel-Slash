@@ -1,3 +1,6 @@
+find_package(ZLIB REQUIRED)
+
+
 file(GLOB_RECURSE SRC_FILES 
     src/*.cpp 
     src/*.h
@@ -9,6 +12,10 @@ add_library(ServerCode STATIC ${SRC_FILES})
 target_include_directories(ServerCode PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty
     ${CMAKE_SOURCE_DIR}/Shared/ThirdParty
+)
+
+target_link_libraries(ServerCode PRIVATE
+    ZLIB::ZLIB
 )
 
 set_target_properties(ServerCode PROPERTIES

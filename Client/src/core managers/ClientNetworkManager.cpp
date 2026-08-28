@@ -164,6 +164,7 @@ void ClientNetworkManager::UDPRecieve() {
         }
     }
 }
+#include <zlib.h>
 void ClientNetworkManager::TCPRecieve() {
     char tempBuffer[4096];
         
@@ -200,14 +201,14 @@ void ClientNetworkManager::TCPRecieve() {
         switch (header->packetType) {
                 
             case TCPPacketType::ChunkPacket: {
-                ChunkPacketPayload* data = reinterpret_cast<ChunkPacketPayload*>(payloadStart);
-                std::cout << "Got a 100% complete chunk from server at: " 
-                  << data->ChunkX << ", " << data->ChunkY << ", " << data->ChunkZ << "\n";
+                ChunkPacketPayload decompressedChunk;
+                uLong decompressedSize = sizeof(ChunkPacketPayload);
+                uncompress(reinterpret_cast<Bytef*>(&decompressedChunk), &decompressedSize, reinterpret_cast<Bytef*>(payloadStart), payloadSize); 
 
                 GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(
-                    glm::i64vec3(data->ChunkX, data->ChunkY, data->ChunkZ), 
-                    data->m_Blocks, 
-                    data->HasAnything
+                    glm::i64vec3(decompressedChunk.ChunkX, decompressedChunk.ChunkY, decompressedChunk.ChunkZ), 
+                    decompressedChunk.m_Blocks, 
+                    decompressedChunk.HasAnything
                 );
                 break;
             }

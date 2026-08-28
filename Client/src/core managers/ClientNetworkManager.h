@@ -4,7 +4,7 @@
 #include <WinSock2.h>
 #include <vector>
 
-enum InputSendPacket : uint8_t {
+/*enum InputSendPacket : uint8_t {
     ForwardPress,
     ForwardRelease,
 
@@ -19,7 +19,9 @@ enum InputSendPacket : uint8_t {
 
     JumpPress,
     JumpRelease,
-};
+};*/
+
+enum InputSendPacket : uint8_t;
 
 enum class ConnectionState {
     Disconnected,
