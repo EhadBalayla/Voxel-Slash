@@ -8,10 +8,8 @@
 #include "AudioManager.h"
 #include "ClientNetworkManager.h"
 #include "ModInstance.h"
-#include "../Entities/Player.h"
-#include "../World/World.h"
 
-#include "../World/Block.h"
+#include "Core Stuff/Block.h"
 
 #include "../core/Frustum.h"
 
@@ -34,8 +32,6 @@ public:
     AudioManager m_AudioManager;
     ClientNetworkManager m_ClientNetworkManager;
     ModInstance* m_TempMod;
-    Player* m_Player;
-    World* m_World;
 
     MPWorld* m_MPWorld = nullptr; //for the whole multiplayer thingy
 

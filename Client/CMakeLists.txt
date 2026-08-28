@@ -14,12 +14,14 @@ target_include_directories(VoxelSlash_Client PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty
     ${CMAKE_SOURCE_DIR}/Shared/src
     ${CMAKE_SOURCE_DIR}/Shared/ThirdParty
+    ${CMAKE_SOURCE_DIR}/ServerCode/src
 )
 
 target_link_libraries(VoxelSlash_Client PRIVATE 
     Shared
     glfw
     Vulkan::Vulkan
+    ServerCode
 )
 
 

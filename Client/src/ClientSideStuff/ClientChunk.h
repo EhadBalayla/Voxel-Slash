@@ -1,5 +1,5 @@
 #pragma once
-#include "../World/Block.h"
+#include "Core Stuff/Block.h"
 #include <vector>
 
 #include "../core managers/Rendering/ChunkBuffer.h"

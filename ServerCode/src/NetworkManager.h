@@ -20,8 +20,6 @@ enum InputSendPacket : uint8_t {
     JumpPress,
     JumpRelease,
 };
-class Chunk;
-class ChunkPacket;
 
 struct ConnectionData {
     SOCKET ClientSocket = INVALID_SOCKET;
@@ -29,7 +27,7 @@ struct ConnectionData {
     uint64_t EntityID = 0; //ID of the player entity
 };
 
-bool SendSingleChunk(SOCKET clientSocket, ChunkPacket& packet);
+class Chunk;
 
 class NetworkManager {
 public:
@@ -39,6 +37,8 @@ public:
     void SendEntitiesData(); //sends entities data to all connected clients
     void SendChunksData(SOCKET s); //temporary, simply sends all chunks to a client
     void SendAllClientsASingleChunk(Chunk* c); //temporary
+    void SendAllClientsEntityAdd(uint64_t ID);
+    void SendAllClientsEntityRemove(uint64_t ID);
 private:
     bool threadRunning = true;
     void connectsLoop();

@@ -10,6 +10,7 @@
 #include <filesystem>
 
 #include "Canvas.h"
+#include "Prefab.h"
 
 #undef CreateWindow
 
@@ -77,18 +78,13 @@ void App::Init() {
 
     //to be deleted later
     m_TempMod = new ModInstance("Data");
-    m_Player = new Player;
 
     Canvas* titleScr = m_TempMod->GetAllCanvases()["TitleScreenHUD"];
     for(auto& N : titleScr->nodes) {
         if(N->m_Name == "SP Button") {
             UIButton* btn = static_cast<UIButton*>(N->m_Element);
             btn->OnPress = []() {
-                GApp->state = GameState::InGame;
-                GApp->waitingFrames = 0;
-                GApp->m_Player->Position = glm::vec3(10.0f, 15.0f, 10.0f);
-                GApp->m_World = new World();
-                GApp->m_World->GetChunkManager().UpdateChunks();
+                
             };
         }
 
@@ -179,7 +175,7 @@ void App::Loop() {
                 break;
             }
             case GameState::InGame: {
-                if(waitingFrames == 0) {
+                /*if(waitingFrames == 0) {
                 processInput();
                 proj = infinitePerspectiveReversedZ(glm::radians(FOV), Width / static_cast<float>(Height), 0.1);
                 m_Frustum = ExtractFrustum(proj * m_Player->GetViewMatrix());
@@ -262,7 +258,7 @@ void App::Loop() {
                         delete GApp->m_World;
                     }
                 }
-                break;
+                break;*/
             }
             case GameState::Multiplayer: {
                 if(GApp->m_ClientNetworkManager.connectState != ConnectionState::Connected) GApp->m_ClientNetworkManager.Connect();
@@ -293,6 +289,7 @@ void App::Loop() {
                         Prefab* pfb = m_TempMod->GetAllPrefabs()["Player_Prefab"];
                         pfb->Render(GRenderer->GetFrameCommandBuffer(), m_ChunkRenderer.GetChunksPipelineLayout(), start);
                     }
+                    m_MPWorld->m_ClientEntityManager.RenderOtherEntities();
 
                     m_Renderer.EndGPass();
 
@@ -369,8 +366,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    if(GApp->state == GameState::InGame) GApp->m_Player->ProcessMouseInput(xoffset, yoffset);
-    else if(GApp->state == GameState::Multiplayer) GApp->m_MPWorld->m_ClientEntityManager.ProcessMouseInput(xoffset, yoffset);
+    //if(GApp->state == GameState::InGame) GApp->m_Player->ProcessMouseInput(xoffset, yoffset);
+    if(GApp->state == GameState::Multiplayer) GApp->m_MPWorld->m_ClientEntityManager.ProcessMouseInput(xoffset, yoffset);
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if(GApp->state == GameState::Multiplayer) {

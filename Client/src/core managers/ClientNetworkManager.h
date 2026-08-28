@@ -49,7 +49,7 @@ private:
 
     void UDPRecieve();
     void TCPRecieve();
-    std::vector<char> m_IncomingStream;
+    std::vector<char> streamBuffer;
 
     SOCKET TCPClientSocket = INVALID_SOCKET;
     SOCKET UDPClientSocket = INVALID_SOCKET;

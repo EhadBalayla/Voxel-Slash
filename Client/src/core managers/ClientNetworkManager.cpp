@@ -14,6 +14,10 @@
 
 #undef CreateWindow
 #include "app.h"
+#include "Helpers/NetworkUtilities.h"
+
+
+
 
 void ClientNetworkManager::InitializeNetwork() {
     WSADATA wsaData;
@@ -71,6 +75,9 @@ void ClientNetworkManager::SendInputMode(InputSendPacket whichOne) {
     send(TCPClientSocket, reinterpret_cast<char*>(&whichOne), sizeof(InputSendPacket), 0);
 }
 
+
+
+
 void ClientNetworkManager::RecieveLoop() {
     bool TCPSent = false;
     bool TCPRecieved = false;
@@ -105,12 +112,14 @@ void ClientNetworkManager::RecieveLoop() {
                     UDPSent = true;
                 }
                 else if(!UDPRecieved) {
-                    char handshakeRetBuffer[20];
+                    uint64_t ID;
                     size_t addrLen = sizeof(serverAddr);
-                    int n = recvfrom(UDPClientSocket, handshakeRetBuffer, 20, 0, (sockaddr*)&serverAddr, (int*)&addrLen);
-                    if(n > 0) { 
+                    int n = recvfrom(UDPClientSocket, reinterpret_cast<char*>(&ID), sizeof(uint64_t), 0, (sockaddr*)&serverAddr, (int*)&addrLen);
+                    //if(n > 0) { 
                         UDPRecieved = true;
-                    }   
+                        GApp->m_MPWorld->m_ClientEntityManager.PlayerEntityID = ID;
+                        std::cout << "sexy here\n";
+                    //}
                 }
 
                 if(TCPRecieved && UDPRecieved) connectState = ConnectionState::Connected;
@@ -133,48 +142,87 @@ void ClientNetworkManager::UDPRecieve() {
     static char UDPReceiveBuffer[1400];
     size_t len = sizeof(serverAddr);
     int iResult = recvfrom(UDPClientSocket, UDPReceiveBuffer, 1400, 0, (sockaddr*)&serverAddr, (int*)&len);
-
-    struct PlayerData {
-        glm::dvec3 pos;
-        float rot;
-    };
+    
     if(iResult > 0) {
-        GApp->m_MPWorld->m_ClientEntityManager.playerPos = reinterpret_cast<PlayerData*>(UDPReceiveBuffer)->pos;
-        GApp->m_MPWorld->m_ClientEntityManager.playerRot = reinterpret_cast<PlayerData*>(UDPReceiveBuffer)->rot;
+        UDPPacketType type = (UDPPacketType)UDPReceiveBuffer[0];
+        switch (type) {
+        case UDPPacketType::EntityTransformPacket:
+            EntityPacket* data = reinterpret_cast<EntityPacket*>(UDPReceiveBuffer);
+            if(data->EntityID == GApp->m_MPWorld->m_ClientEntityManager.PlayerEntityID) {
+                GApp->m_MPWorld->m_ClientEntityManager.playerPos = data->pos;
+                GApp->m_MPWorld->m_ClientEntityManager.playerRot = data->rot;
+            }
+            break;
+        }
     }
 }
 void ClientNetworkManager::TCPRecieve() {
-    struct ChunkPacket {
-        int LOD;
-        int64_t ChunkX, ChunkY, ChunkZ;
-        BlockType m_Blocks[32*32*32];
-        bool HasAnything;
-    };
-    const size_t PACKET_SIZE = sizeof(ChunkPacket);
-
-    static char TCPRecieveBuffer[65536];
-    size_t len = sizeof(serverAddr);
-    int iResult = recv(TCPClientSocket, TCPRecieveBuffer, sizeof(TCPRecieveBuffer), 0);
-
-    if(iResult > 0) {
-        m_IncomingStream.insert(m_IncomingStream.end(), TCPRecieveBuffer, TCPRecieveBuffer + iResult);
+    char tempBuffer[4096];
+        
+    while (true) {
+        int bytesRead = recv(TCPClientSocket, tempBuffer, sizeof(tempBuffer), 0);
+            
+        if (bytesRead > 0) {
+            streamBuffer.insert(streamBuffer.end(), tempBuffer, tempBuffer + bytesRead);
+        }
+        else if (bytesRead == 0) {
+            std::cout << "[Network] Connection lost (Peer disconnected).\n";
+             return;
+        }
+        else {
+            int error = WSAGetLastError();
+            if (error == WSAEWOULDBLOCK) {
+                break;
+            }
+            std::cout << "[Network Error] recv failed with code: " << error << "\n";
+            return;
+        }
     }
 
-    while (m_IncomingStream.size() >= PACKET_SIZE) {
-        
-        ChunkPacket data;
-        
-        std::memcpy(&data, m_IncomingStream.data(), PACKET_SIZE);
+    while (streamBuffer.size() >= sizeof(TCPPacketHeader)) {
+        TCPPacketHeader* header = reinterpret_cast<TCPPacketHeader*>(streamBuffer.data());
+            
+        if (streamBuffer.size() < header->packetSize) {
+            break;
+        }
 
-        std::cout << "Got a 100% complete chunk from server at: " 
-                  << data.ChunkX << ", " << data.ChunkY << ", " << data.ChunkZ << "\n";
+        char* payloadStart = streamBuffer.data() + sizeof(TCPPacketHeader);
+        uint32_t payloadSize = header->packetSize - sizeof(TCPPacketHeader);
 
-        GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(
-            glm::i64vec3(data.ChunkX, data.ChunkY, data.ChunkZ), 
-            data.m_Blocks, 
-            data.HasAnything
-        );
+        switch (header->packetType) {
+                
+            case TCPPacketType::ChunkPacket: {
+                ChunkPacketPayload* data = reinterpret_cast<ChunkPacketPayload*>(payloadStart);
+                std::cout << "Got a 100% complete chunk from server at: " 
+                  << data->ChunkX << ", " << data->ChunkY << ", " << data->ChunkZ << "\n";
 
-        m_IncomingStream.erase(m_IncomingStream.begin(), m_IncomingStream.begin() + PACKET_SIZE);
+                GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(
+                    glm::i64vec3(data->ChunkX, data->ChunkY, data->ChunkZ), 
+                    data->m_Blocks, 
+                    data->HasAnything
+                );
+                break;
+            }
+                
+            case TCPPacketType::EntityAddPacket: {
+                auto* data = reinterpret_cast<EntityAddPacketPayload*>(payloadStart);
+                std::cout << "[Network] Spawning Entity ID: " << data->EntityID << "\n";
+                GApp->m_MPWorld->m_ClientEntityManager.otherEntities.push_back(data->EntityID);
+                break;
+            }
+                
+            case TCPPacketType::EntityRemovePacket: {
+                //auto* data = reinterpret_cast<EntityRemovePacketPayload*>(payloadStart);
+                //std::cout << "[Network] Removing Entity ID: " << data->EntityID << "\n";
+                break;
+            }
+                
+            default: {
+                std::cout << "[Network Warning] Unknown packet type received: " << (int)header->packetType << "\n";
+                break;
+            }
+        }
+
+        streamBuffer.erase(streamBuffer.begin(), streamBuffer.begin() + header->packetSize);
     }
 }

@@ -14,7 +14,10 @@
 int iResult, iSendResult;
 
 #include "Server.h"
-#include "Core Stuff/Packets.h"
+#include "Helpers/NetworkUtilities.h"
+
+
+
 
 NetworkManager::NetworkManager() {
     WSADATA wsaData;
@@ -116,40 +119,39 @@ void NetworkManager::SendEntitiesData() {
     for(auto it = connectedClients.begin(); it != connectedClients.end(); ) {
         ConnectionData connection = *it;
 
-        Entity playerEntity = GServer->m_EntityManager.GetEntity(connection.EntityID);
-        PlayerPacket data = {playerEntity.Position, playerEntity.Rotation};
+        for(auto& e : GServer->m_EntityManager.GetAllEntities()) {
+            EntityPacket data;
+            data.EntityID = e.ID;
+            data.pos = e.Position;
+            data.rot = e.Rotation;
 
-        sendto(UDPSocket, reinterpret_cast<char*>(&data), sizeof(PlayerPacket), 0, (sockaddr*)&connection.udpAddr, sizeof(sockaddr_in));
+            sendto(UDPSocket, reinterpret_cast<char*>(&data), sizeof(EntityPacket), 0, (sockaddr*)&connection.udpAddr, sizeof(sockaddr_in));
+        }
+
+        //Entity playerEntity = GServer->m_EntityManager.GetEntity(connection.EntityID);
+        //PlayerPacket data = {playerEntity.Position, playerEntity.Rotation};
+
+        //sendto(UDPSocket, reinterpret_cast<char*>(&data), sizeof(PlayerPacket), 0, (sockaddr*)&connection.udpAddr, sizeof(sockaddr_in));
 
         it++;
     }
 }
-bool SendSingleChunk(SOCKET clientSocket, ChunkPacket& packet) {
-    char* dataPtr = reinterpret_cast<char*>(&packet);
-    int bytesLeft = sizeof(ChunkPacket);
-    int bytesSentSoFar = 0;
-
-    while (bytesLeft > 0) {
-        int result = send(clientSocket, dataPtr + bytesSentSoFar, bytesLeft, 0);
-
-        if (result == SOCKET_ERROR) {
-            int error = WSAGetLastError();
-            if (error == WSAEWOULDBLOCK) {
-                Sleep(1); 
-                continue;
-            }
-            return false; 
-        }
-
-        bytesSentSoFar += result;
-        bytesLeft -= result;
-    }
+bool SendSingleChunk(SOCKET clientSocket, ChunkPacketPayload& packet) {
+    SendTCPPacket(clientSocket, TCPPacketType::ChunkPacket, &packet, sizeof(ChunkPacketPayload));
     return true;
+}
+bool SendEntityAdd(SOCKET clientSocket, uint64_t ID) {
+    SendTCPPacket(clientSocket, TCPPacketType::EntityAddPacket, &ID, sizeof(ID));
+    return true;
+}
+bool SendEntityRemove(SOCKET clientSocket, uint64_t ID) {
+    return true;
+
 }
 void NetworkManager::SendChunksData(SOCKET s) {
     for(auto& c : GServer->m_ChunkManager.GetChunkProvider().GetAllChunks(0)) {
 
-        ChunkPacket data;
+        ChunkPacketPayload data;
         data.LOD = c.second->LOD;
         data.ChunkX = c.second->ChunkX;
         data.ChunkY = c.second->ChunkY;
@@ -161,7 +163,7 @@ void NetworkManager::SendChunksData(SOCKET s) {
     }
 }
 void NetworkManager::SendAllClientsASingleChunk(Chunk* c) {
-    ChunkPacket data;
+    ChunkPacketPayload data;
     data.LOD = c->LOD;
     data.ChunkX = c->ChunkX;
     data.ChunkY = c->ChunkY;
@@ -171,6 +173,16 @@ void NetworkManager::SendAllClientsASingleChunk(Chunk* c) {
 
     for(auto& client : connectedClients) {
         SendSingleChunk(client.ClientSocket, data);
+    }
+}
+void NetworkManager::SendAllClientsEntityAdd(uint64_t ID) {
+    for(auto& client : connectedClients) {
+        SendEntityAdd(client.ClientSocket, ID);
+    }
+}
+void NetworkManager::SendAllClientsEntityRemove(uint64_t ID) {
+    for(auto& client : connectedClients) {
+        SendEntityRemove(client.ClientSocket, ID);
     }
 }
 
@@ -191,20 +203,23 @@ void NetworkManager::connectsLoop() {
             size_t len = sizeof(addr);
             recvfrom(UDPSocket, handshakeRetBuffer, 20, 0, (sockaddr*)&addr, (int*)&len);
 
-            char MSG[] = "Hello Client";
-            sendto(UDPSocket, MSG, strlen(MSG), 0, (sockaddr*)&addr, len);
-
-            std::cout << "A client connected" << std::endl;
-
             ConnectionData connection;
             connection.ClientSocket = ClientSocket;
             connection.udpAddr = addr;
             connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 20.0f, 10.0f));
 
+            uint64_t NewPlayerID = connection.EntityID;
+            sendto(UDPSocket, reinterpret_cast<char*>(&NewPlayerID), sizeof(uint64_t), 0, (sockaddr*)&addr, len);
+
             SendChunksData(connection.ClientSocket);
 
-            std::lock_guard<std::mutex> lock(clientsMutex);
-            connectedClients.push_back(connection);
+            std::cout << "A client connected" << std::endl;
+
+            {
+                std::lock_guard<std::mutex> lock(clientsMutex);
+                connectedClients.push_back(connection);
+            }
+            //SendAllClientsEntityAdd(connection.EntityID);
         }
     }
 }

@@ -1,10 +1,10 @@
 #include "Utilities.h"
 #include "../core managers/app.h"
 
-#include "../World/Chunk.h"
+#include "Core Stuff/Chunk.h"
 
 bool IsChunkInRenderDistance(Chunk* c) {
-    int ChunkX = GApp->m_Player->ChunkCoordX;
+    /*int ChunkX = GApp->m_Player->ChunkCoordX;
     int ChunkY = GApp->m_Player->ChunkCoordY;
     int ChunkZ = GApp->m_Player->ChunkCoordZ;
 
@@ -16,10 +16,11 @@ bool IsChunkInRenderDistance(Chunk* c) {
     int y = std::abs(c->ChunkY - LOD_Y);
 	int z = std::abs(c->ChunkZ - LOD_Z);
 
-	return x <= GApp->RenderDistance && y <= GApp->RenderDistance && z <= GApp->RenderDistance;
+	return x <= GApp->RenderDistance && y <= GApp->RenderDistance && z <= GApp->RenderDistance;*/
+	return true;
 }
 bool IsChunkInBufferDistance(Chunk* c) {
-	int ChunkX = GApp->m_Player->ChunkCoordX;
+	/*int ChunkX = GApp->m_Player->ChunkCoordX;
     int ChunkY = GApp->m_Player->ChunkCoordY;
     int ChunkZ = GApp->m_Player->ChunkCoordZ;
 
@@ -31,10 +32,11 @@ bool IsChunkInBufferDistance(Chunk* c) {
     int y = std::abs(c->ChunkY - LOD_Y);
 	int z = std::abs(c->ChunkZ - LOD_Z);
 
-	return x <= GApp->RenderDistance + 1 && y <= GApp->RenderDistance + 1 && z <= GApp->RenderDistance + 1;
+	return x <= GApp->RenderDistance + 1 && y <= GApp->RenderDistance + 1 && z <= GApp->RenderDistance + 1;*/
+	return true;
 }
 bool ShouldLODRender(Chunk* c) {
-	int ChunkX = GApp->m_Player->ChunkCoordX;
+	/*int ChunkX = GApp->m_Player->ChunkCoordX;
     int ChunkY = GApp->m_Player->ChunkCoordY;
     int ChunkZ = GApp->m_Player->ChunkCoordZ;
 
@@ -46,8 +48,8 @@ bool ShouldLODRender(Chunk* c) {
     int y = std::abs(c->ChunkY - LOD_Y);
 	int z = std::abs(c->ChunkZ - LOD_Z);
 
-	if (x * 2 > GApp->RenderDistance - 1 || y * 2 > GApp->RenderDistance - 1 || z * 2 > GApp->RenderDistance - 1) return true;
-	return false;
+	if (x * 2 > GApp->RenderDistance - 1 || y * 2 > GApp->RenderDistance - 1 || z * 2 > GApp->RenderDistance - 1) return true;*/
+	return true;
 }
 glm::vec3 SmoothInterp(const glm::vec3& current, const glm::vec3& target, float deltaTime, float speed) {
     float alpha = 1.0f - expf(-speed * deltaTime);

@@ -40,6 +40,8 @@ uint64_t EntityManager::SpawnEntity(std::string EntityID, glm::dvec3 Position, f
 
     idToIdx[currentID] = entities.size() - 1;
     std::cout << "Spawned entity of type " << EntityID << "\n";
+
+    GServer->m_NetworkManager.SendAllClientsEntityAdd(entity.ID);
     return currentID;
 }
 void EntityManager::DeleteEntity(uint64_t id) {
