@@ -115,11 +115,10 @@ void ClientNetworkManager::RecieveLoop() {
                     uint64_t ID;
                     size_t addrLen = sizeof(serverAddr);
                     int n = recvfrom(UDPClientSocket, reinterpret_cast<char*>(&ID), sizeof(uint64_t), 0, (sockaddr*)&serverAddr, (int*)&addrLen);
-                    //if(n > 0) { 
+                    if(n > 0) { 
                         UDPRecieved = true;
-                        GApp->m_MPWorld->m_ClientEntityManager.PlayerEntityID = ID;
-                        std::cout << "sexy here\n";
-                    //}
+                        ClientIDInServer = ID;
+                    }
                 }
 
                 if(TCPRecieved && UDPRecieved) connectState = ConnectionState::Connected;
@@ -148,9 +147,18 @@ void ClientNetworkManager::UDPRecieve() {
         switch (type) {
         case UDPPacketType::EntityTransformPacket:
             EntityPacket* data = reinterpret_cast<EntityPacket*>(UDPReceiveBuffer);
-            if(data->EntityID == GApp->m_MPWorld->m_ClientEntityManager.PlayerEntityID) {
+            if(data->EntityID == GApp->m_ClientNetworkManager.ClientIDInServer) {
                 GApp->m_MPWorld->m_ClientEntityManager.playerPos = data->pos;
                 GApp->m_MPWorld->m_ClientEntityManager.playerRot = data->rot;
+            }
+            else {
+                for(auto& e : GApp->m_MPWorld->m_ClientEntityManager.otherEntities) {
+                    if(e.ID == data->EntityID) {
+                        e.pos = data->pos;
+                        e.rot = data->rot;
+                        break;
+                    }
+                }
             }
             break;
         }
@@ -207,7 +215,8 @@ void ClientNetworkManager::TCPRecieve() {
             case TCPPacketType::EntityAddPacket: {
                 auto* data = reinterpret_cast<EntityAddPacketPayload*>(payloadStart);
                 std::cout << "[Network] Spawning Entity ID: " << data->EntityID << "\n";
-                GApp->m_MPWorld->m_ClientEntityManager.otherEntities.push_back(data->EntityID);
+                GApp->m_MPWorld->m_ClientEntityManager.otherEntities.push_back({ data->EntityID, glm::dvec3(0.0), 0.0f });
+                std::cout << "Added Entity ID: " << data->EntityID <<"\n";
                 break;
             }
                 

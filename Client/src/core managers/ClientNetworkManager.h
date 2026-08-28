@@ -39,6 +39,7 @@ public:
     void SendInputMode(InputSendPacket whichOne);
 
     ConnectionState connectState = ConnectionState::Disconnected;
+    uint64_t ClientIDInServer = 0;
 private:
     bool ThreadsRunning = true;
     

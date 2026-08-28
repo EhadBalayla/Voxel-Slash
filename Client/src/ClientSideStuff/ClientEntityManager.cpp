@@ -47,10 +47,15 @@ void ClientEntityManager::ProcessMouseInput(float xoffset, float yoffset) {
 
 #include "../core managers/app.h"
 #include "Prefab.h"
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 void ClientEntityManager::RenderOtherEntities() {
     if(otherEntities.size() > 0) {
         for(auto entity : otherEntities) {
             glm::mat4 mat = glm::mat4(1.0f);
+            mat = glm::translate(mat, (glm::vec3)entity.pos);
+            mat = glm::rotate(mat, glm::radians(entity.rot), glm::vec3(0.0f, 1.0f, 0.0f));
 
             GApp->m_BoxOutlineShader.Bind();
             GApp->m_ChunkRenderer.SetTrans(mat);

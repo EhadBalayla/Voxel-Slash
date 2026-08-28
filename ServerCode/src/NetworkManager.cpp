@@ -162,6 +162,11 @@ void NetworkManager::SendChunksData(SOCKET s) {
         SendSingleChunk(s, data);
     }
 }
+void NetworkManager::SendAllEntities(SOCKET s, uint64_t IDToIgnore) {
+    for(auto& c : GServer->m_EntityManager.GetAllEntities()) {
+        if(c.ID != IDToIgnore) SendEntityAdd(s, c.ID);
+    }
+}
 void NetworkManager::SendAllClientsASingleChunk(Chunk* c) {
     ChunkPacketPayload data;
     data.LOD = c->LOD;
@@ -212,6 +217,7 @@ void NetworkManager::connectsLoop() {
             sendto(UDPSocket, reinterpret_cast<char*>(&NewPlayerID), sizeof(uint64_t), 0, (sockaddr*)&addr, len);
 
             SendChunksData(connection.ClientSocket);
+            SendAllEntities(connection.ClientSocket, NewPlayerID);
 
             std::cout << "A client connected" << std::endl;
 
@@ -219,7 +225,6 @@ void NetworkManager::connectsLoop() {
                 std::lock_guard<std::mutex> lock(clientsMutex);
                 connectedClients.push_back(connection);
             }
-            //SendAllClientsEntityAdd(connection.EntityID);
         }
     }
 }
@@ -233,7 +238,7 @@ void NetworkManager::RecieveLoop() {
             UDPRecieve();
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(33));
     }
 }
 

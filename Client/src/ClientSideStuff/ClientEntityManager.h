@@ -5,9 +5,14 @@
 constexpr float SCameraHeight = 1.62f;
 constexpr float SCameraDistance = 5.0f;
 
+struct ClientEntityData {
+    uint64_t ID;
+    glm::dvec3 pos;
+    float rot;
+};
+
 class ClientEntityManager {
 public:
-    uint64_t PlayerEntityID = 0;
     glm::dvec3 playerPos = glm::dvec3(0.0);
     float playerRot = 0.0f;
 
@@ -23,6 +28,6 @@ public:
     void ProcessMouseInput(float xoffset, float yoffset);
     float MouseSensitivity = 0.5f;
 
-    std::vector<uint64_t> otherEntities;
+    std::vector<ClientEntityData> otherEntities;
     void RenderOtherEntities();
 };
