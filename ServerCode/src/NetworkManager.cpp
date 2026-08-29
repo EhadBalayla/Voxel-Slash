@@ -128,11 +128,6 @@ void NetworkManager::SendEntitiesData() {
             sendto(UDPSocket, reinterpret_cast<char*>(&data), sizeof(EntityPacket), 0, (sockaddr*)&connection.udpAddr, sizeof(sockaddr_in));
         }
 
-        //Entity playerEntity = GServer->m_EntityManager.GetEntity(connection.EntityID);
-        //PlayerPacket data = {playerEntity.Position, playerEntity.Rotation};
-
-        //sendto(UDPSocket, reinterpret_cast<char*>(&data), sizeof(PlayerPacket), 0, (sockaddr*)&connection.udpAddr, sizeof(sockaddr_in));
-
         it++;
     }
 }
@@ -152,8 +147,8 @@ bool SendEntityAdd(SOCKET clientSocket, uint64_t ID) {
     return true;
 }
 bool SendEntityRemove(SOCKET clientSocket, uint64_t ID) {
+    SendTCPPacket(clientSocket, TCPPacketType::EntityRemovePacket, &ID, sizeof(ID));
     return true;
-
 }
 void NetworkManager::SendChunksData(SOCKET s) {
     for(auto& c : GServer->m_ChunkManager.GetChunkProvider().GetAllChunks(0)) {

@@ -16,6 +16,8 @@ public:
     glm::dvec3 playerPos = glm::dvec3(0.0);
     float playerRot = 0.0f;
 
+    int64_t CurrentChunkX = 0, CurrentChunkY = 0, CurrentChunkZ = 0;
+
     glm::vec3 CameraPivotPosition = glm::vec3(0.0f);
 
     float CamRotationYaw = 0.0f;

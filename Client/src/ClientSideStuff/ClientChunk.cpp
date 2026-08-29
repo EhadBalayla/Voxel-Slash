@@ -33,8 +33,7 @@ void ClientChunk::Render() {
     if(HasOpaque) {
         ChunkRenderer& renderer = GApp->m_ChunkRenderer;
 
-        int LODFactor = 1;//GetLODSize(LOD);
-        //glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(ChunkX * Chunk_Length * LODFactor, ChunkY * Chunk_Length * LODFactor, ChunkZ * Chunk_Length * LODFactor));
+        int LODFactor = GetLODSize(LOD);
         glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(ChunkX * 32 * LODFactor, ChunkY * 32 * LODFactor, ChunkZ * 32 * LODFactor));
         model = glm::scale(model, glm::vec3(static_cast<float>(LODFactor)));
         
@@ -49,8 +48,6 @@ void ClientChunk::Render() {
 
 
 void ClientChunk::GenerateMeshData() {
-    uint32_t indexOffset = 0;
-
     for(int x = 0; x < 32; x++) {
         for(int y = 0; y < 32; y++) {
             for(int z = 0; z < 32; z++) {
@@ -63,28 +60,34 @@ void ClientChunk::GenerateMeshData() {
                     int nx, ny, nz;
                     nx = x + dx, ny = y + dy, nz = z + dz;
                     if (nx < 0) {
-                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX - 1, ChunkY, ChunkZ))->m_Blocks[IndexAt(32 - 1, ny, nz)];
+                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX - 1, ChunkY, ChunkZ), LOD)->m_Blocks[IndexAt(32 - 1, ny, nz)];
                         return b == BlockType::Air;
+                        //return true;
                     }
                     else if (nx >= 32) {
-                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX + 1, ChunkY, ChunkZ))->m_Blocks[IndexAt(0, ny, nz)];
+                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX + 1, ChunkY, ChunkZ), LOD)->m_Blocks[IndexAt(0, ny, nz)];
                         return b == BlockType::Air;
+                        //return true;
                     }
                     else if (ny < 0) {
-                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX, ChunkY - 1, ChunkZ))->m_Blocks[IndexAt(nx, 32 - 1, nz)];
+                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX, ChunkY - 1, ChunkZ), LOD)->m_Blocks[IndexAt(nx, 32 - 1, nz)];
                         return b == BlockType::Air;
+                        //return true;
                     }
                     else if (ny >= 32) {
-                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX, ChunkY + 1, ChunkZ))->m_Blocks[IndexAt(nx, 0, nz)];
+                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX, ChunkY + 1, ChunkZ), LOD)->m_Blocks[IndexAt(nx, 0, nz)];
                         return b == BlockType::Air;
+                        //return true;
                     }
                     else if (nz < 0) {
-                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX, ChunkY, ChunkZ - 1))->m_Blocks[IndexAt(nx, ny, 32 - 1)];
+                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX, ChunkY, ChunkZ - 1), LOD)->m_Blocks[IndexAt(nx, ny, 32 - 1)];
                         return b == BlockType::Air;
+                        //return true;
                     }
                     else if (nz >= 32) {
-                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX, ChunkY, ChunkZ + 1))->m_Blocks[IndexAt(nx, ny, 0)];
+                        BlockType b = GApp->m_MPWorld->m_ClientChunkManager.GetChunk(glm::i64vec3(ChunkX, ChunkY, ChunkZ + 1), LOD)->m_Blocks[IndexAt(nx, ny, 0)];
                         return b == BlockType::Air;
+                        //return true;
                     }
 
                     

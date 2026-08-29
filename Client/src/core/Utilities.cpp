@@ -1,7 +1,7 @@
 #include "Utilities.h"
 #include "../core managers/app.h"
 
-#include "Core Stuff/Chunk.h"
+#include "../ClientSideStuff/ClientChunk.h"
 
 bool IsChunkInRenderDistance(Chunk* c) {
     /*int ChunkX = GApp->m_Player->ChunkCoordX;
@@ -35,10 +35,10 @@ bool IsChunkInBufferDistance(Chunk* c) {
 	return x <= GApp->RenderDistance + 1 && y <= GApp->RenderDistance + 1 && z <= GApp->RenderDistance + 1;*/
 	return true;
 }
-bool ShouldLODRender(Chunk* c) {
-	/*int ChunkX = GApp->m_Player->ChunkCoordX;
-    int ChunkY = GApp->m_Player->ChunkCoordY;
-    int ChunkZ = GApp->m_Player->ChunkCoordZ;
+bool ShouldLODRender(ClientChunk* c) {
+	int ChunkX = GApp->m_MPWorld->m_ClientEntityManager.CurrentChunkX;
+    int ChunkY = GApp->m_MPWorld->m_ClientEntityManager.CurrentChunkY;
+    int ChunkZ = GApp->m_MPWorld->m_ClientEntityManager.CurrentChunkZ;
 
 	int LOD_X = ChunkX / GetLODSize(c->LOD);
     int LOD_Y = ChunkY / GetLODSize(c->LOD);
@@ -48,8 +48,8 @@ bool ShouldLODRender(Chunk* c) {
     int y = std::abs(c->ChunkY - LOD_Y);
 	int z = std::abs(c->ChunkZ - LOD_Z);
 
-	if (x * 2 > GApp->RenderDistance - 1 || y * 2 > GApp->RenderDistance - 1 || z * 2 > GApp->RenderDistance - 1) return true;*/
-	return true;
+	if (x * 2 > 8 - 1 || y * 2 > 8 - 1 || z * 2 > 8 - 1) return true;
+	return false;
 }
 glm::vec3 SmoothInterp(const glm::vec3& current, const glm::vec3& target, float deltaTime, float speed) {
     float alpha = 1.0f - expf(-speed * deltaTime);

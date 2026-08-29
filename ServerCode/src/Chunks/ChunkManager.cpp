@@ -80,13 +80,13 @@ void ChunkManager::chunksUpdaterLoop() {
             LocalCenterY = CurrentChunkY;
             LocalCenterZ = CurrentChunkZ;
         }
-        for(int i = 0; i < SERVER_TEMP_LOD_COUNT; i++) {
+        for(int i = 0; i < SERVER_TEMP_LOD_COUNT; ++i) {
 
             int CenterX = LocalCenterX / GetLODSize(i);
             int CenterY = LocalCenterY / GetLODSize(i);
             int CenterZ = LocalCenterZ / GetLODSize(i);
 
-            for (int r = 0; r <= SERVER_TEMP_RENDER_DISTANCE; r++) {
+            for (int r = 0; r <= SERVER_TEMP_RENDER_DISTANCE; ++r) {
 
 	    	    for (int dx = -r; dx <= r; dx++) {
 	    	        for (int dy = -r; dy <= r; dy++) {

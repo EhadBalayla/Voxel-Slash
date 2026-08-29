@@ -37,6 +37,6 @@ struct EntityAddPacketPayload {
     uint64_t EntityID;
 };
 struct EntityRemovePacketPayload {
-
+    uint64_t EntityID;
 };
 #pragma pack(pop)

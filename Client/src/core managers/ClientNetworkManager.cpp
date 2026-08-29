@@ -150,6 +150,18 @@ void ClientNetworkManager::UDPRecieve() {
             if(data->EntityID == GApp->m_ClientNetworkManager.ClientIDInServer) {
                 GApp->m_MPWorld->m_ClientEntityManager.playerPos = data->pos;
                 GApp->m_MPWorld->m_ClientEntityManager.playerRot = data->rot;
+
+                int64_t ChunkX = std::floor(data->pos.x / 32.0);
+                int64_t ChunkY = std::floor(data->pos.y / 32.0);
+                int64_t ChunkZ = std::floor(data->pos.z / 32.0);
+
+                if(ChunkX != GApp->m_MPWorld->m_ClientEntityManager.CurrentChunkX ||
+                ChunkY != GApp->m_MPWorld->m_ClientEntityManager.CurrentChunkY ||
+                ChunkZ != GApp->m_MPWorld->m_ClientEntityManager.CurrentChunkZ) {
+                    GApp->m_MPWorld->m_ClientEntityManager.CurrentChunkX = ChunkX;
+                    GApp->m_MPWorld->m_ClientEntityManager.CurrentChunkY = ChunkY;
+                    GApp->m_MPWorld->m_ClientEntityManager.CurrentChunkZ = ChunkZ;
+                }
             }
             else {
                 for(auto& e : GApp->m_MPWorld->m_ClientEntityManager.otherEntities) {
@@ -199,7 +211,6 @@ void ClientNetworkManager::TCPRecieve() {
         uint32_t payloadSize = header->packetSize - sizeof(TCPPacketHeader);
 
         switch (header->packetType) {
-                
             case TCPPacketType::ChunkPacket: {
                 ChunkPacketPayload decompressedChunk;
                 uLong decompressedSize = sizeof(ChunkPacketPayload);
@@ -208,22 +219,28 @@ void ClientNetworkManager::TCPRecieve() {
                 GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(
                     glm::i64vec3(decompressedChunk.ChunkX, decompressedChunk.ChunkY, decompressedChunk.ChunkZ), 
                     decompressedChunk.m_Blocks, 
-                    decompressedChunk.HasAnything
+                    decompressedChunk.HasAnything,
+                    decompressedChunk.LOD
                 );
                 break;
             }
                 
             case TCPPacketType::EntityAddPacket: {
                 auto* data = reinterpret_cast<EntityAddPacketPayload*>(payloadStart);
-                std::cout << "[Network] Spawning Entity ID: " << data->EntityID << "\n";
                 GApp->m_MPWorld->m_ClientEntityManager.otherEntities.push_back({ data->EntityID, glm::dvec3(0.0), 0.0f });
-                std::cout << "Added Entity ID: " << data->EntityID <<"\n";
                 break;
             }
                 
             case TCPPacketType::EntityRemovePacket: {
-                //auto* data = reinterpret_cast<EntityRemovePacketPayload*>(payloadStart);
-                //std::cout << "[Network] Removing Entity ID: " << data->EntityID << "\n";
+                auto* data = reinterpret_cast<EntityRemovePacketPayload*>(payloadStart);
+                auto& entities = GApp->m_MPWorld->m_ClientEntityManager.otherEntities;
+                for(auto it = entities.begin(); it != entities.end(); ) {
+                    if(it->ID == data->EntityID) { 
+                        entities.erase(it);
+                        break;
+                    }
+                    ++it;
+                }
                 break;
             }
                 

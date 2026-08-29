@@ -16,15 +16,16 @@ public:
     ClientChunkManager();
     ~ClientChunkManager();
 
-    void AddNewChunk(glm::i64vec3 coords, void* data, bool HasAnything);
-    std::unordered_map<glm::i64vec3, ClientChunk*>& GetLoadedChunks();
-    ClientChunk* GetChunk(glm::i64vec3 coords);
+    void AddNewChunk(glm::i64vec3 coords, void* data, bool HasAnything, int LOD);
+    std::unordered_map<glm::i64vec3, ClientChunk*>& GetLoadedChunks(int LOD);
+    ClientChunk* GetChunk(glm::i64vec3 coords, int LOD);
 
     void RenderChunks(); //simply put... renders all chunks that are render ready
 
 private:
-    std::unordered_map<glm::i64vec3, ClientChunk*> LoadedChunks;
-    bool HasAllNeighbors(glm::i64vec3 coords);
+    std::unordered_map<glm::i64vec3, ClientChunk*> LoadedChunks[6];
+    std::mutex LoadedChunksMTX[6];
+    bool HasAllNeighbors(glm::i64vec3 coords, int LOD);
 
     void PushMesh(ClientChunk* c);
     void PushRenderReady(ClientChunk* c);

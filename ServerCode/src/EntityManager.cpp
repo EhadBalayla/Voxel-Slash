@@ -39,7 +39,7 @@ uint64_t EntityManager::SpawnEntity(std::string EntityID, glm::dvec3 Position, f
     NextEntityID++;
 
     idToIdx[currentID] = entities.size() - 1;
-    std::cout << "Spawned entity of type " << EntityID << "\n";
+
     GServer->m_NetworkManager.SendAllClientsEntityAdd(currentID);
     return currentID;
 }
@@ -60,6 +60,8 @@ void EntityManager::DeleteEntity(uint64_t id) {
 
     entities.pop_back();
     idToIdx.erase(it);
+
+    GServer->m_NetworkManager.SendAllClientsEntityRemove(id);
 }
 Entity EntityManager::GetEntity(uint64_t id) {
     std::lock_guard<std::mutex> lock(enttArrMTX);

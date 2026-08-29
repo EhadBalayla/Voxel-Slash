@@ -3,6 +3,8 @@
 
 #include "../core managers/app.h"
 
+#include "../core/Utilities.h"
+
 ClientChunkManager::ClientChunkManager() {
     MeshWorkerThread = std::thread(&ClientChunkManager::MeshWorkerLoop, this);
 }
@@ -12,20 +14,27 @@ ClientChunkManager::~ClientChunkManager() {
     MeshWorkerThread.join();
 }
 
-void ClientChunkManager::AddNewChunk(glm::i64vec3 coords, void* data, bool HasAnything) {
-    if(LoadedChunks.find(coords) != LoadedChunks.end()) return;
+void ClientChunkManager::AddNewChunk(glm::i64vec3 coords, void* data, bool HasAnything, int LOD) {
+    auto& MAP = GetLoadedChunks(LOD);
+    {
+        std::lock_guard<std::mutex> lock(LoadedChunksMTX[LOD]);
+        if(MAP.find(coords) != MAP.end()) return;
+    }
 
     ClientChunk* c = new ClientChunk;
     c->ChunkX = coords.x;
     c->ChunkY = coords.y;
     c->ChunkZ = coords.z;
-    c->LOD = 0;
+    c->LOD = LOD;
     c->HasAnything = HasAnything;
     memcpy((void*)c->m_Blocks, data, 32*32*32);
 
-    LoadedChunks[coords] = c;
+    {
+        std::lock_guard<std::mutex> lock(LoadedChunksMTX[LOD]);
+        MAP[coords] = c;
+    }
 
-    if(HasAllNeighbors(coords)) {
+    if(HasAllNeighbors(coords, LOD)) {
         PushMesh(c);
     }
 
@@ -35,22 +44,24 @@ void ClientChunkManager::AddNewChunk(glm::i64vec3 coords, void* data, bool HasAn
         {0,0,1}, {0,0,-1}
     };
 
-    for (auto d : dirs)
+    for (auto& d : dirs)
     {
         glm::i64vec3 n = coords + d;
 
-        ClientChunk* ch = GetChunk(n);
+        ClientChunk* ch = GetChunk(n, LOD);
         if (!ch) continue;
 
-        if (!ch->IsMeshed && HasAllNeighbors(n))
+        if (!ch->IsMeshed && HasAllNeighbors(n, LOD))
             PushMesh(ch);
     }
 }
-std::unordered_map<glm::i64vec3, ClientChunk*>& ClientChunkManager::GetLoadedChunks() {
-    return LoadedChunks;
+std::unordered_map<glm::i64vec3, ClientChunk*>& ClientChunkManager::GetLoadedChunks(int LOD) {
+    return LoadedChunks[LOD];
 }
-ClientChunk* ClientChunkManager::GetChunk(glm::i64vec3 coords) {
-    if(LoadedChunks.find(coords) != LoadedChunks.end()) return LoadedChunks[coords];
+ClientChunk* ClientChunkManager::GetChunk(glm::i64vec3 coords, int LOD) {
+    auto& MAP = GetLoadedChunks(LOD);
+    std::lock_guard<std::mutex> lock(LoadedChunksMTX[LOD]);
+    if(MAP.find(coords) != MAP.end()) return MAP[coords];
     return nullptr;
 }
 
@@ -68,27 +79,31 @@ void ClientChunkManager::RenderChunks() {
     GApp->m_OpaqueShader.Bind();
     for(auto it = RenderReadyChunks.begin(); it != RenderReadyChunks.end();) {
         ClientChunk* c = *it;
+        it++;
 
         if(!c->IsRenderReady) {
             c->IsRenderReady = true;
             c->UploadMeshData();
         }
-        else {
+        else {  
+            if(c->LOD > 0 && !ShouldLODRender(c)) continue;
+
             c->Render();
         }
-        it++;
     }
 }
 
-bool ClientChunkManager::HasAllNeighbors(glm::i64vec3 coords) {
+bool ClientChunkManager::HasAllNeighbors(glm::i64vec3 coords, int LOD) {
     static glm::i64vec3 offsets[6] = {
         {1, 0, 0}, {-1, 0, 0},
         {0, 1, 0}, {0, -1, 0},
         {0, 0, 1}, {0, 0, -1}
     };
 
-    for (auto of : offsets) {
-        if (LoadedChunks.find(coords + of) == LoadedChunks.end()) return false;
+    auto& MAP = GetLoadedChunks(LOD);
+    std::lock_guard<std::mutex> lock(LoadedChunksMTX[LOD]);
+    for (auto& of : offsets) {
+        if (MAP.find(coords + of) == MAP.end()) return false;
     }
     return true;
 }
