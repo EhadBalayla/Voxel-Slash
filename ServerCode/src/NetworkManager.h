@@ -38,6 +38,7 @@ public:
     void SendChunksData(SOCKET s); //temporary, simply sends all chunks to a client
     void SendAllEntities(SOCKET s, uint64_t IDToIgnore); //temporary, simply to give an entity adding all the other entities
     void SendAllClientsASingleChunk(Chunk* c); //temporary
+    void SendAllClientsRemovingAChunk(Chunk* c);
     void SendAllClientsEntityAdd(uint64_t ID);
     void SendAllClientsEntityRemove(uint64_t ID);
 private:

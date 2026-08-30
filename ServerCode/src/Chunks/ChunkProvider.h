@@ -33,7 +33,7 @@ public:
     ChunkManager* owningManager;
 
     Chunk* ProvideChunk(int64_t ChunkX, int64_t ChunkY, int64_t ChunkZ, int LOD);
-    void RemoveChunk(Chunk* c);
+    void UnprovideChunk(int64_t ChunkX, int64_t ChunkY, int64_t ChunkZ, int LOD);
     std::unordered_map<glm::i64vec3, Chunk*>& GetAllChunks(int LOD);
 private:
     std::unordered_map<glm::i64vec3, Chunk*> chunks[6];

@@ -142,6 +142,10 @@ bool SendSingleChunk(SOCKET clientSocket, ChunkPacketPayload& packet) {
     free(compressedChunk);
     return true;
 }
+bool SendChunkToRemove(SOCKET clientSocket, ChunkRemovePacketPayload& packet) {
+    SendTCPPacket(clientSocket, TCPPacketType::ChunkRemovePacket, &packet, sizeof(packet));
+    return true;
+}
 bool SendEntityAdd(SOCKET clientSocket, uint64_t ID) {
     SendTCPPacket(clientSocket, TCPPacketType::EntityAddPacket, &ID, sizeof(ID));
     return true;
@@ -182,6 +186,16 @@ void NetworkManager::SendAllClientsASingleChunk(Chunk* c) {
         SendSingleChunk(client.ClientSocket, data);
     }
 }
+void NetworkManager::SendAllClientsRemovingAChunk(Chunk* c) {
+    ChunkRemovePacketPayload data;
+    data.ChunkX = c->ChunkX;
+    data.ChunkY = c->ChunkY;
+    data.ChunkZ = c->ChunkZ;
+    data.LOD = c->LOD;
+    for(auto& client : connectedClients) {
+        SendChunkToRemove(client.ClientSocket, data);
+    }
+}
 void NetworkManager::SendAllClientsEntityAdd(uint64_t ID) {
     for(auto& client : connectedClients) {
         SendEntityAdd(client.ClientSocket, ID);
@@ -214,6 +228,7 @@ void NetworkManager::connectsLoop() {
             connection.ClientSocket = ClientSocket;
             connection.udpAddr = addr;
             connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 20.0f, 10.0f));
+            GServer->m_ChunkManager.UpdateChunks(0, 0, 0, 0, 0, 0);
 
             uint64_t NewPlayerID = connection.EntityID;
             sendto(UDPSocket, reinterpret_cast<char*>(&NewPlayerID), sizeof(uint64_t), 0, (sockaddr*)&addr, len);

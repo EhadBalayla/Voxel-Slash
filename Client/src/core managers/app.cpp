@@ -87,7 +87,6 @@ void App::Init() {
             UIButton* btn = static_cast<UIButton*>(N->m_Element);
             btn->OnPress = []() {
                 GApp->m_LocalServer = new Server;
-                GApp->m_LocalServer->m_ChunkManager.UpdateChunks(0, 0, 0);
                 GApp->state = GameState::Multiplayer;
             };
         }

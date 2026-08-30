@@ -243,6 +243,11 @@ void ClientNetworkManager::TCPRecieve() {
                 }
                 break;
             }
+            case TCPPacketType::ChunkRemovePacket: {
+                auto* data = reinterpret_cast<ChunkRemovePacketPayload*>(payloadStart);
+                GApp->m_MPWorld->m_ClientChunkManager.RemoveChunk({data->ChunkX, data->ChunkY, data->ChunkZ}, data->LOD);
+                break;
+            }
                 
             default: {
                 std::cout << "[Network Warning] Unknown packet type received: " << (int)header->packetType << "\n";

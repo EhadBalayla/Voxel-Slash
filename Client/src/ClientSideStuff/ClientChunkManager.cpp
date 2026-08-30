@@ -55,6 +55,24 @@ void ClientChunkManager::AddNewChunk(glm::i64vec3 coords, void* data, bool HasAn
             PushMesh(ch);
     }
 }
+void ClientChunkManager::RemoveChunk(glm::i64vec3 coords, int LOD) {
+    auto& MAP = GetLoadedChunks(LOD);
+
+    ClientChunk* c;
+    {
+        std::lock_guard<std::mutex> lock(LoadedChunksMTX[LOD]);
+        c = MAP[coords];
+    }
+
+    if(!c->IsMeshed) {
+        MAP.erase(coords);
+        return;
+    }
+    c->IsMarkedForDeletion = true;
+    {
+        MAP.erase(coords);
+    }
+}
 std::unordered_map<glm::i64vec3, ClientChunk*>& ClientChunkManager::GetLoadedChunks(int LOD) {
     return LoadedChunks[LOD];
 }
@@ -79,13 +97,19 @@ void ClientChunkManager::RenderChunks() {
     GApp->m_OpaqueShader.Bind();
     for(auto it = RenderReadyChunks.begin(); it != RenderReadyChunks.end();) {
         ClientChunk* c = *it;
-        it++;
 
         if(!c->IsRenderReady) {
             c->IsRenderReady = true;
             c->UploadMeshData();
+            ++it;
         }
         else {  
+            if(c->IsMarkedForDeletion) {
+                it = RenderReadyChunks.erase(it);
+                continue;
+                //temporarily erase chunk without erasing RAM or freeing VRAM cause i am NOT dealing with Vulkan syncronization issues at THIS moment in time okay no fucking way.
+            }
+            ++it;
             if(c->LOD > 0 && !ShouldLODRender(c)) continue;
 
             c->Render();

@@ -12,7 +12,7 @@ public:
     ChunkManager();
     ~ChunkManager();
 
-    void UpdateChunks(int64_t ChunkX, int64_t ChunkY, int64_t ChunkZ);
+    void UpdateChunks(int64_t ChunkX, int64_t ChunkY, int64_t ChunkZ, int64_t PrevChunkX, int64_t PrevChunkY, int64_t PrevChunkZ);
 
     ChunkProvider& GetChunkProvider();
     ChunkGenerator& GetChunkGenerator();
@@ -29,7 +29,7 @@ private:
     //extra threads for iterating over chunks at different stages
     bool ThreadRunning = true;
     void chunksUpdaterLoop();
-    int64_t CurrentChunkX, CurrentChunkY, CurrentChunkZ;
+    int64_t CurrentChunkX, CurrentChunkY, CurrentChunkZ, LastChunkX, LastChunkY, LastChunkZ;
     std::mutex tempMTX;
     std::thread chunksUpdater;
     std::condition_variable updaterCV;

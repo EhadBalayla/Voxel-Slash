@@ -21,4 +21,9 @@ public:
     bool IsGenerated = false;
     
     bool HasAnything = false;
+
+    uint32_t RefCount = 1;
+
+    void IncrementRefCount() {++RefCount;}
+    void DecrementRefCount() {--RefCount;}
 };

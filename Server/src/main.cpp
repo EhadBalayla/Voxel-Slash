@@ -3,7 +3,6 @@
 
 int main() {
     Server server; //literally starts the entire actual server LMAOOOO
-    server.m_ChunkManager.UpdateChunks(0, 0, 0);
     std::cout << "Hello server" << std::endl;
     while(true) {
         std::string cmd;

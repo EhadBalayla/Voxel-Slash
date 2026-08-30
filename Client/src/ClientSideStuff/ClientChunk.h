@@ -30,6 +30,8 @@ public:
     bool HasAnything = false;
     bool HasOpaque = false;
 
+    bool IsMarkedForDeletion = false;
+
     //functions
     void Render();
 

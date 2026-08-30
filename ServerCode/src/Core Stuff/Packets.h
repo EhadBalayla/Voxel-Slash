@@ -10,7 +10,8 @@ enum class UDPPacketType : uint8_t {
 enum class TCPPacketType : uint8_t {
     ChunkPacket,
     EntityAddPacket,
-    EntityRemovePacket
+    EntityRemovePacket,
+    ChunkRemovePacket
 };
 
 #pragma pack(push, 1)
@@ -32,6 +33,10 @@ struct ChunkPacketPayload {
     int64_t ChunkX, ChunkY, ChunkZ;
     BlockType m_Blocks[VOXEL_ARRAY_SIZE];
     bool HasAnything;
+};
+struct ChunkRemovePacketPayload {
+    int64_t ChunkX, ChunkY, ChunkZ;
+    int LOD;
 };
 struct EntityAddPacketPayload {
     uint64_t EntityID;

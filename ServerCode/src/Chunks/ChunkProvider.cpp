@@ -11,7 +11,8 @@ Chunk* ChunkProvider::ProvideChunk(int64_t ChunkX, int64_t ChunkY, int64_t Chunk
     {
         std::lock_guard<std::mutex> lock(MTX[LOD]);
         if(IsValidChunk(ChunkX, ChunkY, ChunkZ, LOD)) {
-            return chunks[LOD][glm::i64vec3(ChunkX, ChunkY, ChunkZ)];
+            Chunk* c = chunks[LOD][glm::i64vec3(ChunkX, ChunkY, ChunkZ)];
+            return c;
         }
     }
 
@@ -22,13 +23,19 @@ Chunk* ChunkProvider::ProvideChunk(int64_t ChunkX, int64_t ChunkY, int64_t Chunk
     }
     return c;
 }
-void ChunkProvider::RemoveChunk(Chunk* c) {
-    auto& map = GetAllChunks(c->LOD);
+#include <iostream>
+#include "../Server.h"
+void ChunkProvider::UnprovideChunk(int64_t ChunkX, int64_t ChunkY, int64_t ChunkZ, int LOD) {
+    auto& map = GetAllChunks(LOD);
+    Chunk* c;
     {
-        std::lock_guard<std::mutex> lock(MTX[c->LOD]);
-        map.erase(glm::i64vec3(c->ChunkX, c->ChunkY, c->ChunkZ));
+        std::lock_guard<std::mutex> lock(MTX[LOD]);
+        c = map[glm::i64vec3(ChunkX, ChunkY, ChunkZ)];
+        map.erase(glm::i64vec3(ChunkX, ChunkY, ChunkZ));
     }
+    GServer->m_NetworkManager.SendAllClientsRemovingAChunk(c);
     delete c;
+    std::cout << "[SERVER]: Deleted chunk at: " << ChunkX << ", " << ChunkY << ", " << ChunkZ << "... at LOD level: " << LOD <<"\n";
 }
 std::unordered_map<glm::i64vec3, Chunk*>& ChunkProvider::GetAllChunks(int LOD) {
     return chunks[LOD];

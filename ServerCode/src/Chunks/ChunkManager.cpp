@@ -9,7 +9,7 @@
 #include "../Server.h"
 
 #define SERVER_TEMP_LOD_COUNT 1 //defining a temporary LOD count for the server, until i'll add a setting for otherwise
-#define SERVER_TEMP_RENDER_DISTANCE 8 //defining a temporary render distance for the server, until i'll add a setting for otherwise
+#define SERVER_TEMP_RENDER_DISTANCE 2 //defining a temporary render distance for the server, until i'll add a setting for otherwise
 
 ChunkManager::ChunkManager() : m_ChunkProvider(this) {
     chunksUpdater = std::thread(&ChunkManager::chunksUpdaterLoop, this);
@@ -34,11 +34,14 @@ ChunkManager::~ChunkManager() {
 
 
 
-void ChunkManager::UpdateChunks(int64_t ChunkX, int64_t ChunkY, int64_t ChunkZ) {
+void ChunkManager::UpdateChunks(int64_t ChunkX, int64_t ChunkY, int64_t ChunkZ, int64_t PrevChunkX, int64_t PrevChunkY, int64_t PrevChunkZ) {
     IsUpdatingChunks = true;
     CurrentChunkX = ChunkX;
     CurrentChunkY = ChunkY;
     CurrentChunkZ = ChunkZ;
+    LastChunkX = PrevChunkX;
+    LastChunkY = PrevChunkY;
+    LastChunkZ = PrevChunkZ;
     updaterCV.notify_one();
 }
 
@@ -63,12 +66,23 @@ void ChunkManager::PushGen(Chunk* c) {
 }
 
 
+bool IsInRenderDistance(int64_t CenterX, int64_t CenterY, int64_t CenterZ, int64_t ChunkX, int64_t ChunkY, int64_t ChunkZ) {
+    int64_t DifferenceX = std::abs(CenterX - ChunkX);
+    int64_t DifferenceY = std::abs(CenterY - ChunkY);
+    int64_t DifferenceZ = std::abs(CenterZ - ChunkZ);
 
+    if(DifferenceX > SERVER_TEMP_RENDER_DISTANCE || DifferenceY > SERVER_TEMP_RENDER_DISTANCE || DifferenceZ > SERVER_TEMP_RENDER_DISTANCE) return false;
+    return true;
+}
 void ChunkManager::chunksUpdaterLoop() {
     while(ThreadRunning) {
         int64_t LocalCenterX = 0;
         int64_t LocalCenterY = 0;
         int64_t LocalCenterZ = 0;
+
+        int64_t LastCenterX = 0;
+        int64_t LastCenterY = 0;
+        int64_t LastCenterZ = 0;
 
         {
             std::unique_lock<std::mutex> lock(tempMTX);
@@ -79,6 +93,10 @@ void ChunkManager::chunksUpdaterLoop() {
             LocalCenterX = CurrentChunkX;
             LocalCenterY = CurrentChunkY;
             LocalCenterZ = CurrentChunkZ;
+
+            LastCenterX = LastChunkX;
+            LastCenterY = LastChunkY;
+            LastCenterZ = LastChunkZ;
         }
         for(int i = 0; i < SERVER_TEMP_LOD_COUNT; ++i) {
 
@@ -86,15 +104,29 @@ void ChunkManager::chunksUpdaterLoop() {
             int CenterY = LocalCenterY / GetLODSize(i);
             int CenterZ = LocalCenterZ / GetLODSize(i);
 
+            int PrevCenterX = LastCenterX / GetLODSize(i);
+            int PrevCenterY = LastCenterY / GetLODSize(i);
+            int PrevCenterZ = LastCenterZ / GetLODSize(i);
+
             for (int r = 0; r <= SERVER_TEMP_RENDER_DISTANCE; ++r) {
 
-	    	    for (int dx = -r; dx <= r; dx++) {
-	    	        for (int dy = -r; dy <= r; dy++) {
-                        for(int dz = -r; dz <= r; dz++) {
-
+	    	    for (int dx = -r; dx <= r; ++dx) {
+	    	        for (int dy = -r; dy <= r; ++dy) {
+                        for(int dz = -r; dz <= r; ++dz) {
 	    		            if (dx != r && dy != r && dz != r && dx != -r && dy != -r && dz != -r) continue;
+                            //spawn new chunks or increment ref count of older chunks
 	    		            Chunk* c = m_ChunkProvider.ProvideChunk(CenterX + dx, CenterY + dy, CenterZ + dz, i);
                             if(!c->IsGenerating && !c->IsGenerated) PushGen(c);
+                            if(!IsInRenderDistance(PrevCenterX, PrevCenterY, PrevCenterZ, CenterX + dx, CenterY + dy, CenterZ + dz)) c->IncrementRefCount();
+
+                            //gather old chunks to decrement ref count
+                            c = m_ChunkProvider.ProvideChunk(PrevCenterX + dx, PrevCenterY + dy, PrevCenterZ + dz, i);
+                            if(!IsInRenderDistance(CenterX, CenterY, CenterZ, PrevCenterX + dx, PrevCenterY + dy, PrevCenterZ + dz)) c->DecrementRefCount();
+
+
+                            if(c->RefCount == 0) {
+                                m_ChunkProvider.UnprovideChunk(PrevCenterX + dx, PrevCenterY + dy, PrevCenterZ + dz, i);
+                            }
                         }
 	    	        }
 	    	    }

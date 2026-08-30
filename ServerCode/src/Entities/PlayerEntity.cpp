@@ -118,11 +118,15 @@ void UpdateChunksAroundPlayer(Entity* player) {
         PlayerData* Data = reinterpret_cast<PlayerData*>(player->ExtraData);
 
         if(CurrentCoordX != Data->ChunkCoordX || CurrentCoordY != Data->ChunkCoordY || CurrentCoordZ != Data->ChunkCoordZ) {
+			int64_t PrevCoordX = Data->ChunkCoordX;
+			int64_t PrevCoordY = Data->ChunkCoordY;
+			int64_t PrevCoordZ = Data->ChunkCoordZ;
+
             Data->ChunkCoordX = CurrentCoordX;
             Data->ChunkCoordY = CurrentCoordY;
             Data->ChunkCoordZ = CurrentCoordZ;
 
-            GServer->m_ChunkManager.UpdateChunks(CurrentCoordX, CurrentCoordY, CurrentCoordZ);
+            GServer->m_ChunkManager.UpdateChunks(CurrentCoordX, CurrentCoordY, CurrentCoordZ, PrevCoordX, PrevCoordY, PrevCoordZ);
         }
     }
 }

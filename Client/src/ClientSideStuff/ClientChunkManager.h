@@ -17,6 +17,7 @@ public:
     ~ClientChunkManager();
 
     void AddNewChunk(glm::i64vec3 coords, void* data, bool HasAnything, int LOD);
+    void RemoveChunk(glm::i64vec3 coords, int LOD);
     std::unordered_map<glm::i64vec3, ClientChunk*>& GetLoadedChunks(int LOD);
     ClientChunk* GetChunk(glm::i64vec3 coords, int LOD);
 
