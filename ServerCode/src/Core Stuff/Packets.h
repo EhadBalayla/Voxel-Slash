@@ -6,6 +6,8 @@
 
 enum class UDPPacketType : uint8_t {
     EntityTransformPacket,
+    InputState,
+    HandshakePacket
 };
 enum class TCPPacketType : uint8_t {
     ChunkPacket,
@@ -21,6 +23,14 @@ struct EntityPacket {
     uint64_t EntityID;
     glm::dvec3 pos;
     float rot;
+};
+struct InputStatePacket {
+    UDPPacketType type = UDPPacketType::InputState;
+    uint64_t ConnectionID;
+    bool ForwardInput;
+    bool BackwardInput;
+    bool LeftInput;
+    bool RightInput;
 };
 
 //TCP packets

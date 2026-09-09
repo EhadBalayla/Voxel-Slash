@@ -178,7 +178,7 @@ void App::Loop() {
                 break;
             }
             case GameState::Multiplayer: {
-                if(GApp->m_ClientNetworkManager.connectState != ConnectionState::Connected) GApp->m_ClientNetworkManager.Connect();
+                if(GApp->m_ClientNetworkManager.connectState != ClientConnectionState::Connected) GApp->m_ClientNetworkManager.Connect();
                 else if (!m_MPWorld) m_MPWorld = new MPWorld;
                 else {
                     m_MPWorld->m_ClientEntityManager.InterpolateCamera(deltaTime);
@@ -292,45 +292,45 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }
 }
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if(GApp->state == GameState::Multiplayer && GApp->m_ClientNetworkManager.connectState == ConnectionState::Connected) {
+    if(GApp->state == GameState::Multiplayer && GApp->m_ClientNetworkManager.connectState == ClientConnectionState::Connected) {
         if(key == GLFW_KEY_SPACE) {
             if(action == GLFW_PRESS) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::JumpPress);
+                //GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::JumpPress);
             }
             else if(action == GLFW_RELEASE) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::JumpRelease);
+                //GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::JumpRelease);
             }
         }
         if(key == GLFW_KEY_W) {
             if(action == GLFW_PRESS) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::ForwardPress);
+                GApp->m_ClientNetworkManager.IsWalkForward = true;
             }
             else if(action == GLFW_RELEASE) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::ForwardRelease);
+                GApp->m_ClientNetworkManager.IsWalkForward = false;
             }
         }
         if(key == GLFW_KEY_S) {
             if(action == GLFW_PRESS) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::BackwardPress);
+                GApp->m_ClientNetworkManager.IsWalkBackwards = true;
             }
             else if(action == GLFW_RELEASE) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::BackwardRelease);
+                GApp->m_ClientNetworkManager.IsWalkBackwards = false;
             }
         }
         if(key == GLFW_KEY_A) {
             if(action == GLFW_PRESS) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::LeftPress);
+                GApp->m_ClientNetworkManager.IsWalkLeft = true;
             }
             else if(action == GLFW_RELEASE) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::LeftRelease);
+                GApp->m_ClientNetworkManager.IsWalkLeft = false;
             }
         }
         if(key == GLFW_KEY_D) {
             if(action == GLFW_PRESS) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::RightPress);
+                GApp->m_ClientNetworkManager.IsWalkRight = true;
             }
             else if(action == GLFW_RELEASE) {
-                GApp->m_ClientNetworkManager.SendInputMode(InputSendPacket::RightRelease);
+                GApp->m_ClientNetworkManager.IsWalkRight = false;
             }
         }
     }

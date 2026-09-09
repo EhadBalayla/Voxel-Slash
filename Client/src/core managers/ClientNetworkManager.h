@@ -4,26 +4,7 @@
 #include <WinSock2.h>
 #include <vector>
 
-/*enum InputSendPacket : uint8_t {
-    ForwardPress,
-    ForwardRelease,
-
-    BackwardPress,
-    BackwardRelease,
-
-    LeftPress,
-    LeftRelease,
-
-    RightPress,
-    RightRelease,
-
-    JumpPress,
-    JumpRelease,
-};*/
-
-enum InputSendPacket : uint8_t;
-
-enum class ConnectionState {
+enum class ClientConnectionState {
     Disconnected,
     Connecting,
     Connected,
@@ -38,10 +19,14 @@ public:
     void Connect();
     void Disconnect();
 
-    void SendInputMode(InputSendPacket whichOne);
-
-    ConnectionState connectState = ConnectionState::Disconnected;
+    ClientConnectionState connectState = ClientConnectionState::Disconnected;
     uint64_t ClientIDInServer = 0;
+    uint64_t ConnectionID = 0;
+
+    bool IsWalkForward = false;
+    bool IsWalkBackwards = false;
+    bool IsWalkLeft = false;
+    bool IsWalkRight = false;
 private:
     bool ThreadsRunning = true;
     
@@ -53,6 +38,7 @@ private:
     void UDPRecieve();
     void TCPRecieve();
     std::vector<char> streamBuffer;
+    void SendInputSnapshot();
 
     SOCKET TCPClientSocket = INVALID_SOCKET;
     SOCKET UDPClientSocket = INVALID_SOCKET;

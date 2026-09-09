@@ -64,15 +64,22 @@ void ClientNetworkManager::Connect() {
     serverAddr.sin_port = htons(27015);
     inet_pton(AF_INET, IP, &serverAddr.sin_addr); // Destination IP
 
-    connectState = ConnectionState::Connecting;
+    connectState = ClientConnectionState::Connecting;
     disconnectSleepCV.notify_one();
 }
 void ClientNetworkManager::Disconnect() {
     
 }
 
-void ClientNetworkManager::SendInputMode(InputSendPacket whichOne) {
-    send(TCPClientSocket, reinterpret_cast<char*>(&whichOne), sizeof(InputSendPacket), 0);
+void ClientNetworkManager::SendInputSnapshot() {
+    InputStatePacket inputState;
+    inputState.ConnectionID = ConnectionID;
+    inputState.ForwardInput = IsWalkForward;
+    inputState.BackwardInput = IsWalkBackwards;
+    inputState.LeftInput = IsWalkLeft;
+    inputState.RightInput = IsWalkRight;
+
+    sendto(UDPClientSocket, (char*)(&inputState), sizeof(inputState), 0, (sockaddr*)&serverAddr, sizeof(sockaddr_in));
 }
 
 
@@ -87,11 +94,11 @@ void ClientNetworkManager::RecieveLoop() {
 
     while(ThreadsRunning) {
         std::unique_lock<std::mutex> lock(disconnectSleepMTX);
-        disconnectSleepCV.wait(lock, [&]{return connectState != ConnectionState::Disconnected || !ThreadsRunning; });
+        disconnectSleepCV.wait(lock, [&]{return connectState != ClientConnectionState::Disconnected || !ThreadsRunning; });
         if (!ThreadsRunning) break;
 
         switch(connectState) {
-            case ConnectionState::Connecting: {
+            case ClientConnectionState::Connecting: {
                 if(!TCPSent) {
                     size_t addrLen = sizeof(serverAddr);
                     connect(TCPClientSocket, (sockaddr*)&serverAddr, addrLen);
@@ -101,14 +108,19 @@ void ClientNetworkManager::RecieveLoop() {
                     int error = 0;
                     int len = sizeof(error);
 
-                    getsockopt(TCPClientSocket, SOL_SOCKET, SO_ERROR, (char*)&error, &len);
-                    if(error == 0) {
+                    uint64_t buff;
+                    error = recv(TCPClientSocket, reinterpret_cast<char*>(&buff), sizeof(uint64_t), 0);
+                    if(error > 0) {
+                        ConnectionID = buff;
                         TCPRecieved = true;
                     }
                 }
                 else if(!UDPSent) {
-                    char MSG[] = "Hello Server";
-                    sendto(UDPClientSocket, MSG, strlen(MSG), 0, (sockaddr*)&serverAddr, sizeof(sockaddr_in));
+                    uint8_t MSG[9];
+                    MSG[0] = (uint8_t)UDPPacketType::HandshakePacket;
+                    uint64_t* MSGBuffer = reinterpret_cast<uint64_t*>(MSG + 1);
+                    memcpy(MSGBuffer, &ConnectionID, sizeof(uint64_t));
+                    sendto(UDPClientSocket, (char*)MSG, sizeof(MSG), 0, (sockaddr*)&serverAddr, sizeof(sockaddr_in));
                     UDPSent = true;
                 }
                 else if(!UDPRecieved) {
@@ -121,12 +133,13 @@ void ClientNetworkManager::RecieveLoop() {
                     }
                 }
 
-                if(TCPRecieved && UDPRecieved) connectState = ConnectionState::Connected;
+                if(TCPRecieved && UDPRecieved) connectState = ClientConnectionState::Connected;
                 break;
             }
-            case ConnectionState::Connected: {
+            case ClientConnectionState::Connected: {
                 TCPRecieve();
                 UDPRecieve();
+                SendInputSnapshot();
                 break;
             }
         }
@@ -178,7 +191,7 @@ void ClientNetworkManager::UDPRecieve() {
 }
 #include <zlib.h>
 void ClientNetworkManager::TCPRecieve() {
-    char tempBuffer[4096];
+    char tempBuffer[8192];
         
     while (true) {
         int bytesRead = recv(TCPClientSocket, tempBuffer, sizeof(tempBuffer), 0);
@@ -201,26 +214,32 @@ void ClientNetworkManager::TCPRecieve() {
     }
 
     while (streamBuffer.size() >= sizeof(TCPPacketHeader)) {
-        TCPPacketHeader* header = reinterpret_cast<TCPPacketHeader*>(streamBuffer.data());
+        TCPPacketHeader header;
+        memcpy(&header, streamBuffer.data(), sizeof(TCPPacketHeader));
             
-        if (streamBuffer.size() < header->packetSize) {
+        if (streamBuffer.size() < header.packetSize) {
             break;
+        }
+        if (header.packetSize < sizeof(TCPPacketHeader)) {
+            std::cout << "[Network] Invalid TCP packet size\n";
+            return;
         }
 
         char* payloadStart = streamBuffer.data() + sizeof(TCPPacketHeader);
-        uint32_t payloadSize = header->packetSize - sizeof(TCPPacketHeader);
+        uint32_t payloadSize = header.packetSize - sizeof(TCPPacketHeader);
 
-        switch (header->packetType) {
+        switch (header.packetType) {
             case TCPPacketType::ChunkPacket: {
-                ChunkPacketPayload decompressedChunk;
-                uLong decompressedSize = sizeof(ChunkPacketPayload);
-                uncompress(reinterpret_cast<Bytef*>(&decompressedChunk), &decompressedSize, reinterpret_cast<Bytef*>(payloadStart), payloadSize); 
+                ChunkPacketPayload* decompressedChunk = reinterpret_cast<ChunkPacketPayload*>(payloadStart);
+                //memcpy(&decompressedChunk, payloadStart, payloadSize);
+                //uLong decompressedSize = sizeof(ChunkPacketPayload);
+                //int result = uncompress(reinterpret_cast<Bytef*>(&decompressedChunk), &decompressedSize, reinterpret_cast<Bytef*>(payloadStart), payloadSize); 
 
                 GApp->m_MPWorld->m_ClientChunkManager.AddNewChunk(
-                    glm::i64vec3(decompressedChunk.ChunkX, decompressedChunk.ChunkY, decompressedChunk.ChunkZ), 
-                    decompressedChunk.m_Blocks, 
-                    decompressedChunk.HasAnything,
-                    decompressedChunk.LOD
+                    glm::i64vec3(decompressedChunk->ChunkX, decompressedChunk->ChunkY, decompressedChunk->ChunkZ), 
+                    decompressedChunk->m_Blocks, 
+                    decompressedChunk->HasAnything,
+                    decompressedChunk->LOD
                 );
                 break;
             }
@@ -250,11 +269,11 @@ void ClientNetworkManager::TCPRecieve() {
             }
                 
             default: {
-                std::cout << "[Network Warning] Unknown packet type received: " << (int)header->packetType << "\n";
+                std::cout << "[Network Warning] Unknown packet type received: " << (int)header.packetType << "\n";
                 break;
             }
         }
 
-        streamBuffer.erase(streamBuffer.begin(), streamBuffer.begin() + header->packetSize);
+        streamBuffer.erase(streamBuffer.begin(), streamBuffer.begin() + header.packetSize);
     }
 }

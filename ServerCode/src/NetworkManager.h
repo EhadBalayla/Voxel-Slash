@@ -1,8 +1,16 @@
 #pragma once
 #include <thread>
 #include <vector>
+#include <deque>
 #include <mutex>
 #include <WinSock2.h>
+#include "Core Stuff/Packets.h"
+
+struct PendingTCPPacket {
+    std::vector<char> data;
+    size_t currentOffset = 0;
+    SOCKET socketTo;
+};
 
 enum InputSendPacket : uint8_t {
     ForwardPress,
@@ -21,9 +29,18 @@ enum InputSendPacket : uint8_t {
     JumpRelease,
 };
 
+enum ConnectionState : uint8_t {
+    Connecting, 
+    Connected, 
+    Disconnecting
+};
+
 struct ConnectionData {
     SOCKET ClientSocket = INVALID_SOCKET;
     sockaddr_in udpAddr;
+    ConnectionState connectionState = ConnectionState::Connecting;
+    uint64_t ConnectionID;
+
     uint64_t EntityID = 0; //ID of the player entity
 };
 
@@ -41,9 +58,12 @@ public:
     void SendAllClientsRemovingAChunk(Chunk* c);
     void SendAllClientsEntityAdd(uint64_t ID);
     void SendAllClientsEntityRemove(uint64_t ID);
+
+    void QueueTCPPacket(SOCKET socketTo, TCPPacketType type, void* payloadData, uint32_t payloadSize);
 private:
+    uint64_t connectionToken = 0;
+
     bool threadRunning = true;
-    void connectsLoop();
     void RecieveLoop();
     std::thread connectsThread; //a thread for listening to TCP connections
     std::thread RecieveThread;
@@ -57,4 +77,9 @@ private:
 
     void TCPRecieve(ConnectionData& client);
     void UDPRecieve();
+
+
+    std::deque<PendingTCPPacket> pendingTCPPackets;
+    std::mutex pendingTCPMutex;
+    void FlushTCPPackets();
 };

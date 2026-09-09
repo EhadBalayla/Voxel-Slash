@@ -14,7 +14,7 @@
 int iResult, iSendResult;
 
 #include "Server.h"
-#include "Helpers/NetworkUtilities.h"
+//#include "Helpers/NetworkUtilities.h"
 
 
 
@@ -45,6 +45,7 @@ NetworkManager::NetworkManager() {
         WSACleanup();
         exit(EXIT_FAILURE);
     }
+    unsigned long mode = 1;
 
     //creating the TCP socket
     TCPSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
@@ -54,6 +55,7 @@ NetworkManager::NetworkManager() {
         WSACleanup();
         exit(EXIT_FAILURE);
     }
+    ioctlsocket(TCPSocket, FIONBIO, &mode);
 
     iResult = bind( TCPSocket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
@@ -80,6 +82,7 @@ NetworkManager::NetworkManager() {
         WSACleanup();
         exit(EXIT_FAILURE);
     }
+    ioctlsocket(UDPSocket, FIONBIO, &mode);
 
     sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
@@ -92,7 +95,7 @@ NetworkManager::NetworkManager() {
 
     std::cout << "Starting threads for listening to connections and sending data between connected clients" << std::endl;
 
-    connectsThread = std::thread(&NetworkManager::connectsLoop, this);
+    //connectsThread = std::thread(&NetworkManager::connectsLoop, this);
     RecieveThread = std::thread(&NetworkManager::RecieveLoop, this);
 
     std::cout << "Networking part of the server started successfully" << std::endl;
@@ -103,7 +106,7 @@ NetworkManager::~NetworkManager() {
     closesocket(TCPSocket);
     closesocket(UDPSocket);
     
-    connectsThread.join();
+    RecieveThread.join();
 
     for(auto& n : connectedClients) {
         shutdown(n.ClientSocket, SD_SEND);
@@ -119,6 +122,7 @@ void NetworkManager::SendEntitiesData() {
     for(auto it = connectedClients.begin(); it != connectedClients.end(); ) {
         ConnectionData connection = *it;
 
+        if(connection.connectionState == Connected)
         for(auto& e : GServer->m_EntityManager.GetAllEntities()) {
             EntityPacket data;
             data.EntityID = e.ID;
@@ -133,25 +137,25 @@ void NetworkManager::SendEntitiesData() {
 }
 #include <zlib.h>
 bool SendSingleChunk(SOCKET clientSocket, ChunkPacketPayload& packet) {
-    uLong compressedSize = compressBound(sizeof(packet));
-    unsigned char* compressedChunk = (unsigned char*)malloc(compressedSize);
-    compress(compressedChunk, &compressedSize, (Bytef*)&packet, sizeof(packet));
+    //uLong compressedSize = compressBound(sizeof(packet));
+    //unsigned char* compressedChunk = (unsigned char*)malloc(compressedSize);
+    //compress(compressedChunk, &compressedSize, (Bytef*)&packet, sizeof(packet));
+    
+    GServer->m_NetworkManager.QueueTCPPacket(clientSocket, TCPPacketType::ChunkPacket, &packet, sizeof(packet));
 
-    SendTCPPacket(clientSocket, TCPPacketType::ChunkPacket, compressedChunk, compressedSize);
-
-    free(compressedChunk);
+    //free(compressedChunk);
     return true;
 }
 bool SendChunkToRemove(SOCKET clientSocket, ChunkRemovePacketPayload& packet) {
-    SendTCPPacket(clientSocket, TCPPacketType::ChunkRemovePacket, &packet, sizeof(packet));
+    GServer->m_NetworkManager.QueueTCPPacket(clientSocket, TCPPacketType::ChunkRemovePacket, &packet, sizeof(packet));
     return true;
 }
 bool SendEntityAdd(SOCKET clientSocket, uint64_t ID) {
-    SendTCPPacket(clientSocket, TCPPacketType::EntityAddPacket, &ID, sizeof(ID));
+    GServer->m_NetworkManager.QueueTCPPacket(clientSocket, TCPPacketType::EntityAddPacket, &ID, sizeof(ID));
     return true;
 }
 bool SendEntityRemove(SOCKET clientSocket, uint64_t ID) {
-    SendTCPPacket(clientSocket, TCPPacketType::EntityRemovePacket, &ID, sizeof(ID));
+    GServer->m_NetworkManager.QueueTCPPacket(clientSocket, TCPPacketType::EntityRemovePacket, &ID, sizeof(ID));
     return true;
 }
 void NetworkManager::SendChunksData(SOCKET s) {
@@ -183,6 +187,7 @@ void NetworkManager::SendAllClientsASingleChunk(Chunk* c) {
     data.HasAnything = c->HasAnything;
 
     for(auto& client : connectedClients) {
+        if(client.connectionState == Connected)
         SendSingleChunk(client.ClientSocket, data);
     }
 }
@@ -193,97 +198,142 @@ void NetworkManager::SendAllClientsRemovingAChunk(Chunk* c) {
     data.ChunkZ = c->ChunkZ;
     data.LOD = c->LOD;
     for(auto& client : connectedClients) {
+        if(client.connectionState == Connected)
         SendChunkToRemove(client.ClientSocket, data);
     }
 }
 void NetworkManager::SendAllClientsEntityAdd(uint64_t ID) {
     for(auto& client : connectedClients) {
+        if(client.connectionState == Connected)
         SendEntityAdd(client.ClientSocket, ID);
     }
 }
 void NetworkManager::SendAllClientsEntityRemove(uint64_t ID) {
     for(auto& client : connectedClients) {
+        if(client.connectionState == Connected)
         SendEntityRemove(client.ClientSocket, ID);
     }
 }
 
+void NetworkManager::QueueTCPPacket(SOCKET socketTo, TCPPacketType type, void* payloadData, uint32_t payloadSize) {
+    PendingTCPPacket packet;
+    packet.socketTo = socketTo;
+    packet.data.resize(sizeof(TCPPacketHeader) + payloadSize);
+    TCPPacketHeader* header = reinterpret_cast<TCPPacketHeader*>(packet.data.data());
+    header->packetSize = sizeof(TCPPacketHeader) + payloadSize;
+    header->packetType = type;
 
+    memcpy(packet.data.data() + sizeof(TCPPacketHeader), payloadData, payloadSize);
 
+    std::lock_guard<std::mutex> lock(pendingTCPMutex);
+    pendingTCPPackets.push_back(std::move(packet));
+} 
 
-
-void NetworkManager::connectsLoop() {
+#include "Entities/PlayerEntity.h"
+void NetworkManager::RecieveLoop() {
     while(threadRunning) {
+        FlushTCPPackets();
         SOCKET ClientSocket = accept(TCPSocket, NULL, NULL);
         if (ClientSocket != INVALID_SOCKET) {
-            //set socket to non blocking
-            u_long mode = 1;
-            ioctlsocket(ClientSocket, FIONBIO, &mode); 
-
-            char handshakeRetBuffer[20]; //just to be safe
-            sockaddr_in addr;
-            size_t len = sizeof(addr);
-            recvfrom(UDPSocket, handshakeRetBuffer, 20, 0, (sockaddr*)&addr, (int*)&len);
-
             ConnectionData connection;
+            connection.ConnectionID = connectionToken;
             connection.ClientSocket = ClientSocket;
-            connection.udpAddr = addr;
-            connection.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 20.0f, 10.0f));
-            GServer->m_ChunkManager.UpdateChunks(0, 0, 0, 0, 0, 0);
-
-            uint64_t NewPlayerID = connection.EntityID;
-            sendto(UDPSocket, reinterpret_cast<char*>(&NewPlayerID), sizeof(uint64_t), 0, (sockaddr*)&addr, len);
-
-            SendChunksData(connection.ClientSocket);
-            SendAllEntities(connection.ClientSocket, NewPlayerID);
-
-            std::cout << "A client connected" << std::endl;
-
+            connectionToken++;
             {
                 std::lock_guard<std::mutex> lock(clientsMutex);
                 connectedClients.push_back(connection);
             }
+            send(ClientSocket, reinterpret_cast<char*>(&connection.ConnectionID), sizeof(uint64_t), 0);
         }
-    }
-}
-#include "Entities/PlayerEntity.h"
-void NetworkManager::RecieveLoop() {
-    while(threadRunning) {
+
         {
             for(auto& client : connectedClients) {
-                TCPRecieve(client);
+                if(client.connectionState == ConnectionState::Connected) TCPRecieve(client);
             }
             UDPRecieve();
         }
-
         std::this_thread::sleep_for(std::chrono::milliseconds(33));
     }
 }
 
 
 void NetworkManager::TCPRecieve(ConnectionData& client) {
-    InputSendPacket incomingInput;
-    int d = recv(client.ClientSocket, reinterpret_cast<char*>(&incomingInput), sizeof(incomingInput), 0);
-    if(d == SOCKET_ERROR) {
-        int err = WSAGetLastError();
-        if (err == WSAEWOULDBLOCK) return;
-        return;
-    }
 
-    auto& entities = GServer->m_EntityManager.GetAllEntities();
-    PlayerData* data = reinterpret_cast<PlayerData*>(entities[GServer->m_EntityManager.GetIDToIDX()[client.EntityID]].ExtraData);
-    switch(incomingInput) {
-        case InputSendPacket::ForwardPress: data->IsForward = true; break;
-        case InputSendPacket::ForwardRelease: data->IsForward = false; break;
-        case InputSendPacket::BackwardPress: data->IsBackward = true; break;
-        case InputSendPacket::BackwardRelease: data->IsBackward = false; break;
-        case InputSendPacket::LeftPress: data->IsLeft = true; break;
-        case InputSendPacket::LeftRelease: data->IsLeft = false; break;
-        case InputSendPacket::RightPress: data->IsRight = true; break;
-        case InputSendPacket::RightRelease: data->IsRight = false; break;
-        case InputSendPacket::JumpPress: data->IsJump = true; break;
-        case InputSendPacket::JumpRelease: data->IsJump = false; break;
-    }
 }
 void NetworkManager::UDPRecieve() {
+    static char UDPReceiveBuffer[1400];
+    sockaddr_in addr;
+    size_t len = sizeof(addr);
+    int iResult = recvfrom(UDPSocket, UDPReceiveBuffer, 1400, 0, (sockaddr*)&addr, (int*)&len);
+    if(iResult <= 0) return;
 
+    UDPPacketType type = (UDPPacketType)UDPReceiveBuffer[0];
+    switch(type) {
+        case UDPPacketType::HandshakePacket: {
+            uint64_t ID;
+            memcpy(&ID, (void*)(UDPReceiveBuffer + 1), sizeof(uint64_t));
+            {
+                std::lock_guard<std::mutex> lock(clientsMutex);
+                for(auto& client : connectedClients) {
+                    if(client.connectionState != Connected && client.ConnectionID == ID) {
+                        client.udpAddr = addr;
+                        client.connectionState = ConnectionState::Connected;
+                        client.EntityID = GServer->m_EntityManager.SpawnEntity("Player", glm::dvec3(10.0f, 20.0f, 10.0f));
+                        GServer->m_ChunkManager.UpdateChunks(0, 0, 0, 0, 0, 0);
+
+                        sendto(UDPSocket, reinterpret_cast<char*>(&client.EntityID), sizeof(uint64_t), 0, (sockaddr*)&addr, len);
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        case UDPPacketType::InputState: {
+            InputStatePacket input;
+            memcpy(&input, UDPReceiveBuffer, sizeof(input));
+            {
+                std::lock_guard<std::mutex> lock(clientsMutex);
+                for(auto& client : connectedClients) {
+                    if(client.connectionState == Connected && client.ConnectionID == input.ConnectionID) {
+                        PlayerData* pData = (PlayerData*)GServer->m_EntityManager.GetEntity(client.EntityID).ExtraData;
+                        pData->IsForward = input.ForwardInput;
+                        pData->IsBackward = input.BackwardInput;
+                        pData->IsLeft = input.LeftInput;
+                        pData->IsRight = input.RightInput;
+
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+    }
+}
+
+
+
+
+
+
+void NetworkManager::FlushTCPPackets() {
+    std::lock_guard<std::mutex> lock(pendingTCPMutex);
+    while(!pendingTCPPackets.empty()) {
+        PendingTCPPacket& packet = pendingTCPPackets.front();
+        const char* data = packet.data.data() + packet.currentOffset;
+        int result = send(packet.socketTo, packet.data.data() + packet.currentOffset, packet.data.size() - packet.currentOffset, 0);
+
+        if(result > 0) {
+            packet.currentOffset += result;
+            if(packet.currentOffset == packet.data.size())
+                pendingTCPPackets.pop_front();
+            continue;
+        }
+
+        if(result == SOCKET_ERROR) {
+            int error = WSAGetLastError();
+            if(error == WSAEWOULDBLOCK) {
+                break;
+            }
+        }
+    }
 }
