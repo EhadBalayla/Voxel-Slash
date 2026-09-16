@@ -9,8 +9,6 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
-#define DEFAULT_PORT "27015"
-
 int iResult, iSendResult;
 
 #include "Server.h"
@@ -19,15 +17,15 @@ int iResult, iSendResult;
 
 
 
-NetworkManager::NetworkManager() {
+NetworkManager::NetworkManager(char* IP, char* Port) {
+    std::cout << "Server will start on IP: " << IP << ", and PORT: " << Port <<"\n";
+
     WSADATA wsaData;
 
     int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if(iResult != 0) {
         std::cout << "WSAStartup failed: " << iResult << std::endl;
     }
-
-
 
     addrinfo* result = nullptr;
     addrinfo* ptr = nullptr;
@@ -39,7 +37,7 @@ NetworkManager::NetworkManager() {
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
 
-    iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo(NULL, Port, &hints, &result);
     if (iResult != 0) {
         std::cout << "getaddrinfo failed: " << iResult << std::endl;
         WSACleanup();
@@ -95,7 +93,6 @@ NetworkManager::NetworkManager() {
 
     std::cout << "Starting threads for listening to connections and sending data between connected clients" << std::endl;
 
-    //connectsThread = std::thread(&NetworkManager::connectsLoop, this);
     RecieveThread = std::thread(&NetworkManager::RecieveLoop, this);
 
     std::cout << "Networking part of the server started successfully" << std::endl;

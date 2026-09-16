@@ -86,7 +86,8 @@ void App::Init() {
         if(N->m_Name == "SP Button") {
             UIButton* btn = static_cast<UIButton*>(N->m_Element);
             btn->OnPress = []() {
-                GApp->m_LocalServer = new Server;
+                ServerProperties props = {"127.0.0.1", "27015"};
+                GApp->m_LocalServer = new Server(props);
                 GApp->state = GameState::Multiplayer;
             };
         }
@@ -178,9 +179,10 @@ void App::Loop() {
                 break;
             }
             case GameState::Multiplayer: {
-                if(GApp->m_ClientNetworkManager.connectState != ClientConnectionState::Connected) GApp->m_ClientNetworkManager.Connect();
+                if(GApp->m_ClientNetworkManager.connectState != ClientConnectionState::Connected) GApp->m_ClientNetworkManager.Connect("127.0.0.1", 27015);
                 else if (!m_MPWorld) m_MPWorld = new MPWorld;
                 else {
+                    Canvas* debugMenuHUD = m_TempMod->GetAllCanvases()["DebugMenuHUD"];
                     m_MPWorld->m_ClientEntityManager.InterpolateCamera(deltaTime);
 
                     proj = infinitePerspectiveReversedZ(glm::radians(FOV), Width / static_cast<float>(Height), 0.1);
@@ -208,6 +210,7 @@ void App::Loop() {
                     }
                     m_MPWorld->m_ClientEntityManager.RenderOtherEntities();
 
+                    debugMenuHUD->Render(m_Renderer.GetFrameCommandBuffer(), GWindow->GetWindowWidth(), GWindow->GetWindowHeight());
                     m_Renderer.EndGPass();
 
                     m_Renderer.PerformLightPass(m_MPWorld->m_ClientEntityManager.GetCameraPosition());

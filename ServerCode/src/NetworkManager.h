@@ -12,26 +12,9 @@ struct PendingTCPPacket {
     SOCKET socketTo;
 };
 
-enum InputSendPacket : uint8_t {
-    ForwardPress,
-    ForwardRelease,
-
-    BackwardPress,
-    BackwardRelease,
-
-    LeftPress,
-    LeftRelease,
-
-    RightPress,
-    RightRelease,
-
-    JumpPress,
-    JumpRelease,
-};
-
 enum ConnectionState : uint8_t {
     Connecting, 
-    Connected, 
+    Connected,
     Disconnecting
 };
 
@@ -48,7 +31,7 @@ class Chunk;
 
 class NetworkManager {
 public:
-    NetworkManager();
+    NetworkManager(char* IP, char* Port);
     ~NetworkManager();
 
     void SendEntitiesData(); //sends entities data to all connected clients

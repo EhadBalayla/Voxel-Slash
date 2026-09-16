@@ -5,9 +5,17 @@
 #include "EntityManager.h"
 #include "Registery.h"
 
+struct ServerProperties {
+    char* IP;
+    char* PORT;
+};
+
 class Server {
 public:
-    Server();
+    Server(ServerProperties& properties);
+
+    //bool Create();
+    //bool Terminate();
 
     NetworkManager m_NetworkManager;
     EntityManager m_EntityManager;

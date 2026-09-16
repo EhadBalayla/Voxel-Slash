@@ -9,9 +9,6 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
-#define PORT "27015"
-#define IP "127.0.0.1"
-
 #undef CreateWindow
 #include "app.h"
 #include "Helpers/NetworkUtilities.h"
@@ -59,9 +56,9 @@ void ClientNetworkManager::ShutdownNetwork() {
     WSACleanup();
 }
 
-void ClientNetworkManager::Connect() {
+void ClientNetworkManager::Connect(const char* IP, int PORT) {
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(27015);
+    serverAddr.sin_port = htons(PORT);
     inet_pton(AF_INET, IP, &serverAddr.sin_addr); // Destination IP
 
     connectState = ClientConnectionState::Connecting;

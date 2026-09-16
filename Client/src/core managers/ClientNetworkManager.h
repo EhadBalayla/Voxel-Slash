@@ -16,7 +16,7 @@ public:
     void InitializeNetwork();
     void ShutdownNetwork();
 
-    void Connect();
+    void Connect(const char* IP, int PORT);
     void Disconnect();
 
     ClientConnectionState connectState = ClientConnectionState::Disconnected;
